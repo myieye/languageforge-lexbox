@@ -412,6 +412,8 @@ input StringOperationFilterInput {
   nstartsWith: String
   endsWith: String
   nendsWith: String
+  "Case-insensitive string contains"
+  icontains: String
 }
 
 input UserFilterInput {
