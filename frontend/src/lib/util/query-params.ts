@@ -4,11 +4,11 @@ import type { ConditionalPick } from 'type-fest';
 import type { EncodeAndDecodeOptions } from 'sveltekit-search-params/sveltekit-search-params';
 import type { PrimitiveRecord } from './types';
 import type { StandardEnum } from '$lib/type.utils';
-import type { Writable } from 'svelte/store';
+import { derived, type Writable } from 'svelte/store';
 
 // Require default values
 type QueryParamOptions<T> = Required<EncodeAndDecodeOptions<T>>;
-type QueryParamsOptions<T> = { [Key in keyof T]: QueryParamOptions<T[Key]> };
+type QueryParamConfig<T> = { [Key in keyof T]: QueryParamOptions<T[Key]> };
 
 // A more type-smart version of ssp that requires defaults to be provided
 export const queryParam = ssp as {
@@ -22,7 +22,7 @@ export const queryParam = ssp as {
   : never;
 }
 
-export function getSearchParams<T extends Record<string, unknown>>(options: QueryParamsOptions<T>)
+export function getSearchParams<T extends Record<string, unknown>>(options: QueryParamConfig<T>)
   : { queryParams: Writable<T>, defaultQueryParams: T } {
   const defaultValues = getDefaults(options);
   for (const key in options) {
@@ -38,14 +38,27 @@ export function getSearchParams<T extends Record<string, unknown>>(options: Quer
     delete (options[key] as EncodeAndDecodeOptions<T[typeof key]>).defaultValue;
   }
 
+  const queryParams = queryParameters<T>(options, { pushHistory: false });
+
+  // only return the params that were explicitly requested
+  const requestedParamKeys = Object.keys(options);
+  const requestedQueryParams = derived(queryParams, (params) => {
+    const extraKeys = Object.keys(params).filter(paramKey => !requestedParamKeys.includes(paramKey));
+    extraKeys.forEach(paramKey => delete params[paramKey]);
+    return params;
+  });
+
   return {
-    queryParams: queryParameters<T>(options, { pushHistory: false }),
+    queryParams: {
+      ...queryParams,
+      ...requestedQueryParams, // override subscribe with the filtered params
+    },
     defaultQueryParams: defaultValues,
   }
 }
 
 function getDefaults<T extends Record<string, unknown>>(
-  options: QueryParamsOptions<T>): T {
+  options: QueryParamConfig<T>): T {
   const defaultValues: Partial<T> = {};
   for (const key in options) {
     const option = options[key];
