@@ -1,7 +1,7 @@
-﻿<script lang="ts">
+<script lang="ts">
 import t from '$lib/i18n';
 import {getProjectTypeI18nKey, ProjectTypeIcon} from '$lib/components/ProjectType';
-import type {AdminSearchParams, Project, User} from './+page';
+import {_FILTER_PAGE_SIZE, type AdminProjectSearchParams, type Project} from './+page';
 import {_deleteProject} from '$lib/gql/mutations';
 import {DialogResponse} from '$lib/components/modals';
 import {notifyWarning} from '$lib/notify';
@@ -19,37 +19,25 @@ import AuthenticatedUserIcon from '$lib/icons/AuthenticatedUserIcon.svelte';
 import IconButton from '$lib/components/IconButton.svelte';
 import {bubbleFocusOnDestroy} from '$lib/util/focus';
 import Button from '$lib/forms/Button.svelte';
+
 export let projects: Project[];
-export let users: User[];
 
 export function setUserFilter(email: string): void {
     $queryParams.userEmail = email;
 }
 
-export let defaultFilterLimit: number;
-const {queryParams, defaultQueryParams} = getSearchParams<AdminSearchParams>({
+const {queryParams, defaultQueryParams} = getSearchParams<AdminProjectSearchParams>({
     showDeletedProjects: queryParam.boolean<boolean>(false),
     projectType: queryParam.string<ProjectType | undefined>(undefined),
     userEmail: queryParam.string(undefined),
     projectSearch: queryParam.string<string>(''),
 });
-function getFilteredUser(userEmail: string | undefined): User | undefined {
-    if (!userEmail) {
-        return undefined;
-    }
-    if (filteredUser?.email == userEmail) {
-        return filteredUser;
-    }
-    return users.find(user => user.email === userEmail);
-}
 
+let projectFilterLimit = _FILTER_PAGE_SIZE;
 let hasActiveProjectFilter: boolean;
 $: projectSearchLower = $queryParams.projectSearch.toLocaleLowerCase();
-let projectFilterLimit = defaultFilterLimit;
 $: projectLimit = hasActiveProjectFilter ? projectFilterLimit : 10;
-$: filteredUser = getFilteredUser($queryParams.userEmail);
-$: userProjects = filteredUser?.projects.map(({projectId}) => projects.find(p => p.id === projectId) as Project);
-$: filteredProjects = (userProjects ?? projects).filter(
+$: filteredProjects = projects.filter(
     (p) =>
         (!$queryParams.projectSearch ||
             p.name.toLocaleLowerCase().includes(projectSearchLower) ||
@@ -59,7 +47,7 @@ $: shownProjects = filteredProjects.slice(0, projectLimit);
 $: {
     // Reset limit if search is changed
     hasActiveProjectFilter;
-    projectFilterLimit = defaultFilterLimit;
+    projectFilterLimit = _FILTER_PAGE_SIZE;
 }
 
 let deleteProjectModal: ConfirmDeleteModal;
@@ -73,6 +61,7 @@ async function softDeleteProject(project: Project): Promise<void> {
     }
 }
 </script>
+
 <ConfirmDeleteModal bind:this={deleteProjectModal} i18nScope="delete_project_modal"/>
 <div>
     <div class="flex justify-between items-center">
@@ -80,9 +69,9 @@ async function softDeleteProject(project: Project): Promise<void> {
           {$t('admin_dashboard.project_table_title')}
             <Badge>
             <span class="inline-flex gap-2">
-              {hasActiveProjectFilter ? filteredProjects.length : shownProjects.length}
-                <span>/</span>
-                {projects.length}
+              {shownProjects.length}
+              <span>/</span>
+              {filteredProjects.length}
             </span>
           </Badge>
         </span>

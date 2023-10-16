@@ -78,12 +78,11 @@ export function getBoolSearchParam<T extends PrimitiveRecord>(key: keyof Conditi
   }
 }
 
-export function getSearchParam<T extends PrimitiveRecord, R>(
+export function getSearchParam<T extends PrimitiveRecord, R = string | undefined>(
   key: keyof ConditionalPick<T, (R extends StandardEnum<unknown> ? R[keyof R] : R)> & string,
-  params: URLSearchParams,
-  defaultValue?: EnumOrString<R>): EnumOrString<R> | undefined {
+  params: URLSearchParams): EnumOrString<R> | undefined {
   const value = params.get(key);
-  return value ? value as EnumOrString<R> | undefined : defaultValue;
+  return value as EnumOrString<R> | undefined;
 }
 
 type EnumOrString<R> = R extends StandardEnum<unknown> ? R : string;

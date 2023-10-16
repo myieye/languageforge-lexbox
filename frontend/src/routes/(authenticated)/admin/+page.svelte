@@ -11,20 +11,29 @@
   import { Duration } from '$lib/util/time';
   import { Icon } from '$lib/icons';
   import Dropdown from '$lib/components/Dropdown.svelte';
-  import Button from '$lib/forms/Button.svelte';
-  import type { User } from './+page';
+  import { RefineFilterMessage } from '$lib/components/Table';
+  import type { AdminUserSearchParams, User } from './+page';
   import ProjectTable from './ProjectTable.svelte';
-
+  import { getSearchParams, queryParam } from '$lib/util/query-params';
 
   export let data: PageData;
   $: allProjects = data.projects;
-  $: allUsers = data.users;
+  $: userData = data.users;
 
-  let projectsTable: ProjectTable;
+  const {queryParams} = getSearchParams<AdminUserSearchParams>({
+    userSearch: queryParam.string<string>(''),
+    userEmail: queryParam.string(undefined),
+  });
+
+  $: users = $userData?.items ?? [];
+  $: totalUsers = $userData?.totalCount ?? 0;
+  $: showUsers = $queryParams.userSearch ? users : users.slice(0, 10);
+
   function filterProjectsByUser(user: User): void {
-    projectsTable.setUserFilter(user.email);
+    $queryParams.userEmail = user.email;
   }
 
+  let projectsTable: ProjectTable;
   let deleteUserModal: DeleteUserModal;
   let formModal: EditUserAccount;
 
@@ -54,24 +63,6 @@
     }
   }
 
-  const defaultFilterLimit = 100;
-  let userSearch = '';
-
-  $: userSearchLower = userSearch.toLocaleLowerCase();
-  let userSearchLimit = defaultFilterLimit;
-  $: userLimit = userSearch ? userSearchLimit : 10;
-  $: filteredUsers = $allUsers?.items?.filter(
-    (u) =>
-      !userSearch ||
-      u.name.toLocaleLowerCase().includes(userSearchLower) ||
-      u.email.toLocaleLowerCase().includes(userSearchLower)
-  ) ?? [];
-  $: users = filteredUsers.slice(0, userLimit);
-  $: {
-    // Reset limit if search is changed
-    userSearch;
-    userSearchLimit = defaultFilterLimit;
-  }
 
 </script>
 
@@ -80,20 +71,20 @@
 </svelte:head>
 <main>
   <div class="grid lg:grid-cols-2 grid-cols-1 gap-10">
-    <ProjectTable bind:this={projectsTable} projects={$allProjects} users={$allUsers?.items ?? []} {defaultFilterLimit}/>
+    <ProjectTable bind:this={projectsTable} projects={$allProjects} />
 
     <div>
       <span class="text-xl flex gap-4">
         {$t('admin_dashboard.user_table_title')}
         <Badge>
           <span class="inline-flex gap-2">
-            {userSearch ? filteredUsers.length : users.length}
+            {showUsers.length}
             <span>/</span>
-            {$allUsers?.totalCount}
+            {totalUsers}
           </span>
         </Badge>
       </span>
-      <Input label="" placeholder={$t('admin_dashboard.filter_placeholder')} bind:value={userSearch} />
+      <Input label="" placeholder={$t('admin_dashboard.filter_placeholder')} bind:value={$queryParams.userSearch} />
 
       <div class="divider" />
       <div class="overflow-x-auto">
@@ -110,7 +101,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each users as user}
+            {#each showUsers as user}
               <tr>
                 <td>{user.name}</td>
                 <td>
@@ -157,12 +148,7 @@
             {/each}
           </tbody>
         </table>
-        {#if userSearch && userSearchLimit < filteredUsers.length}
-          <Button class="float-right mt-2"
-            on:click={() => (userSearchLimit = Infinity)}>
-            {$t('admin_dashboard.load_more')}
-          </Button>
-        {/if}
+        <RefineFilterMessage total={totalUsers} showing={showUsers.length} />
       </div>
     </div>
   </div>
