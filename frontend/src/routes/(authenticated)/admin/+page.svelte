@@ -12,25 +12,31 @@
   import { Icon } from '$lib/icons';
   import Dropdown from '$lib/components/Dropdown.svelte';
   import { RefineFilterMessage } from '$lib/components/Table';
-  import type { AdminUserSearchParams, User } from './+page';
+  import type { AdminSearchParams, User } from './+page';
   import ProjectTable from './ProjectTable.svelte';
   import { getSearchParams, queryParam } from '$lib/util/query-params';
+  import type { ProjectType } from '$lib/gql/types';
 
   export let data: PageData;
   $: allProjects = data.projects;
   $: userData = data.users;
 
-  const {queryParams} = getSearchParams<AdminUserSearchParams>({
+  const queryParams = getSearchParams<AdminSearchParams>({
     userSearch: queryParam.string<string>(''),
+    showDeletedProjects: queryParam.boolean<boolean>(false),
+    projectType: queryParam.string<ProjectType | undefined>(undefined),
     userEmail: queryParam.string(undefined),
+    projectSearch: queryParam.string<string>(''),
   });
+
+  const { queryParamValues } = queryParams;
 
   $: users = $userData?.items ?? [];
   $: totalUsers = $userData?.totalCount ?? 0;
-  $: showUsers = $queryParams.userSearch ? users : users.slice(0, 10);
+  $: shownUsers = $queryParamValues.userSearch ? users : users.slice(0, 10);
 
   function filterProjectsByUser(user: User): void {
-    $queryParams.userEmail = user.email;
+    $queryParamValues.userEmail = user.email;
   }
 
   let projectsTable: ProjectTable;
@@ -71,20 +77,20 @@
 </svelte:head>
 <main>
   <div class="grid lg:grid-cols-2 grid-cols-1 gap-10">
-    <ProjectTable bind:this={projectsTable} projects={$allProjects} />
+    <ProjectTable bind:this={projectsTable} {queryParams} projects={$allProjects} />
 
     <div>
       <span class="text-xl flex gap-4">
         {$t('admin_dashboard.user_table_title')}
         <Badge>
           <span class="inline-flex gap-2">
-            {showUsers.length}
+            {shownUsers.length}
             <span>/</span>
             {totalUsers}
           </span>
         </Badge>
       </span>
-      <Input label="" placeholder={$t('admin_dashboard.filter_placeholder')} bind:value={$queryParams.userSearch} />
+      <Input label="" placeholder={$t('admin_dashboard.filter_placeholder')} bind:value={$queryParamValues.userSearch} />
 
       <div class="divider" />
       <div class="overflow-x-auto">
@@ -101,7 +107,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each showUsers as user}
+            {#each shownUsers as user}
               <tr>
                 <td>{user.name}</td>
                 <td>
@@ -148,7 +154,7 @@
             {/each}
           </tbody>
         </table>
-        <RefineFilterMessage total={totalUsers} showing={showUsers.length} />
+        <RefineFilterMessage total={totalUsers} showing={shownUsers.length} />
       </div>
     </div>
   </div>

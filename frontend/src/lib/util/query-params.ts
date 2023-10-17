@@ -4,26 +4,27 @@ import type { ConditionalPick } from 'type-fest';
 import type { EncodeAndDecodeOptions } from 'sveltekit-search-params/sveltekit-search-params';
 import type { PrimitiveRecord } from './types';
 import type { StandardEnum } from '$lib/type.utils';
-import { derived, type Writable } from 'svelte/store';
+import type { Writable } from 'svelte/store';
 
 // Require default values
 type QueryParamOptions<T> = Required<EncodeAndDecodeOptions<T>>;
 type QueryParamConfig<T> = { [Key in keyof T]: QueryParamOptions<T[Key]> };
+export type QueryParams<T> = { queryParamValues: Writable<T>, defaultQueryParamValues: T };
 
 // A more type-smart version of ssp that requires defaults to be provided
 export const queryParam = ssp as {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [Property in keyof typeof ssp]: (typeof ssp)[Property] extends (defaultValue: any) => EncodeAndDecodeOptions<infer P>
   ? <V extends P | undefined>(defaultValue: V) => QueryParamOptions<
-    NonNullable<V> extends never // default is undefined, that's obviously too specific to be the parameter type, so we hand onto P
+    NonNullable<V> extends never // default is undefined, that's obviously too specific to be the parameter type, so we hang onto P
     ? P | V : V>
   : (typeof ssp)[Property] extends typeof ssp.array
   ? typeof ssp.array // special case we can worry about if we ever need it
   : never;
 }
 
-export function getSearchParams<T extends Record<string, unknown>>(options: QueryParamConfig<T>)
-  : { queryParams: Writable<T>, defaultQueryParams: T } {
+export function getSearchParams<T extends Record<string, unknown>>(options: QueryParamConfig<T>) : QueryParams<T> {
+  // pull the defaults out before we delete them
   const defaultValues = getDefaults(options);
   for (const key in options) {
     const { encode, decode, defaultValue } = options[key];
@@ -40,20 +41,9 @@ export function getSearchParams<T extends Record<string, unknown>>(options: Quer
 
   const queryParams = queryParameters<T>(options, { pushHistory: false });
 
-  // only return the params that were explicitly requested
-  const requestedParamKeys = Object.keys(options);
-  const requestedQueryParams = derived(queryParams, (params) => {
-    const extraKeys = Object.keys(params).filter(paramKey => !requestedParamKeys.includes(paramKey));
-    extraKeys.forEach(paramKey => delete params[paramKey]);
-    return params;
-  });
-
   return {
-    queryParams: {
-      ...queryParams,
-      ...requestedQueryParams, // override subscribe with the filtered params
-    },
-    defaultQueryParams: defaultValues,
+    queryParamValues: queryParams,
+    defaultQueryParamValues: defaultValues,
   }
 }
 

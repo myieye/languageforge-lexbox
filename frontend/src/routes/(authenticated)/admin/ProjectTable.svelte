@@ -1,7 +1,7 @@
 <script lang="ts">
 import t from '$lib/i18n';
 import {getProjectTypeI18nKey, ProjectTypeIcon} from '$lib/components/ProjectType';
-import {_FILTER_PAGE_SIZE, type AdminProjectSearchParams, type Project} from './+page';
+import {_FILTER_PAGE_SIZE, type AdminSearchParams, type Project} from './+page';
 import {_deleteProject} from '$lib/gql/mutations';
 import {DialogResponse} from '$lib/components/modals';
 import {notifyWarning} from '$lib/notify';
@@ -13,36 +13,29 @@ import ProjectTypeSelect from '$lib/forms/ProjectTypeSelect.svelte';
 import FormField from '$lib/forms/FormField.svelte';
 import {ActiveFilter, FilterBar} from '$lib/components/FilterBar';
 import Badge from '$lib/components/Badges/Badge.svelte';
-import {getSearchParams, queryParam} from '$lib/util/query-params';
-import type {ProjectType} from '$lib/gql/types';
 import AuthenticatedUserIcon from '$lib/icons/AuthenticatedUserIcon.svelte';
 import IconButton from '$lib/components/IconButton.svelte';
 import {bubbleFocusOnDestroy} from '$lib/util/focus';
 import Button from '$lib/forms/Button.svelte';
+import type { QueryParams } from '$lib/util/query-params';
 
 export let projects: Project[];
 
-export function setUserFilter(email: string): void {
-    $queryParams.userEmail = email;
-}
+export let queryParams: QueryParams<AdminSearchParams>;
+$: filters = queryParams.queryParamValues;
+$: defaultFilters = queryParams.defaultQueryParamValues;
 
-const {queryParams, defaultQueryParams} = getSearchParams<AdminProjectSearchParams>({
-    showDeletedProjects: queryParam.boolean<boolean>(false),
-    projectType: queryParam.string<ProjectType | undefined>(undefined),
-    userEmail: queryParam.string(undefined),
-    projectSearch: queryParam.string<string>(''),
-});
-
+const projectFilterKeys = new Set(['projectSearch', 'projectType', 'showDeletedProjects', 'userEmail'] as const) satisfies Set<keyof AdminSearchParams>;
 let projectFilterLimit = _FILTER_PAGE_SIZE;
 let hasActiveProjectFilter: boolean;
-$: projectSearchLower = $queryParams.projectSearch.toLocaleLowerCase();
+$: projectSearchLower = $filters.projectSearch.toLocaleLowerCase();
 $: projectLimit = hasActiveProjectFilter ? projectFilterLimit : 10;
 $: filteredProjects = projects.filter(
     (p) =>
-        (!$queryParams.projectSearch ||
+        (!$filters.projectSearch ||
             p.name.toLocaleLowerCase().includes(projectSearchLower) ||
             p.code.toLocaleLowerCase().includes(projectSearchLower)) &&
-        (!$queryParams.projectType || p.type === $queryParams.projectType));
+        (!$filters.projectType || p.type === $filters.projectType));
 $: shownProjects = filteredProjects.slice(0, projectLimit);
 $: {
     // Reset limit if search is changed
@@ -83,8 +76,8 @@ async function softDeleteProject(project: Project): Promise<void> {
         </a>
     </div>
 
-    <FilterBar bind:search={$queryParams.projectSearch} filters={queryParams} defaultValues={defaultQueryParams}
-               bind:hasActiveFilter={hasActiveProjectFilter} autofocus>
+    <FilterBar bind:search={$filters.projectSearch} {filters} defaultValues={defaultFilters}
+               bind:hasActiveFilter={hasActiveProjectFilter} filterKeys={projectFilterKeys} autofocus>
         <svelte:fragment slot="activeFilters" let:activeFilters>
             {#each activeFilters as filter}
                 {#if filter.key === 'projectType'}
@@ -107,16 +100,16 @@ async function softDeleteProject(project: Project): Promise<void> {
         <svelte:fragment slot="filters">
             <h2 class="card-title">Project filters</h2>
             <FormField label={$t('admin_dashboard.project_filter.project_member')}>
-                {#if $queryParams.userEmail}
+                {#if $filters.userEmail}
                     <div class="join" use:bubbleFocusOnDestroy>
                         <input class="input input-bordered join-item flex-grow"
                                placeholder={$t('admin_dashboard.project_filter.all_users')} readonly
-                               value={$queryParams.userEmail}/>
+                               value={$filters.userEmail}/>
                         <div class="join-item isolate">
                             <IconButton
                                     icon="i-mdi-close"
                                     style="btn-outline"
-                                    on:click={() => $queryParams.userEmail = undefined}
+                                    on:click={() => $filters.userEmail = undefined}
                             />
                         </div>
                     </div>
@@ -138,14 +131,14 @@ async function softDeleteProject(project: Project): Promise<void> {
                 {/if}
             </FormField>
             <div class="form-control">
-                <ProjectTypeSelect bind:value={$queryParams.projectType}
+                <ProjectTypeSelect bind:value={$filters.projectType}
                                    undefinedOptionLabel={$t('project_type.any')}/>
             </div>
             <div class="form-control">
                 <label class="cursor-pointer label gap-4">
                     <span class="label-text">{$t('admin_dashboard.show_delete_projects')}</span>
                     <input
-                            bind:checked={$queryParams.showDeletedProjects}
+                            bind:checked={$filters.showDeletedProjects}
                             type="checkbox"
                             class="toggle toggle-error"
                     />
