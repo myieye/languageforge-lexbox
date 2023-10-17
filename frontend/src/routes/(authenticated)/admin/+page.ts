@@ -36,9 +36,9 @@ export async function load(event: PageLoadEvent) {
 
   const client = getClient();
 
-  const projectFilter = {
+  const projectFilter: ProjectFilterInput = {
     ...(userEmail ? { users: { some: { user: { email: { icontains: userEmail } } } } } : {})
-  } as ProjectFilterInput;
+  };
 
   //language=GraphQL
   const projectResultsPromise = client.queryStore(event.fetch, graphql(`
