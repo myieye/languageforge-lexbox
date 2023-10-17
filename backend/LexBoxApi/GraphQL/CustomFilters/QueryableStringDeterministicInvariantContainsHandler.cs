@@ -20,6 +20,12 @@ public class QueryableStringDeterministicInvariantContainsHandler : QueryableStr
         .MakeGenericMethod(typeof(string));
     private static readonly ConstantExpression _efFunctions = Expression.Constant(EF.Functions);
 
+    static QueryableStringDeterministicInvariantContainsHandler()
+    {
+        ArgumentNullException.ThrowIfNull(_ilike, nameof(_ilike));
+        ArgumentNullException.ThrowIfNull(_collate, nameof(_collate));
+    }
+
     protected override int Operation => CustomFilterOperations.IContains;
 
     public QueryableStringDeterministicInvariantContainsHandler(InputParser inputParser)
@@ -31,34 +37,34 @@ public class QueryableStringDeterministicInvariantContainsHandler : QueryableStr
         QueryableFilterContext context,
         IFilterOperationField field,
         IValueNode value,
-        object? parsedValue)
+        object? search)
     {
-        if (parsedValue is string)
-        {
-            var pattern = $"%{parsedValue}%";
-            var property = context.GetInstance();
+        if (search is not string)
+            throw new InvalidOperationException($"Expected {nameof(QueryableStringDeterministicInvariantContainsHandler)} to be called with a string, but was {search}.");
 
-            var collatedValueExpression = Expression.Call(
+        var pattern = $"%{search}%";
+        var property = context.GetInstance();
+
+        var collatedValueExpression = Expression.Call(
+            null,
+            _collate,
+            _efFunctions,
+            property,
+            // we have to explicitly use a deterministic collation, because Postgres doesn't support LIKE for non-deterministic collations,
+            // which we use for some columns
+            Expression.Constant("und-x-icu")
+        );
+
+        // property != null && EF.Functions.ILike(EF.Functions.Collate(property, "und-x-icu"), "%search%")
+        return Expression.AndAlso(
+            Expression.NotEqual(property, Expression.Constant(null, typeof(object))),
+            Expression.Call(
                 null,
-                _collate,
+                _ilike,
                 _efFunctions,
-                property,
-                // we have to explicitly use a deterministic collation, because Postgres doesn't support LIKE for non-deterministic collations,
-                // which we use for some columns
-                Expression.Constant("und-x-icu")
-            );
-
-            return Expression.AndAlso(
-                Expression.NotEqual(property, Expression.Constant(null, typeof(object))),
-                Expression.Call(
-                    null,
-                    _ilike,
-                    _efFunctions,
-                    collatedValueExpression,
-                    Expression.Constant(pattern)
-                )
-            );
-        }
-        throw new InvalidOperationException();
+                collatedValueExpression,
+                Expression.Constant(pattern)
+            )
+        );
     }
 }
