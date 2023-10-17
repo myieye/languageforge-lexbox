@@ -5,6 +5,8 @@ namespace LexBoxApi.GraphQL.CustomFilters;
 
 public static class CustomFilterOperations
 {
+    // Our custom operation IDs should be above 1024:
+    // https://chillicream.com/docs/hotchocolate/v13/api-reference/extending-filtering#operation
     public const int IContains = 1025;
 
     public static IFilterConventionDescriptor AddDeterministicInvariantContainsFilter(this IFilterConventionDescriptor descriptor)
