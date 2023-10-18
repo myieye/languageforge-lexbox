@@ -8,7 +8,9 @@ import {
   fetchExchange,
   type CombinedError,
   queryStore,
-  type OperationResultSource
+  type OperationResultSource,
+  type Pausable,
+  type OperationResultStore
 } from '@urql/svelte';
 import {createClient} from '@urql/svelte';
 import {browser} from '$app/environment';
@@ -16,7 +18,7 @@ import {isObject} from '../util/types';
 import {tracingExchange} from '$lib/otel';
 import {LexGqlError, isErrorResult, type $OpResult, type GqlInputError, type ExtractErrorTypename, type GenericData} from './types';
 import type {Readable, Unsubscriber} from 'svelte/store';
-import {derived} from 'svelte/store';
+import {derived, writable} from 'svelte/store';
 import {cacheExchange} from '@urql/exchange-graphcache';
 import {devtoolsExchange} from '@urql/devtools';
 import type { LexAuthUser } from '$lib/user';
@@ -84,17 +86,26 @@ class GqlClient {
     );
   }
 
-  async queryStore<Data = unknown, Variables extends AnyVariables = AnyVariables>(
+  queryStore<Data = unknown, Variables extends AnyVariables = AnyVariables>(
     fetch: Fetch,
     query: TypedDocumentNode<Data, Variables>,
     variables: Variables,
-    context: QueryOperationOptions = {}): Promise<QueryStoreReturnType<Data>> {
+    context: QueryOperationOptions = {}): { dataPromise: Promise<QueryStoreReturnType<Data>>, loading: Readable<boolean> } {
     const resultStore = queryStore<Data, Variables>({
       client: this.client,
       query,
       variables,
       context: {fetch, ...context}
     });
+    const loading = writable(true);
+    const dataPromise = this.initQueryStore(resultStore);
+    void dataPromise.then(() => loading.set(false));
+    return { dataPromise, loading };
+  }
+
+  private async initQueryStore<Data = unknown, Variables extends AnyVariables = AnyVariables>(
+    resultStore: OperationResultStore<Data, Variables> & Pausable,
+  ): Promise<QueryStoreReturnType<Data>> {
     const results = await new Promise<OperationResultState<Data, Variables>>((resolve) => {
       let invalidate = undefined as Unsubscriber | undefined;
       invalidate = resultStore.subscribe(value => {

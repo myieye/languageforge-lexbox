@@ -6,22 +6,17 @@ import { redirect } from '@sveltejs/kit';
 import { getBoolSearchParam, getSearchParam } from '$lib/util/query-params';
 import type { $OpResult, ChangeUserAccountByAdminInput, ChangeUserAccountByAdminMutation, ProjectFilterInput, ProjectType } from '$lib/gql/types';
 import type { LoadAdminDashboardProjectsQuery, LoadAdminDashboardUsersQuery } from '$lib/gql/types';
+import { debounce } from '$lib/util/time';
 
 export const _FILTER_PAGE_SIZE = 100;
 
-export type AdminProjectSearchParams = {
+export type AdminSearchParams = {
   showDeletedProjects: boolean,
   projectType: ProjectType | undefined,
   userEmail: string | undefined,
+  userSearch: string,
   projectSearch: string,
 };
-
-export type AdminUserSearchParams = {
-  userSearch: string,
-  userEmail: string | undefined,
-}
-
-export type AdminSearchParams = AdminProjectSearchParams & AdminUserSearchParams;
 
 export type Project = LoadAdminDashboardProjectsQuery['projects'][number];
 export type User = NonNullable<NonNullable<LoadAdminDashboardUsersQuery['users']>['items']>[number];
@@ -41,7 +36,7 @@ export async function load(event: PageLoadEvent) {
   };
 
   //language=GraphQL
-  const projectResultsPromise = client.queryStore(event.fetch, graphql(`
+  const projectQuery = client.queryStore(event.fetch, graphql(`
         query loadAdminDashboardProjects($withDeletedProjects: Boolean, $filter: ProjectFilterInput) {
             projects(
               where: $filter,
@@ -60,7 +55,7 @@ export async function load(event: PageLoadEvent) {
         }
     `), { withDeletedProjects, filter: projectFilter });
 
-  const userResultsPromise = client.queryStore(event.fetch, graphql(`
+  const userQuery = debounce('admin-user-query', () => client.queryStore(event.fetch, graphql(`
         query loadAdminDashboardUsers($userSearch: String, $take: Int!) {
             users(
               where: {or: [
@@ -82,13 +77,13 @@ export async function load(event: PageLoadEvent) {
               }
             }
         }
-    `), { userSearch, take: _FILTER_PAGE_SIZE });
-
-  const [projectResults, userResults] = await Promise.all([projectResultsPromise, userResultsPromise]);
+    `), { userSearch, take: _FILTER_PAGE_SIZE }),
+    { userSearch },
+  );
 
   return {
-    ...projectResults,
-    ...userResults,
+    projectQuery,
+    userQuery,
   }
 }
 

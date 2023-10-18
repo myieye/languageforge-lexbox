@@ -55,7 +55,7 @@ export async function load(event: PageLoadEvent) {
 				}
 			`),
       { projectCode }
-    );
+    ).dataPromise;
 
   const projectId = get(result.projectByCode)?.id as string;
   event.depends(`project:${projectId}`);

@@ -18,8 +18,8 @@ export async function load(event: PageLoadEvent) {
                 type
             }
         }
-  `), {});
+  `), {}).dataPromise;
   return {
-    projects: results.myProjects,
+    projects: results,
   }
 }

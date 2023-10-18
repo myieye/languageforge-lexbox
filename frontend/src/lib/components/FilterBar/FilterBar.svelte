@@ -7,6 +7,8 @@
 </script>
 
 <script lang="ts">
+  import Loader from '../Loader.svelte';
+
   import t from '$lib/i18n';
   import { derived, type Readable, type Writable } from 'svelte/store';
   import Dropdown from '../Dropdown.svelte';
@@ -18,6 +20,7 @@
   export let filters: Writable<Filters>;
   export let defaultValues: Filters;
   export let hasActiveFilter: boolean;
+  export let loading = true;
 
   /**
    * Explicitly specify the filter object keys that should be used from the `filters` (optional)
@@ -67,6 +70,9 @@
       {autofocus}
     />
     <div class="ml-auto flex join">
+      <span class="inline-flex join-item mr-2">
+        <Loader {loading} />
+      </span>
       {#if hasActiveFilter}
         <button class="btn btn-square btn-sm join-item" on:click={reseFilters}>
           <span class="text-lg">✕</span>

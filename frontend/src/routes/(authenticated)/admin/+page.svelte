@@ -16,10 +16,15 @@
   import ProjectTable from './ProjectTable.svelte';
   import { getSearchParams, queryParam } from '$lib/util/query-params';
   import type { ProjectType } from '$lib/gql/types';
+  import { readable } from 'svelte/store';
 
   export let data: PageData;
-  $: allProjects = data.projects;
-  $: userData = data.users;
+  let allProjects: Awaited<PageData['projectQuery']['dataPromise']>['projects'] = readable([]);
+  let userData: Awaited<PageData['userQuery']['dataPromise']>['users'];
+  $: void data.projectQuery.dataPromise?.then(projectResults => allProjects = projectResults.projects);
+  $: void data.userQuery.dataPromise?.then(userResults => userData = userResults.users);
+  $: loadingUsers = data.userQuery.loading;
+  $: userQueryState = data.userQuery.state;
 
   const queryParams = getSearchParams<AdminSearchParams>({
     userSearch: queryParam.string<string>(''),
@@ -33,7 +38,7 @@
 
   $: users = $userData?.items ?? [];
   $: totalUsers = $userData?.totalCount ?? 0;
-  $: shownUsers = $queryParamValues.userSearch ? users : users.slice(0, 10);
+  $: shownUsers = userQueryState?.userSearch ? users : users.slice(0, 10);
 
   function filterProjectsByUser(user: User): void {
     $queryParamValues.userEmail = user.email;
@@ -68,8 +73,6 @@
       }
     }
   }
-
-
 </script>
 
 <svelte:head>

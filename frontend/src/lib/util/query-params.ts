@@ -4,7 +4,7 @@ import type { ConditionalPick } from 'type-fest';
 import type { EncodeAndDecodeOptions } from 'sveltekit-search-params/sveltekit-search-params';
 import type { PrimitiveRecord } from './types';
 import type { StandardEnum } from '$lib/type.utils';
-import type { Writable } from 'svelte/store';
+import { derived, get, writable, type Writable } from 'svelte/store';
 
 // Require default values
 type QueryParamOptions<T> = Required<EncodeAndDecodeOptions<T>>;
@@ -40,9 +40,22 @@ export function getSearchParams<T extends Record<string, unknown>>(options: Quer
   }
 
   const queryParams = queryParameters<T>(options, { pushHistory: false });
+  const memoryQueryParams = writable(get(queryParams));
+
+  const proxyStore = {
+    ...memoryQueryParams,
+    set: (value: T) => {
+      memoryQueryParams.set(value);
+      queryParams.set(value);
+    },
+    ...derived([queryParams, memoryQueryParams], ([queryParams, memoryQueryParams]) => ({
+      ...queryParams,
+      ...memoryQueryParams,
+    })),
+  };
 
   return {
-    queryParamValues: queryParams,
+    queryParamValues: proxyStore,
     defaultQueryParamValues: defaultValues,
   }
 }
