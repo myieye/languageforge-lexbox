@@ -122,7 +122,9 @@ jobs:
         run: pnpm exec playwright install-deps chromium
       - name: Run UI tests
         working-directory: frontend/viewer
-        run: task test:ui-standalone
+        # --reporter replaces the config's CI reporters: the Argos upload there needs an
+        # Argos project for this fork, which doesn't exist (visual review happens upstream)
+        run: task test:ui-standalone -- --reporter=list
       - name: Build viewer
         working-directory: frontend/viewer
         run: pnpm run build
