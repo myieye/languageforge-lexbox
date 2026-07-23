@@ -1,7 +1,9 @@
-# Staging fork
+# The sandbox
 
-This is myieye/languageforge-lexbox — Tim's staging fork of sillsdev/languageforge-lexbox.
-AI agents (Claude, Devin, CodeRabbit) churn on PRs here so the noise never reaches the real repo.
+This is myieye/languageforge-lexbox, "the sandbox": Tim's staging fork of
+sillsdev/languageforge-lexbox. AI agents (Claude, Devin, CodeRabbit, DeepSource) churn on
+"sandbox PRs" here so the noise never reaches the real repo. ("Sandbox", not "staging":
+the real repo has a staging deploy environment.)
 Identify remotes by URL, not name: locally `origin` = sillsdev and `sandbox` = this fork,
 but a Claude Code Web session opened on this fork has `origin` = the fork. The fork skills
 resolve them by URL.
