@@ -123,8 +123,10 @@ jobs:
       - name: Run UI tests
         working-directory: frontend/viewer
         # --reporter replaces the config's CI reporters: the Argos upload there needs an
-        # Argos project for this fork, which doesn't exist (visual review happens upstream)
-        run: task test:ui-standalone -- --reporter=list
+        # Argos project for this fork, which doesn't exist (visual review happens upstream).
+        # --workers=2: the config pins CI to 1 worker; 2 halves the runtime on the 4-core
+        # runner. Revert to 1 if tests turn flaky.
+        run: task test:ui-standalone -- --reporter=list --workers=2
       - name: Build viewer
         working-directory: frontend/viewer
         run: pnpm run build
