@@ -2,7 +2,9 @@
 
 This is myieye/languageforge-lexbox — Tim's staging fork of sillsdev/languageforge-lexbox.
 AI agents (Claude, Devin, CodeRabbit) churn on PRs here so the noise never reaches the real repo.
-Local remote names: `origin` = sillsdev, `sandbox` = this fork.
+Identify remotes by URL, not name: locally `origin` = sillsdev and `sandbox` = this fork,
+but a Claude Code Web session opened on this fork has `origin` = the fork. The fork skills
+resolve them by URL.
 
 ## Rules
 
@@ -12,9 +14,11 @@ Local remote names: `origin` = sillsdev, `sandbox` = this fork.
 - `develop` here = upstream `develop` plus `[fork-only]` commits. Fork-only commits touch
   **only files that don't exist upstream** (this file, `.github/workflows/fork-*.yaml`,
   `.coderabbit.yaml`), so syncing from upstream never conflicts.
-- **Cut feature branches from upstream `develop`, never from this fork's `develop`.**
-  Otherwise the fork-only commits ride along at promote time. Before promoting, verify:
-  `git cat-file -e HEAD:FORK.md` must FAIL on the branch.
+- **Prefer cutting feature branches from upstream `develop`.** Branches cut from this
+  fork's `develop` (natural in a Claude Code Web session opened here) are fine for staging;
+  promotion rebases them onto upstream first (`git rebase --onto <sillsdev>/develop
+  <fork>/develop` is always clean). Either way, a promoted branch must FAIL
+  `git cat-file -e HEAD:FORK.md`.
 - Never rebase or force-push this fork's `develop` — it would corrupt the diffs of open
   staging PRs.
 
