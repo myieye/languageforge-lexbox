@@ -1,0 +1,6 @@
+# Fork-only file (doesn't exist upstream). Auto-review is off to protect the free-tier
+# quota: request a review manually by commenting `@coderabbitai review` on a PR, normally
+# only once Devin and CI are already clean. See FORK.md.
+reviews:
+  auto_review:
+    enabled: false
