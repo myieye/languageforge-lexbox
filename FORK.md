@@ -41,7 +41,8 @@ gh api repos/myieye/languageforge-lexbox/actions/workflows --paginate \
 
 1. Push the branch to this fork and open a PR against `develop` here.
 2. Run the Devin + CI loop on the staging PR (make-devin-and-ci-green with the PR URL)
-   until both are clean at the same HEAD.
+   until both are clean at the same HEAD. DeepSource reviews every push automatically;
+   triage its PR-check findings along the way.
 3. Only then spend CodeRabbit quota: comment `@coderabbitai review` on the PR
    (auto-review is off via `.coderabbit.yaml` to protect the free-tier quota).
 4. Promote: push the branch to sillsdev, open the real PR there, close the staging PR
