@@ -66,10 +66,11 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
     {
         if (forceRefresh)
             lexboxProjectService.InvalidateProjectsCache(server);
-        var lexboxProjects = await lexboxProjectService.GetLexboxProjects(server);
+        var userProjects = await lexboxProjectService.GetLexboxProjects(server);
         //a freshly fetched list is fresh knowledge of the user's roles, so let it update local projects too
-        await projectServerInfoService.ApplyServerInfo(server, lexboxProjects);
-        if (lexboxProjects is null) return new(server, [], false);
+        await projectServerInfoService.ApplyServerInfo(server, userProjects);
+        if (userProjects is null) return new(server, [], false);
+        var lexboxProjects = userProjects.Result;
         var projectModels = lexboxProjects.Projects.Select(p => new ProjectModel(
                 p.Name,
                 p.Code,

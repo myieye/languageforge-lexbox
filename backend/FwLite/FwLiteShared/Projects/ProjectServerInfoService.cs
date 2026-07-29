@@ -66,11 +66,11 @@ public class ProjectServerInfoService(
     }
 
     /// <summary>
-    /// Stamps the server's signed-in user (and roles from <paramref name="lexboxProjects"/>, when available)
+    /// Stamps the server's signed-in user (and roles from <paramref name="userProjects"/>, when available)
     /// onto the local projects originating from <paramref name="server"/>. Signed out means no fresh knowledge:
     /// the stored user and role are kept as the last known state.
     /// </summary>
-    public async Task ApplyServerInfo(LexboxServer server, ListProjectsResult? lexboxProjects)
+    public async Task ApplyServerInfo(LexboxServer server, UserProjectList? userProjects)
     {
         await _applyLock.WaitAsync();
         try
@@ -87,6 +87,8 @@ public class ProjectServerInfoService(
                 return;
             }
             if (user is null) return;
+            //a list fetched under a different account (user switched mid-fetch) is no fresh knowledge for this user
+            var lexboxProjects = userProjects is not null && userProjects.UserId == user.Id ? userProjects.Result : null;
             //materialize: the lazy directory enumeration shouldn't span the awaits below
             foreach (var project in crdtProjectsService.ListProjects().ToArray())
             {
