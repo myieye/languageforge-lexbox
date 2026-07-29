@@ -75,6 +75,13 @@ filters by References before the latest-per-entity check (603ms → 37ms per loo
 place, `AlwaysValidateCommits=false` adds nothing at this scale — rehashing 30k small commits is
 cheap; the remaining ~300ms/record is snapshot maintenance and per-commit transaction cost.
 
+## Temp-copy SQLite pragmas: no effect here
+
+Branch `claude/sync-perf-temp-copy-pragmas` drops durability (synchronous=OFF,
+journal_mode=MEMORY) on dry-run temp copies. Measured 17m22s / 434ms — indistinguishable from
+baseline on this hardware (NVMe; fsync isn't the bottleneck). Branch is pushed but not PR'd;
+might still matter on slow disks.
+
 ## Correctness gate for optimization PRs
 
 A dry-run sync of the demo project must produce identical results before and after the change:
