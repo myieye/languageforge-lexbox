@@ -84,17 +84,28 @@ public partial class CrdtProjectsService(
         await Task.WhenAll(tasks);
     }
 
-    public async ValueTask UpdateProjectServerInfo(CrdtProject project,
+    /// <summary>
+    /// Stamps the signed-in user (and their role, when known) onto the project's <see cref="ProjectData"/>.
+    /// A null <paramref name="role"/> means "no fresh role knowledge" and leaves the stored role untouched.
+    /// Returns the refreshed <see cref="ProjectData"/>, or null when nothing needed updating.
+    /// </summary>
+    public async ValueTask<ProjectData?> UpdateProjectServerInfo(CrdtProject project,
         string? userName,
         string? userId,
-        UserProjectRole role)
+        UserProjectRole? role)
     {
-        if (project.Data?.LastUserName == userName && project.Data?.LastUserId == userId && project.Data?.Role == role) return;
+        if (project.Data is not null
+            && project.Data.LastUserName == userName
+            && project.Data.LastUserId == userId
+            && (role is null || project.Data.Role == role)) return null;
+        ProjectData? updated = null;
         await ExecInProject(project, async (scopedServices, currentProjectService) =>
         {
             await currentProjectService.UpdateLastUser(userName, userId);
-            await currentProjectService.UpdateUserRole(role);
+            if (role is not null) await currentProjectService.UpdateUserRole(role.Value);
+            updated = await currentProjectService.GetProjectData();
         });
+        return updated;
     }
 
     public IEnumerable<CrdtProject> ListProjects()

@@ -38,4 +38,24 @@ public class OAuthClientIsSignedInTests
 
         (await client.IsSignedIn()).Should().BeFalse();
     }
+
+    // Strict mock only stubs GetAccountsAsync, so these also prove GetCachedUser never reaches for a token.
+    // Note: MSAL's Username carries our Name claim, i.e. the person's name, not an email or login.
+    [Fact]
+    public async Task GetCachedUser_ReturnsAccountIdentity()
+    {
+        var account = Mock.Of<IAccount>(a => a.Username == "Test User"
+                                             && a.HomeAccountId == new AccountId("uid.tid", "uid", "tid"));
+        var (client, _) = BuildClient([account]);
+
+        (await client.GetCachedUser()).Should().Be(new LexboxUser("Test User", "uid"));
+    }
+
+    [Fact]
+    public async Task GetCachedUser_ReturnsNull_WhenNoAccounts()
+    {
+        var (client, _) = BuildClient([]);
+
+        (await client.GetCachedUser()).Should().BeNull();
+    }
 }

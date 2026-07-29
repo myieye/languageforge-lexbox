@@ -14,8 +14,10 @@ public class JsEventListener : IDisposable
 
     private readonly GlobalEventBus _globalEventBus;
 
-    //just a guess, this may need to be adjusted if we start losing events
-    private const int MaxJsEventQueueSize = 10;
+    //just a guess, this may need to be adjusted if we start losing events. Sized to absorb a login
+    //re-stamping user state on many projects at once (one ProjectDataChangedEvent each) without
+    //dropping unrelated events like Sync/EntriesChanged.
+    private const int MaxJsEventQueueSize = 64;
     private readonly Channel<IFwEvent> _jsEventChannel = Channel.CreateBounded<IFwEvent>(MaxJsEventQueueSize);
     private readonly IDisposable _globalBusSubscription;
 

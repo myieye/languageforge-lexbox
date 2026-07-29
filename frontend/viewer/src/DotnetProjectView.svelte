@@ -12,8 +12,10 @@
     ISyncServiceJsInvokable
   } from '$lib/dotnet-types/generated-types/FwLiteShared/Services/ISyncServiceJsInvokable';
   import {initProjectContext} from '$project/project-context.svelte';
+  import {useProjectEventBus} from '$lib/services/event-bus';
   import {initProjectStorage} from '$lib/storage';
   import type {IMediaFilesServiceJsInvokable} from '$lib/dotnet-types/generated-types/FwLiteShared/Services/IMediaFilesServiceJsInvokable';
+  import type {IProjectData} from '$lib/dotnet-types/generated-types/LcmCrdt/IProjectData';
 
   const projectServicesProvider = useProjectServicesProvider();
 
@@ -28,6 +30,15 @@
 
   initProjectStorage(code);
 
+  // The backend re-stamps project user state (current user, role) after logins; keep our copy live so
+  // e.g. comment ownership is right after logging in from the sync dialog without reopening the project.
+  // Events that arrive while the project is still opening are buffered, because setup() would otherwise
+  // overwrite them with the older open-time snapshot.
+  let latestProjectData: IProjectData | undefined;
+  useProjectEventBus().onProjectDataChanged(event => {
+    latestProjectData = event.projectData;
+    if (serviceLoaded) projectContext.updateProjectData(event.projectData);
+  });
 
   let projectName = $state<string>(code);
   let projectScope: IProjectScope;
@@ -75,6 +86,7 @@
       paratext
     });
     serviceLoaded = true;
+    if (latestProjectData) projectContext.updateProjectData(latestProjectData);
   });
   onDestroy(() => {
     destroyed = true;

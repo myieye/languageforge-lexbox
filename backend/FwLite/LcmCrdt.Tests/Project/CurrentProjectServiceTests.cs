@@ -82,4 +82,33 @@ public class CurrentProjectServiceTests : IAsyncLifetime
         service.ProjectData.Should().NotBeNull();
         service.ProjectData.Name.Should().Be("test-data-setup-works-in-new-instance");
     }
+
+    [Fact]
+    public async Task UpdateLastUser_WithNullUser_KeepsPersistedValue()
+    {
+        // The persisted value is the signed-out fallback, so a null update (signed out) mustn't wipe it.
+        var project = await CreateProject("test-last-user-null");
+        await _service.SetupProjectContext(project);
+        await _service.UpdateLastUser("Test User", "test-id");
+
+        await _service.UpdateLastUser(null, null);
+
+        var projectData = await _service.GetProjectData();
+        projectData.LastUserName.Should().Be("Test User");
+        projectData.LastUserId.Should().Be("test-id");
+    }
+
+    [Fact]
+    public async Task UpdateLastUser_ReplacesPreviousUser()
+    {
+        var project = await CreateProject("test-last-user-replace");
+        await _service.SetupProjectContext(project);
+        await _service.UpdateLastUser("first", "first-id");
+
+        await _service.UpdateLastUser("second", "second-id");
+
+        var projectData = await _service.GetProjectData();
+        projectData.LastUserName.Should().Be("second");
+        projectData.LastUserId.Should().Be("second-id");
+    }
 }

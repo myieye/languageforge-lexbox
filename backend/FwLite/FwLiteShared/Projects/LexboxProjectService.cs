@@ -54,29 +54,41 @@ public class LexboxProjectService : IDisposable
         return Servers().FirstOrDefault(s => s.Id == projectData.ServerId);
     }
 
-    public async Task<ListProjectsResult> GetLexboxProjects(LexboxServer server)
+    //the list is per-user (roles, membership), so entries are stamped with the identity they were fetched
+    //under: a fetch that raced a user switch can never be read back as the new user's list
+    private record CachedProjectList(string UserId, ListProjectsResult Result);
+
+    /// <summary>
+    /// The server's project list for the signed-in user, cached for a few minutes. Null when the list can't
+    /// be fetched (signed out, offline, server error) — callers must treat that as "no fresh knowledge", not
+    /// as an empty list. Failures are never cached, so e.g. a fetch that raced a login isn't stuck looking
+    /// signed out for the cache duration.
+    /// </summary>
+    public async Task<ListProjectsResult?> GetLexboxProjects(LexboxServer server)
     {
-        return await cache.GetOrCreateAsync(ProjectListCacheKey(server),
-            async entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
-                var httpClient = await clientFactory.GetClient(server).CreateHttpClient();
-                if (httpClient is null) return new([], false);
-                try
-                {
-                    return await httpClient.GetFromJsonAsync<ListProjectsResult>("api/crdt/listProjectsV2") ?? new([], false);
-                }
-                catch (Exception e)
-                {
-                    logger.LogError(e, "Error getting lexbox projects");
-                    return new([], false);
-                }
-            }) ?? new([], false);
+        var user = await clientFactory.GetClient(server).GetCachedUser();
+        if (user is null) return null;
+        if (cache.TryGetValue(ProjectListCacheKey(server), out CachedProjectList? cached) && cached?.UserId == user.Id)
+            return cached.Result;
+        var result = await FetchLexboxProjects(server);
+        if (result is not null)
+            cache.Set(ProjectListCacheKey(server), new CachedProjectList(user.Id, result), TimeSpan.FromMinutes(5));
+        return result;
     }
 
-    public async Task<LexboxUser?> GetLexboxUser(LexboxServer server)
+    private async Task<ListProjectsResult?> FetchLexboxProjects(LexboxServer server)
     {
-        return await clientFactory.GetClient(server).GetCurrentUser();
+        var httpClient = await clientFactory.GetClient(server).CreateHttpClient();
+        if (httpClient is null) return null;
+        try
+        {
+            return await httpClient.GetFromJsonAsync<ListProjectsResult>("api/crdt/listProjectsV2");
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error getting lexbox projects");
+            return null;
+        }
     }
 
     public async Task<(DownloadProjectByCodeResult, Guid?)> GetLexboxProjectId(LexboxServer server, string code)
