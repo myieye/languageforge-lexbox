@@ -11,5 +11,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting"/>
     <PackageReference Include="Moq"/>
+    <PackageReference Include="SIL.LCModel" GeneratePathProperty="true"/>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- liblcm's new-project templates, needed by IProjectLoader.NewProject (demo project generation) -->
+    <Content Include="$(PkgSIL_LCModel)/contentFiles/Templates/*.*" Link="Templates/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 </Project>

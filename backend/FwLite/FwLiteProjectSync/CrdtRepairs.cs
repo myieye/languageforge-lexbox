@@ -7,7 +7,7 @@ namespace FwLiteProjectSync;
 public static class CrdtRepairs
 {
 #pragma warning disable CS0618 // Type or member is obsolete
-    public static async Task<int> SyncMissingTranslationIds(Entry[] snapshotEntries, FwDataMiniLcmApi fwDataApi, CrdtMiniLcmApi crdtApi, bool dryRun = false)
+    public static async Task<int> SyncMissingTranslationIds(Entry[] snapshotEntries, FwDataMiniLcmApi fwDataApi, CrdtMiniLcmApi crdtApi)
     {
         using var activity = FwLiteProjectSyncActivitySource.Value.StartActivity();
         // Sync any available IDs from fwdata to the snapshot and the crdt entries
@@ -65,10 +65,15 @@ public static class CrdtRepairs
                         // crdt translation was deleted.
                         // nothing to do. The deletion will sync to the fwdata translation.
                     }
+                    else if (crdtTranslation.Id == validTranslationId)
+                    {
+                        // We've already patched the crdt side, but for some reason that is not yet reflected in the json snapshot
+                        // (e.g. an interrupted/partial sync)
+                    }
                     else
                     {
                         // We assume we're overwriting Translation.MissingTranslationId/the Default ID.
-                        // But there's a slight change we're not, because the translation could have been deleted and recreated with a new valid ID.
+                        // But there's a slight chance we're not, because the translation could have been deleted and recreated with a new valid ID.
                         // However, until this "repair" we see crdt's as only having a single translation.
                         // I.e. the ID is essentially meaningless and semantically the user was actually just editing the synced/only fwdata translation.
                         syncedIdCount++;
@@ -78,7 +83,7 @@ public static class CrdtRepairs
             }
         }
 
-        if (!dryRun && exampleSentenceIdToTranslationId.Any())
+        if (exampleSentenceIdToTranslationId.Any())
         {
             await crdtApi.SetFirstTranslationIds(exampleSentenceIdToTranslationId);
         }

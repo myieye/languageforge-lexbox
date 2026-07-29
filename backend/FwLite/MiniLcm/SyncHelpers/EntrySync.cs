@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using MiniLcm.Exceptions;
 using MiniLcm.Models;
 using SystemTextJsonPatch;
@@ -9,21 +10,23 @@ public static class EntrySync
 {
     public static async Task<int> SyncFull(Entry[] beforeEntries,
         Entry[] afterEntries,
-        IMiniLcmApi api)
+        IMiniLcmApi api,
+        ILogger? logger = null)
     {
-        var (changes, addedEntries) = await SyncWithoutComplexFormsAndComponents(beforeEntries, afterEntries, api);
+        var (changes, addedEntries) = await SyncWithoutComplexFormsAndComponents(beforeEntries, afterEntries, api, logger);
         var updatedBeforeEntries = beforeEntries.Where(before => afterEntries.Any(after => after.Id == before.Id));
-        changes += await SyncComplexFormsAndComponents([.. updatedBeforeEntries, .. addedEntries], afterEntries, api);
+        changes += await SyncComplexFormsAndComponents([.. updatedBeforeEntries, .. addedEntries], afterEntries, api, logger);
         return changes;
     }
 
     public static async Task<(int Changes, ICollection<Entry> Added)> SyncWithoutComplexFormsAndComponents(Entry[] beforeEntries,
         Entry[] afterEntries,
-        IMiniLcmApi api)
+        IMiniLcmApi api,
+        ILogger? logger = null)
     {
         var allBeforeSenses = beforeEntries.SelectMany(e => e.Senses).ToDictionary(s => s.Id);
         var allAfterSenses = afterEntries.SelectMany(e => e.Senses).ToDictionary(s => s.Id);
-        return await DiffCollection.DiffAndGetAdded(beforeEntries, afterEntries, new EntriesDiffApi(api, allBeforeSenses, allAfterSenses));
+        return await DiffCollection.DiffAndGetAdded(beforeEntries, afterEntries, new EntriesDiffApi(api, allBeforeSenses, allAfterSenses, logger));
     }
 
     /// <summary>
@@ -32,12 +35,22 @@ public static class EntrySync
     /// </summary>
     public static async Task<int> SyncComplexFormsAndComponents(Entry[] beforeEntries,
         Entry[] afterEntries,
-        IMiniLcmApi api)
+        IMiniLcmApi api,
+        ILogger? logger = null)
     {
+        var syncedCount = 0;
         return await DiffCollection.Diff(beforeEntries, afterEntries,
             new ObjectWithIdCollectionReplaceDiffApi<Entry>(
-                (before, after) => SyncComplexFormsAndComponents(before, after, api)));
+                async (before, after) =>
+                {
+                    var changes = await SyncComplexFormsAndComponents(before, after, api);
+                    if (++syncedCount % ProgressLogInterval == 0)
+                        logger?.LogInformation("Synced complex forms of {Count}/{Total} entries", syncedCount, beforeEntries.Length);
+                    return changes;
+                }));
     }
+
+    private const int ProgressLogInterval = 50;
 
     public static async Task<int> SyncFull(Entry beforeEntry, Entry afterEntry, IMiniLcmApi api)
     {
@@ -143,8 +156,10 @@ public static class EntrySync
         return new UpdateObjectInput<Entry>(patchDocument);
     }
 
-    private class EntriesDiffApi(IMiniLcmApi api, Dictionary<Guid, Sense> allBeforeSenses, Dictionary<Guid, Sense> allAfterSenses) : ObjectWithIdCollectionDiffApi<Entry>
+    private class EntriesDiffApi(IMiniLcmApi api, Dictionary<Guid, Sense> allBeforeSenses, Dictionary<Guid, Sense> allAfterSenses, ILogger? logger) : ObjectWithIdCollectionDiffApi<Entry>
     {
+        private int _syncedCount = 0;
+
         public override async Task<(int, Entry)> AddAndGet(Entry afterEntry)
         {
             var hasMovedSense = afterEntry.Senses.Any(s => allBeforeSenses.ContainsKey(s.Id));
@@ -161,18 +176,28 @@ public static class EntrySync
             {
                 addedEntry = await api.CreateEntry(afterEntry, CreateEntryOptions.WithoutComplexFormsAndComponents);
             }
+            OnEntryDiffed();
             return (1, addedEntry);
         }
 
         public override async Task<int> Remove(Entry entry)
         {
             await api.DeleteEntry(entry.Id);
+            OnEntryDiffed();
             return 1;
         }
 
-        public override Task<int> Replace(Entry before, Entry after)
+        public override async Task<int> Replace(Entry before, Entry after)
         {
-            return SyncWithoutComplexFormsAndComponents(before, after, api, allBeforeSenses, allAfterSenses);
+            var changes = await SyncWithoutComplexFormsAndComponents(before, after, api, allBeforeSenses, allAfterSenses);
+            OnEntryDiffed();
+            return changes;
+        }
+
+        private void OnEntryDiffed()
+        {
+            if (++_syncedCount % ProgressLogInterval == 0)
+                logger?.LogInformation("Synced {Count} entries", _syncedCount);
         }
     }
 
