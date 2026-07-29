@@ -103,7 +103,7 @@ public static class Utils
         Console.WriteLine($"Sync completed successfully. Crdt changes: {result.CrdtChanges}, Fwdata changes: {result.FwdataChanges}.");
     }
 
-    private static string GetDefaultDownloadsPath([CallerFilePath] string callerFilePath = "")
+    public static string GetDefaultDownloadsPath([CallerFilePath] string callerFilePath = "")
     {
         var sourceDir = Path.GetDirectoryName(callerFilePath) ??
             throw new InvalidOperationException("Could not determine source file directory");
