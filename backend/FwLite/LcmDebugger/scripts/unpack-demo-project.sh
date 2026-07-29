@@ -5,6 +5,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 downloads="$repo_root/deployment/_downloads"
+artifact_dir="$repo_root/backend/FwLite/LcmDebugger/demo"
 name="slow-sync-demo"
 
 if [[ -d "$downloads/$name" && -f "$downloads/$name/crdt.sqlite" ]]; then
@@ -12,12 +13,13 @@ if [[ -d "$downloads/$name" && -f "$downloads/$name/crdt.sqlite" ]]; then
   exit 1
 fi
 
-if [[ -f "$downloads/$name.tar.zst" ]]; then
-  zstd -dc "$downloads/$name.tar.zst" | tar -C "$downloads" -xf -
-elif compgen -G "$downloads/$name.tar.zst.part-*" >/dev/null; then
-  cat "$downloads/$name.tar.zst".part-* | zstd -dc | tar -C "$downloads" -xf -
+mkdir -p "$downloads"
+if [[ -f "$artifact_dir/$name.tar.zst" ]]; then
+  zstd -dc "$artifact_dir/$name.tar.zst" | tar -C "$downloads" -xf -
+elif compgen -G "$artifact_dir/$name.tar.zst.part-*" >/dev/null; then
+  cat "$artifact_dir/$name.tar.zst".part-* | zstd -dc | tar -C "$downloads" -xf -
 else
-  echo "No $name.tar.zst(.part-*) found under $downloads — is this the demo branch?" >&2
+  echo "No $name.tar.zst(.part-*) found under $artifact_dir — is this the demo branch?" >&2
   exit 1
 fi
 
