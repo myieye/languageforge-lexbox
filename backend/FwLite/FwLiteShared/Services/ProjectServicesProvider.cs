@@ -18,6 +18,7 @@ public class ProjectServicesProvider(
     IServiceProvider serviceProvider,
     LexboxProjectService lexboxProjectService,
     OAuthClientFactory oAuthClientFactory,
+    ProjectServerInfoService projectServerInfoService,
     ILogger<ProjectServicesProvider> logger,
     IEnumerable<IProjectProvider> projectProviders
 ): IAsyncDisposable
@@ -106,6 +107,13 @@ public class ProjectServicesProvider(
             return projectData;
         }
         if (currentUser is null) return projectData;
+        if (projectData.LastUserId is not null && projectData.LastUserId != currentUser.Id)
+        {
+            //the stored role belongs to the previous user, so trust neither (same rule as
+            //ProjectServerInfoService.ResolveRole) and fetch this user's real role in the background
+            await currentProjectService.UpdateUserRole(UserProjectRole.Unknown);
+            _ = projectServerInfoService.RefreshProjectsServerInfo(server);
+        }
         await currentProjectService.UpdateLastUser(currentUser.Name, currentUser.Id);
         return await currentProjectService.GetProjectData();
     }
