@@ -175,6 +175,9 @@ public static class LcmCrdtKernel
         var updateSearchTableInterceptor = provider.GetService<UpdateEntrySearchTableInterceptor>();
         if (updateSearchTableInterceptor is not null)
             builder.AddInterceptors(updateSearchTableInterceptor);
+
+        if (projectContext.Project.IsTempCopy)
+            builder.AddInterceptors(TempCopyPragmasInterceptor.Instance);
     }
 
     private static Expression<Func<Sense, IQueryable<SemanticDomain>>> SenseSemanticDomainRowsExpression()

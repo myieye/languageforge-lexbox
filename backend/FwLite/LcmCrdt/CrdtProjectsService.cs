@@ -307,7 +307,7 @@ public partial class CrdtProjectsService(
 
             scope = provider.CreateAsyncScope();
             // OpenCrdtProject is typed to the interface, but a CRDT project always resolves a CrdtMiniLcmApi.
-            var api = (CrdtMiniLcmApi)await scope.Value.ServiceProvider.OpenCrdtProject(new CrdtProject(source.Name, tempPath));
+            var api = (CrdtMiniLcmApi)await scope.Value.ServiceProvider.OpenCrdtProject(new CrdtProject(source.Name, tempPath) { IsTempCopy = true });
             return new TempCrdtProjectCopy(api, scope.Value, () => EnsureDeleteProject(tempPath, suppressException: true));
         }
         catch

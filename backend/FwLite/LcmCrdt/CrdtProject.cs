@@ -18,6 +18,8 @@ public class CrdtProject(string code, string dbPath) : IProjectIdentifier
     public ProjectDataFormat DataFormat => ProjectDataFormat.Harmony;
     public string DbPath { get; } = dbPath;
     public ProjectData? Data { get; set; }
+    /// <summary>Throwaway copy (dry-run sync): its db runs without durability guarantees.</summary>
+    public bool IsTempCopy { get; init; }
 }
 
 /// <summary>
