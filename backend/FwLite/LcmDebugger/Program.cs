@@ -21,20 +21,14 @@ int IntArg(string name, int fallback)
 {
     var raw = Arg(name);
     if (raw is null) return fallback;
-    if (int.TryParse(raw, out var value)) return value;
-    Console.Error.WriteLine($"{name} expects an integer, got '{raw}'");
-    Environment.Exit(1);
-    return fallback;
+    return int.TryParse(raw, out var value) ? value : throw new ArgumentException($"{name} expects an integer, got '{raw}'");
 }
 
 double DoubleArg(string name, double fallback)
 {
     var raw = Arg(name);
     if (raw is null) return fallback;
-    if (double.TryParse(raw, out var value)) return value;
-    Console.Error.WriteLine($"{name} expects a number, got '{raw}'");
-    Environment.Exit(1);
-    return fallback;
+    return double.TryParse(raw, out var value) ? value : throw new ArgumentException($"{name} expects a number, got '{raw}'");
 }
 
 var builder = Host.CreateApplicationBuilder();
