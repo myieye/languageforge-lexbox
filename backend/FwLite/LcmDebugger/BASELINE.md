@@ -59,6 +59,22 @@ window sort + GROUP BY over every snapshot row, which no index removes — so no
 from this work. The rewrite (or caching current snapshots across a commit's application) is
 Harmony-internal.
 
+## Harmony referencing-query fix (branch `sync-perf-snapshot-lookups` on myieye/harmony)
+
+Built with `UseHarmonySource=true` (base commit a14c5bb; note aae2ee0 and later break lexbox with
+"ChangeTypeListBuilder is frozen"). Same demo project and gate:
+
+| run | sync time | avg/record |
+|---|---|---|
+| harmony source, unmodified (validates ≈ NuGet baseline) | 18m02s | 451ms |
+| + `CurrentSnapshotsReferencing` fix (validation on) | **12m13s** | **305ms (−32%)** |
+| + `--no-validate` as well | 12m20s | 308ms |
+
+The fix replaces the composed CurrentSnapshots-CTE lookup in the cycle check with a query that
+filters by References before the latest-per-entity check (603ms → 37ms per lookup). With it in
+place, `AlwaysValidateCommits=false` adds nothing at this scale — rehashing 30k small commits is
+cheap; the remaining ~300ms/record is snapshot maintenance and per-commit transaction cost.
+
 ## Correctness gate for optimization PRs
 
 A dry-run sync of the demo project must produce identical results before and after the change:
