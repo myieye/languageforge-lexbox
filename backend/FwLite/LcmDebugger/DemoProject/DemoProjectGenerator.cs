@@ -42,12 +42,12 @@ public static class DemoProjectGenerator
         var spec = DemoSpec.Build(opts);
         var laggingCount = spec.Entries.Count(e => e.Lagging);
         logger.LogInformation("Spec: {Total} entries ({Lagging} lagging), {SyncedLinks} synced links, {LaggingLinks} lagging links, seed {Seed}",
-            spec.Entries.Length, laggingCount, spec.SyncedLinks.Length, spec.LaggingLinks.Length, opts.Seed);
+            spec.Entries.Count, laggingCount, spec.SyncedLinks.Count, spec.LaggingLinks.Count, opts.Seed);
 
         var total = Stopwatch.StartNew();
         var fwProject = new FwDataProject("fw", opts.OutDir);
         var fwDataFactory = services.GetRequiredService<FwDataFactory>();
-        using var keepAlive = fwDataFactory.PreventEviction(fwProject);
+        using var _ = fwDataFactory.PreventEviction(fwProject);
 
         var sw = Stopwatch.StartNew();
         services.GetRequiredService<IProjectLoader>().NewProject(fwProject, "en", "fr")?.Dispose();
@@ -83,9 +83,9 @@ public static class DemoProjectGenerator
             await fwApi.CreateEntry(BuildEntry(entrySpec, spec), CreateEntryOptions.AsIs);
             if ((entrySpec.Index + 1) % 500 == 0)
                 logger.LogInformation("fwdata: created {Count}/{Total} entries ({Rate:F1}/s)",
-                    entrySpec.Index + 1, spec.Entries.Length, (entrySpec.Index + 1) / sw.Elapsed.TotalSeconds);
+                    entrySpec.Index + 1, spec.Entries.Count, (entrySpec.Index + 1) / sw.Elapsed.TotalSeconds);
         }
-        logger.LogInformation("fwdata: created {Total} entries in {Elapsed}", spec.Entries.Length, sw.Elapsed);
+        logger.LogInformation("fwdata: created {Total} entries in {Elapsed}", spec.Entries.Count, sw.Elapsed);
 
         sw.Restart();
         // Group links per complex form, synced links first, so the CRDT (synced links only) and
@@ -188,7 +188,7 @@ public static class DemoProjectGenerator
                 commitCount++;
             }
         }
-        logger.LogInformation("crdt: created {Count} synced complex-form links in {Elapsed}", spec.SyncedLinks.Length, sw.Elapsed);
+        logger.LogInformation("crdt: created {Count} synced complex-form links in {Elapsed}", spec.SyncedLinks.Count, sw.Elapsed);
 
         sw.Restart();
         // Net-zero edit pairs: bulk up the commit history (what makes ValidateCommits and the
@@ -227,8 +227,8 @@ public static class DemoProjectGenerator
             opts.LagFraction,
             opts.UpdateRounds,
             LaggingEntries = laggingCount,
-            SyncedLinks = spec.SyncedLinks.Length,
-            LaggingLinks = spec.LaggingLinks.Length,
+            SyncedLinks = spec.SyncedLinks.Count,
+            LaggingLinks = spec.LaggingLinks.Count,
             Commits = dbCommits,
             FwProjectId = fwApi.ProjectId,
         };

@@ -27,13 +27,13 @@ public class DemoSpec
 {
     public required DemoGenOptions Options { get; init; }
     public required Guid ProjectId { get; init; }
-    public required PartOfSpeech[] PartsOfSpeech { get; init; }
-    public required SemanticDomain[] SemanticDomains { get; init; }
-    public required EntrySpec[] Entries { get; init; }
+    public required IReadOnlyList<PartOfSpeech> PartsOfSpeech { get; init; }
+    public required IReadOnlyList<SemanticDomain> SemanticDomains { get; init; }
+    public required IReadOnlyList<EntrySpec> Entries { get; init; }
     /// <summary>Links whose ends are both synced entries; these exist in the CRDT project too.</summary>
-    public required LinkSpec[] SyncedLinks { get; init; }
+    public required IReadOnlyList<LinkSpec> SyncedLinks { get; init; }
     /// <summary>Links with at least one lagging end; these exist only in fwdata and get created during sync.</summary>
-    public required LinkSpec[] LaggingLinks { get; init; }
+    public required IReadOnlyList<LinkSpec> LaggingLinks { get; init; }
 
     public IEnumerable<LinkSpec> AllLinks => SyncedLinks.Concat(LaggingLinks);
 

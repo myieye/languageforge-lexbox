@@ -17,6 +17,26 @@ string? Arg(string name)
     return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
 }
 
+int IntArg(string name, int fallback)
+{
+    var raw = Arg(name);
+    if (raw is null) return fallback;
+    if (int.TryParse(raw, out var value)) return value;
+    Console.Error.WriteLine($"{name} expects an integer, got '{raw}'");
+    Environment.Exit(1);
+    return fallback;
+}
+
+double DoubleArg(string name, double fallback)
+{
+    var raw = Arg(name);
+    if (raw is null) return fallback;
+    if (double.TryParse(raw, out var value)) return value;
+    Console.Error.WriteLine($"{name} expects a number, got '{raw}'");
+    Environment.Exit(1);
+    return fallback;
+}
+
 var builder = Host.CreateApplicationBuilder();
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Warning);
 builder.Logging.AddFilter("LinqToDB", LogLevel.Warning);
@@ -64,12 +84,12 @@ switch (command)
         var options = new DemoGenOptions
         {
             OutDir = Path.GetFullPath(Arg("--out") ?? Path.Combine(Utils.GetDefaultDownloadsPath(), "slow-sync-demo")),
-            Seed = int.Parse(Arg("--seed") ?? "42"),
-            TotalEntries = int.Parse(Arg("--entries") ?? "10000"),
-            LagFraction = double.Parse(Arg("--lag") ?? "0.10"),
-            UpdateRounds = int.Parse(Arg("--update-rounds") ?? "1"),
-            SyncedLinks = int.Parse(Arg("--synced-links") ?? "800"),
-            LaggingLinks = int.Parse(Arg("--lagging-links") ?? "700"),
+            Seed = IntArg("--seed", 42),
+            TotalEntries = IntArg("--entries", 10000),
+            LagFraction = DoubleArg("--lag", 0.10),
+            UpdateRounds = IntArg("--update-rounds", 1),
+            SyncedLinks = IntArg("--synced-links", 800),
+            LaggingLinks = IntArg("--lagging-links", 700),
         };
         await DemoProjectGenerator.Generate(services, options, logger);
         break;
