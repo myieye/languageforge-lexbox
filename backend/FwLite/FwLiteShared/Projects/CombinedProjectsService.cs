@@ -69,7 +69,8 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
         var lexboxProjects = await lexboxProjectService.GetLexboxProjects(server);
         //a freshly fetched list is fresh knowledge of the user's roles, so let it update local projects too
         await projectServerInfoService.ApplyServerInfo(server, lexboxProjects);
-        var projectModels = (lexboxProjects?.Projects ?? []).Select(p => new ProjectModel(
+        if (lexboxProjects is null) return new(server, [], false);
+        var projectModels = lexboxProjects.Projects.Select(p => new ProjectModel(
                 p.Name,
                 p.Code,
                 Crdt: p.IsCrdtProject,
@@ -79,7 +80,7 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
                 server,
                 p.Id))
             .ToArray();
-        return new(server, projectModels, lexboxProjects?.CanDownloadByCode ?? false);
+        return new(server, projectModels, lexboxProjects.CanDownloadByCode);
     }
 
 
