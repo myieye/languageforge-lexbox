@@ -40,6 +40,25 @@ Result: `CrdtChanges 2400, FwdataChanges 0`
   each diffed from both the complex-form and the component side; the second call no-ops)
 - average cost: **437ms per change record** over the whole sync
 
+## CurrentSnapshots CTE profile (SQLite, demo scale: 66380 snapshots, 30605 commits)
+
+Harmony's `CurrentSnapshots()` CTE (window over Snapshots⋈Commits, `GROUP BY EntityId`), which
+the complex-form cycle check runs once per BFS hop:
+
+| query | time |
+|---|---|
+| bare CTE (47422 current snapshots) | 679ms |
+| CTE + `References.Contains(id)` filter (the cycle-check shape) | 603ms |
+| same, with a covering index on Snapshots(EntityId, CommitId, Id) | 564ms |
+| same, plus covering index on Commits(Id, DateTime, Counter) | 581ms |
+| per-entity `GetCurrentSnapshotByObjectId` shape | <1ms |
+| **rewritten reference lookup** (filter by References first, then verify the row is its entity's latest) | **37ms (16x)** |
+
+Indexing is a dead end: the plan already uses `IX_Snapshots_EntityId`, and the cost is the
+window sort + GROUP BY over every snapshot row, which no index removes — so no index migration
+from this work. The rewrite (or caching current snapshots across a commit's application) is
+Harmony-internal.
+
 ## Correctness gate for optimization PRs
 
 A dry-run sync of the demo project must produce identical results before and after the change:
