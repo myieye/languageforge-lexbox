@@ -54,11 +54,12 @@ builder.Services.AddLcmCrdtClient();
 builder.Services.AddFwLiteProjectSync();
 builder.Services.AddScoped((_services) => new Mock<IServerHttpClientProvider>().Object);
 
-if (command == "generate")
+if (command == "generate" || args.Contains("--no-validate"))
 {
-    // Keeps generating a large commit history O(n): only the single-commit write path checks this
-    // flag, which is why the generator writes through DataModel.AddChanges. Never set for `sync` —
-    // baseline measurements must match what FwHeadless runs.
+    // For generate: keeps generating a large commit history O(n) — only the single-commit write
+    // path checks this flag, which is why the generator writes through DataModel.AddChanges.
+    // For sync, opt in with --no-validate to measure FwHeadless's AlwaysValidateCommits=false
+    // configuration; the default matches what FwHeadless runs out of the box.
     builder.Services.Configure<CrdtConfig>(c => c.AlwaysValidateCommits = false);
 }
 

@@ -23,6 +23,14 @@ public class FwHeadlessConfig
     public string FdoDataModelVersion { get; init; } = "7000072";
 
     /// <summary>
+    /// Re-validate the whole commit history after every local CRDT commit (Harmony's
+    /// AlwaysValidateCommits). O(history) per commit, so on large projects it dominates
+    /// FwData→CRDT sync time. Remote sync (SyncWith/AddRangeFromSync) validates
+    /// unconditionally in Harmony regardless of this setting.
+    /// </summary>
+    public bool AlwaysValidateCommits { get; init; } = true;
+
+    /// <summary>
     /// Project directory structure in FwHeadless: (Note that FwDataProject.ProjectsPath is the root of a SINGLE project)
     /// {ProjectStorageRoot}/
     ///   └── {projectCode}-{projectId}/          ← GetProjectFolder() / FwDataProject.ProjectsPath

@@ -7,6 +7,7 @@ using LcmCrdt;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using MiniLcm.Project;
+using SIL.Harmony;
 
 namespace FwHeadless;
 
@@ -32,6 +33,8 @@ public static class FwHeadlessKernel
             .AddLcmCrdtClientCore()
             .AddFwDataBridge(ServiceLifetime.Scoped)
             .AddFwLiteProjectSync();
+        services.AddOptions<CrdtConfig>().PostConfigure((CrdtConfig crdtConfig, IOptions<FwHeadlessConfig> config) =>
+            crdtConfig.AlwaysValidateCommits = config.Value.AlwaysValidateCommits);
         services.RemoveAll(typeof(IMediaAdapter));
         services.AddScoped<IMediaAdapter, LexboxFwDataMediaAdapter>();
         services.AddScoped<MediaFileService>();
