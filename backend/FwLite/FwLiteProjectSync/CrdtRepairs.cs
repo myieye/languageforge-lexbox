@@ -65,10 +65,15 @@ public static class CrdtRepairs
                         // crdt translation was deleted.
                         // nothing to do. The deletion will sync to the fwdata translation.
                     }
+                    else if (crdtTranslation.Id == validTranslationId)
+                    {
+                        // We've already patched the crdt side, but for some reason that is not yet reflected in the json snapshot
+                        // (e.g. an interrupted/partial sync)
+                    }
                     else
                     {
                         // We assume we're overwriting Translation.MissingTranslationId/the Default ID.
-                        // But there's a slight change we're not, because the translation could have been deleted and recreated with a new valid ID.
+                        // But there's a slight chance we're not, because the translation could have been deleted and recreated with a new valid ID.
                         // However, until this "repair" we see crdt's as only having a single translation.
                         // I.e. the ID is essentially meaningless and semantically the user was actually just editing the synced/only fwdata translation.
                         syncedIdCount++;

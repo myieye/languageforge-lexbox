@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using FwDataMiniLcmBridge;
 using FwDataMiniLcmBridge.Api;
 using LcmCrdt;
 using LexCore.Sync;
@@ -12,7 +13,8 @@ namespace FwLiteProjectSync;
 public class CrdtFwdataProjectSyncService(MiniLcmImport miniLcmImport,
     ILogger<CrdtFwdataProjectSyncService> logger,
     MiniLcmApiValidationWrapperFactory validationWrapperFactory,
-    CrdtProjectsService crdtProjectsService)
+    CrdtProjectsService crdtProjectsService,
+    FwDataFactory fwDataFactory)
 {
     public record DryRunSyncResult(
         int CrdtChanges,
@@ -52,6 +54,9 @@ public class CrdtFwdataProjectSyncService(MiniLcmImport miniLcmImport,
             activity?.SetStatus(ActivityStatusCode.Error, $"Project id mismatch, CRDT Id: {crdt.ProjectData.FwProjectId}, FWData Id: {fwdata.ProjectId}");
             throw new InvalidOperationException($"Project id mismatch, CRDT Id: {crdt.ProjectData.FwProjectId}, FWData Id: {fwdata.ProjectId}");
         }
+
+        // A sync that outlives the LcmCache's sliding expiration (e.g. paused in a debugger) would otherwise have it disposed mid-sync.
+        using var keepFwdataAlive = fwDataFactory.PreventEviction(fwdata.Project);
 
         // Project snapshot logic/handling is done outside of this class so that Sync vs Import is explicit.
         // We still choose to explicitly verify a consistent state to avoid accidental misuse.
@@ -124,33 +129,42 @@ public class CrdtFwdataProjectSyncService(MiniLcmImport miniLcmImport,
 
     private async Task<SyncResult> SyncInternal(IMiniLcmApi crdtApi, IMiniLcmApi fwdataApi, ProjectSnapshot projectSnapshot)
     {
+        logger.LogInformation("Syncing writing systems");
         var currentFwDataWritingSystems = await fwdataApi.GetWritingSystems();
         var crdtChanges = await WritingSystemSync.Sync(projectSnapshot.WritingSystems, currentFwDataWritingSystems, crdtApi);
         var fwdataChanges = await WritingSystemSync.Sync(currentFwDataWritingSystems, await crdtApi.GetWritingSystems(), fwdataApi);
 
+        logger.LogInformation("Syncing publications");
         var currentFwDataPublications = await fwdataApi.GetPublications().ToArrayAsync();
         crdtChanges += await PublicationSync.Sync(projectSnapshot.Publications, currentFwDataPublications, crdtApi);
         fwdataChanges += await PublicationSync.Sync(currentFwDataPublications, await crdtApi.GetPublications().ToArrayAsync(), fwdataApi);
 
+        logger.LogInformation("Syncing parts of speech");
         var currentFwDataPartsOfSpeech = await fwdataApi.GetPartsOfSpeech().ToArrayAsync();
         crdtChanges += await PartOfSpeechSync.Sync(projectSnapshot.PartsOfSpeech, currentFwDataPartsOfSpeech, crdtApi);
         fwdataChanges += await PartOfSpeechSync.Sync(currentFwDataPartsOfSpeech, await crdtApi.GetPartsOfSpeech().ToArrayAsync(), fwdataApi);
 
+        logger.LogInformation("Syncing semantic domains");
         var currentFwDataSemanticDomains = await fwdataApi.GetSemanticDomains().ToArrayAsync();
         crdtChanges += await SemanticDomainSync.Sync(projectSnapshot.SemanticDomains, currentFwDataSemanticDomains, crdtApi);
         fwdataChanges += await SemanticDomainSync.Sync(currentFwDataSemanticDomains, await crdtApi.GetSemanticDomains().ToArrayAsync(), fwdataApi);
 
+        logger.LogInformation("Syncing complex form types");
         var currentFwDataComplexFormTypes = await fwdataApi.GetComplexFormTypes().ToArrayAsync();
         crdtChanges += await ComplexFormTypeSync.Sync(projectSnapshot.ComplexFormTypes, currentFwDataComplexFormTypes, crdtApi);
         fwdataChanges += await ComplexFormTypeSync.Sync(currentFwDataComplexFormTypes, await crdtApi.GetComplexFormTypes().ToArrayAsync(), fwdataApi);
 
+        logger.LogInformation("Syncing morph types");
         var currentFwDataMorphTypes = await fwdataApi.GetMorphTypes().ToArrayAsync();
         crdtChanges += await MorphTypeSync.Sync(projectSnapshot.MorphTypes, currentFwDataMorphTypes, crdtApi);
         fwdataChanges += await MorphTypeSync.Sync(currentFwDataMorphTypes, await crdtApi.GetMorphTypes().ToArrayAsync(), fwdataApi);
 
         var currentFwDataEntries = await fwdataApi.GetAllEntries().ToArrayAsync();
-        crdtChanges += await EntrySync.SyncFull(projectSnapshot.Entries, currentFwDataEntries, crdtApi);
-        fwdataChanges += await EntrySync.SyncFull(currentFwDataEntries, await crdtApi.GetAllEntries().ToArrayAsync(), fwdataApi);
+        logger.LogInformation("Syncing {Count} fwdata entries into crdt", currentFwDataEntries.Length);
+        crdtChanges += await EntrySync.SyncFull(projectSnapshot.Entries, currentFwDataEntries, crdtApi, logger);
+        var currentCrdtEntries = await crdtApi.GetAllEntries().ToArrayAsync();
+        logger.LogInformation("Syncing {Count} crdt entries into fwdata", currentCrdtEntries.Length);
+        fwdataChanges += await EntrySync.SyncFull(currentFwDataEntries, currentCrdtEntries, fwdataApi, logger);
 
         return new SyncResult(crdtChanges, fwdataChanges);
     }
