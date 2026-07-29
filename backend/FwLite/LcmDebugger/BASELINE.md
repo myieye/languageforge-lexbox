@@ -1,0 +1,46 @@
+# Slow-sync demo baseline
+
+Baseline numbers for the slow-sync demo project, measured with the LcmDebugger `sync` harness on
+this branch (NuGet SIL.Harmony, `AlwaysValidateCommits` at its default `true`). Optimization PRs
+compare against these numbers and must reproduce the same change counts.
+
+## Demo project
+
+Generated with `dotnet run --project backend/FwLite/LcmDebugger -- generate` (seed 42, defaults):
+
+| | |
+|---|---|
+| Entries in fwdata | 10000 (1–3 senses each, 0–2 examples per sense) |
+| Entries in crdt/fw_snapshot | 9000 (every 10th entry lags) |
+| CRDT commits | 30605 (9000 entry creates + 18000 net-zero updates + 800 component links + metadata) |
+| Complex-form links | 800 synced (in CRDT) + 700 involving lagging entries (fwdata only) |
+| Sizes | crdt.sqlite 120MB, fw/ 45MB, fw_snapshot.json 19MB |
+
+Retrieve without regenerating: `backend/FwLite/LcmDebugger/scripts/unpack-demo-project.sh`
+
+## Baseline run (2026-07-29, Linux container, .NET 10.0.302)
+
+`dotnet run --project backend/FwLite/LcmDebugger -- sync slow-sync-demo` (dry run on a temp copy)
+
+| Phase | Duration |
+|---|---|
+| Open project + load snapshot | 8.1s |
+| Metadata phases (WS/pubs/POS/semdoms/CFT/morph types) | 6.3s |
+| Syncing fwdata entries into crdt | **17m20s** |
+| Syncing crdt entries into fwdata | 1.5s |
+| **Total sync** | **17m28s** |
+
+Within the fwdata→crdt phase: the 9000 unchanged-entry diffs take under a second; the rest is
+1000 `CreateEntry` (~180ms each early, rising as commits accumulate) and the complex-forms pass
+(~13min), which slows measurably toward the end as each new commit grows the history that
+`ValidateCommits` rehashes and the snapshot count the `CurrentSnapshots` CTE scans.
+
+Result: `CrdtChanges 2400, FwdataChanges 0`
+- crdt records: 1000 `CreateEntry` + 1400 `SubmitCreateComplexFormComponent` (700 lagging links,
+  each diffed from both the complex-form and the component side; the second call no-ops)
+- average cost: **437ms per change record** over the whole sync
+
+## Correctness gate for optimization PRs
+
+A dry-run sync of the demo project must produce identical results before and after the change:
+`CrdtChanges 2400, FwdataChanges 0`, same per-method record counts as above.
