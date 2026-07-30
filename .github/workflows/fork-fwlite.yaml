@@ -55,10 +55,11 @@ jobs:
       - name: Check for stale generated TypeScript types
         run: task fw-lite:has-stale-generated-types -- --no-build
 
-      - name: Set a non-UTC timezone so timezone bugs are observable
-        run: sudo timedatectl set-timezone America/New_York
-
       - name: Dotnet test
+        # TZ makes date bugs observable (#2092); hosted runners deny timedatectl, and .NET
+        # honours TZ for TimeZoneInfo.Local on Linux. Same reasoning as fw-lite.yaml.
+        env:
+          TZ: America/New_York
         run: dotnet test FwLiteCore.slnf --logger GitHubActions --no-build -p:BuildAndroid=false --filter "Category!=Benchmark"
 
   viewer-ui-tests:
