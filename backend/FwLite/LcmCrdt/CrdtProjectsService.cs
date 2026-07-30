@@ -258,10 +258,7 @@ public partial class CrdtProjectsService(
             await InitProjectDb(db, projectData);
             await currentProjectService.RefreshProjectData();
             await (request.AfterCreate?.Invoke(serviceScope.ServiceProvider, crdtProject) ?? Task.CompletedTask);
-            // Ensure "data migrations" are executed on project creation (e.g. seeding morph types)
-            // These should happen AFTER the initial download, so they can be run conditionally based on
-            // the current state of the project.
-            // probably just remove this in #2350
+            // Run EF migrate + FTS regenerate-if-missing (same path as opening an existing project).
             await currentProjectService.SetupProjectContext(crdtProject);
         }
         catch (Exception e)
@@ -282,6 +279,40 @@ public partial class CrdtProjectsService(
         }
 
         return crdtProject;
+    }
+
+    /// <summary>
+    /// Opens a throwaway copy of a project's database in its own scope and a temp dir
+    /// </summary>
+    public async Task<TempCrdtProjectCopy> OpenTempProjectCopy(CrdtProject source)
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "FwLiteProjectCopies");
+        Directory.CreateDirectory(tempDir);
+        var tempPath = Path.Combine(tempDir, $"{source.Name}-{Guid.NewGuid():N}.sqlite");
+
+        // Nothing owns the temp file or scope until TempCrdtProjectCopy is returned, so undo both if we throw first.
+        AsyncServiceScope? scope = null;
+        try
+        {
+            await using (var sourceConnection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = source.DbPath }.ConnectionString))
+            await using (var copyConnection = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = tempPath }.ConnectionString))
+            {
+                await sourceConnection.OpenAsync();
+                await copyConnection.OpenAsync();
+                sourceConnection.BackupDatabase(copyConnection);
+            }
+
+            scope = provider.CreateAsyncScope();
+            // OpenCrdtProject is typed to the interface, but a CRDT project always resolves a CrdtMiniLcmApi.
+            var api = (CrdtMiniLcmApi)await scope.Value.ServiceProvider.OpenCrdtProject(new CrdtProject(source.Name, tempPath));
+            return new TempCrdtProjectCopy(api, scope.Value, () => EnsureDeleteProject(tempPath, suppressException: true));
+        }
+        catch
+        {
+            if (scope is not null) await scope.Value.DisposeAsync();
+            await EnsureDeleteProject(tempPath, suppressException: true);
+            throw;
+        }
     }
 
     private Task EnsureDeleteProject(string sqliteFile, bool suppressException = false)
