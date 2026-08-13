@@ -1,3 +1,4 @@
+using SIL.Harmony.Config;
 using FwLiteMaui.Services;
 using FwLiteShared;
 using FwLiteShared.Auth;
@@ -118,7 +119,7 @@ public static class FwLiteMauiKernel
             config.CacheFileName = fwLiteMauiConfig.AuthCacheFilePath;
             config.SystemWebViewLogin = true;
         });
-        services.Configure<CrdtConfig>(config =>
+        services.Configure<HarmonyConfig>(config =>
         {
             config.FailedSyncOutputPath = Path.Combine(baseDataPath, "failedSyncs");
             config.LocalResourceCachePath = Path.Combine(baseDataPath, "localResourcesCache");
@@ -139,8 +140,10 @@ public static class FwLiteMauiKernel
         services.AddSingleton(_ => Launcher.Default);
         services.AddSingleton(_ => Browser.Default);
         services.AddSingleton(_ => Share.Default);
+        services.AddSingleton(_ => MediaPicker.Default);
         services.AddSingleton<IPreferencesService, MauiPreferencesService>();
         services.AddSingleton<ITroubleshootingService, MauiTroubleshootingService>();
+        services.AddSingleton<IPlatformFeaturesService, MauiPlatformFeaturesService>();
         logging.AddConsole();
 #if DEBUG
         logging.AddDebug();

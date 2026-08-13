@@ -1,3 +1,4 @@
+using SIL.Harmony.Config;
 using System.Net;
 using FwLiteShared.AppUpdate;
 using FwLiteShared.Auth;
@@ -51,13 +52,14 @@ public static class FwLiteSharedKernel
         services.AddSingleton<IHostedService>(s => s.GetRequiredService<UpdateChecker>());
         services.TryAddSingleton<IPlatformUpdateService, CorePlatformUpdateService>();
         services.TryAddSingleton<INetworkStatus, NetworkInterfaceNetworkStatus>();
+        services.TryAddSingleton<IPlatformFeaturesService, DummyPlatformFeaturesService>();
         services.AddSingleton<UpdateService>();
         services.AddSingleton<TestingService>();
         services.AddOptions<FwLiteConfig>().BindConfiguration("FwLite");
         services.DecorateConstructor<IJSRuntime>((provider, runtime) =>
         {
-            var crdtConfig = provider.GetRequiredService<IOptions<CrdtConfig>>().Value;
-            runtime.ConfigureJsonSerializerOptions(crdtConfig);
+            var harmonyConfig = provider.GetRequiredService<IOptions<HarmonyConfig>>().Value;
+            runtime.ConfigureJsonSerializerOptions(harmonyConfig);
         });
         return services;
     }
