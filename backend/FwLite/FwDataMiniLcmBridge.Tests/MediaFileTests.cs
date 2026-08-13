@@ -94,6 +94,28 @@ public class MediaFileTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task MediaUriFromPath_ReturnsNotFoundForFilesOutsideLinkedFiles()
+    {
+        var outsidePath = Path.Combine(_api.Cache.ProjectId.ProjectFolder, "outside-linked-files.txt");
+        await File.WriteAllTextAsync(outsidePath, "test");
+
+        _mediaAdapter.MediaUriFromPath(outsidePath, _api.Cache).Should().Be(MediaUri.NotFound);
+    }
+
+    [Fact]
+    public async Task MediaUriFromPath_IgnoresPathCasingOnWindows()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var fileName = "MediaUriFromPath_IgnoresPathCasingOnWindows.txt";
+        await StoreFileContentsAsync(fileName, "test");
+        var path = Path.Combine(_api.Cache.LangProject.LinkedFilesRootDir.ToUpperInvariant(),
+            FwDataMiniLcmApi.AudioVisualFolder,
+            fileName);
+
+        _mediaAdapter.MediaUriFromPath(path, _api.Cache).Should().NotBe(MediaUri.NotFound);
+    }
+
+    [Fact]
     public async Task CreateEntry_MapsMediaUrisForAudioWs()
     {
         var fileName = "CreateEntry_MapsMediaUrisForAudioWs.txt";

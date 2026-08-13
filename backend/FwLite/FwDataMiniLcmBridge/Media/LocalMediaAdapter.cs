@@ -55,10 +55,15 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
         return Path.GetFileName(@new).IsNormalized(NormalizationForm.FormD) ? @new : curr;
     }
 
-    //path is expected to be relative to the LinkedFilesRootDir
     public MediaUri MediaUriFromPath(string path, LcmCache cache)
     {
-        EnsureCorrectRootFolder(path, cache);
+        if (!Path.IsPathRooted(path)) throw new ArgumentException("Path must be absolute, " + path, nameof(path));
+        if (!IsInRootFolder(path, cache))
+        {
+            //FW allows pictures to reference files anywhere on disk, we can only serve files under LinkedFilesRootDir
+            logger.LogWarning("Media path {Path} is outside the LinkedFilesRootDir {Root}", path, cache.LangProject.LinkedFilesRootDir);
+            return MediaUri.NotFound;
+        }
         if (!File.Exists(path)) return MediaUri.NotFound;
         var uri = PathToUri(path);
         //this may be a new file, so we need to add it to the cache
@@ -66,15 +71,13 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
         return uri;
     }
 
-    private void EnsureCorrectRootFolder(string path, LcmCache cache)
+    private static bool IsInRootFolder(string path, LcmCache cache)
     {
-        if (Path.IsPathRooted(path))
-        {
-            if (path.StartsWith(cache.LangProject.LinkedFilesRootDir)) return;
-            throw new ArgumentException("Path must be in the LinkedFilesRootDir", nameof(path));
-        }
-
-        throw new ArgumentException("Path must be absolute, " + path, nameof(path));
+        //GetRelativePath applies the platform's separator and casing rules, a plain prefix check doesn't
+        var relative = Path.GetRelativePath(cache.LangProject.LinkedFilesRootDir, path);
+        return !Path.IsPathRooted(relative)
+            && relative != ".."
+            && !relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal);
     }
 
     private static MediaUri PathToUri(string path)
