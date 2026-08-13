@@ -7,7 +7,7 @@ Data gets from FieldWorks Lite to classic FieldWorks (and back) through four sep
 trigger, transport and failure modes. Nothing is one big pipeline: hops 1 and 2 are the only ones a user starts
 directly, and only hop 2 moves data between the CRDT world and the Mercurial world.
 
-For the non-technical version, see the [user guide explainer](/user-guide/how-sync-works).
+For the non-technical version, see the [user guide explainer](/fw-lite/how-sync-works).
 
 ```mermaid
 flowchart LR

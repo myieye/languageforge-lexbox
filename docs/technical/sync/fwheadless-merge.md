@@ -6,7 +6,7 @@ sidebar_position: 3
 FwHeadless is the only place where CRDT data and FwData meet. It keeps a per-project CRDT database *and* a
 Mercurial working copy of the FieldWorks project, and merges between them on request.
 
-:::warning Data-loss territory
+:::warning[Data-loss territory]
 This is the highest-risk code in the repo. A bug here can overwrite FieldWorks edits, corrupt the hg repo, or
 produce divergent data that can't be reconciled. Read `backend/FwHeadless/AGENTS.md` and
 `backend/FwLite/AGENTS.md` before changing anything under `FwLiteProjectSync/`.

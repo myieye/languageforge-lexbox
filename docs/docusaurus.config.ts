@@ -49,13 +49,26 @@ const config: Config = {
     ],
   ],
 
+  // One docs instance per product/audience. These route bases are deep-link targets
+  // for the apps (FW Lite help menu → /fw-lite/, lexbox.org help → /lexbox/,
+  // project-page sync help → /fw-lite/how-sync-works) — don't move them without redirects.
   plugins: [
     [
       '@docusaurus/plugin-content-docs',
       {
-        id: 'user-guide',
-        path: 'user-guide',
-        routeBasePath: 'user-guide',
+        id: 'fw-lite',
+        path: 'fw-lite',
+        routeBasePath: 'fw-lite',
+        sidebarPath: './sidebars.ts',
+        editUrl,
+      } satisfies DocsOptions,
+    ],
+    [
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'lexbox',
+        path: 'lexbox',
+        routeBasePath: 'lexbox',
         sidebarPath: './sidebars.ts',
         editUrl,
       } satisfies DocsOptions,
@@ -70,6 +83,15 @@ const config: Config = {
         editUrl,
       } satisfies DocsOptions,
     ],
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        createRedirects: (path: string) =>
+          path.startsWith('/fw-lite/') || path === '/fw-lite'
+            ? [path.replace('/fw-lite', '/user-guide')]
+            : undefined,
+      },
+    ],
   ],
 
   themeConfig: {
@@ -79,12 +101,13 @@ const config: Config = {
     navbar: {
       title: 'FieldWorks Lite & Lexbox',
       logo: {
-        alt: 'Lexbox logo',
+        alt: 'FieldWorks Lite & Lexbox',
         src: 'img/logo.svg',
         srcDark: 'img/logo-dark.svg',
       },
       items: [
-        {to: '/user-guide/', label: 'User guide', position: 'left'},
+        {to: '/fw-lite/', label: 'FieldWorks Lite', position: 'left'},
+        {to: '/lexbox/', label: 'Lexbox', position: 'left'},
         {to: '/technical/', label: 'Technical', position: 'left'},
         {href: repoUrl, label: 'GitHub', position: 'right'},
       ],

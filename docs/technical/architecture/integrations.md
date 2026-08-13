@@ -47,7 +47,7 @@ sequenceDiagram
 | `POST /api/crdt/{projectId}/countChanges` | cheap "how far behind am I" count |
 | `GET /api/crdt/listProjects`, `/lookupProjectId` | discovery |
 
-The push hub is at `/api/hub/crdt/project-changes`; a client calls `ListenForProjectChanges(projectId)` to join the project group. All of it requires an auth token with the `SendAndReceive` scope. See [How sync works](/user-guide/how-sync-works) for the user-facing version.
+The push hub is at `/api/hub/crdt/project-changes`; a client calls `ListenForProjectChanges(projectId)` to join the project group. All of it requires an auth token with the `SendAndReceive` scope. See [How sync works](/fw-lite/how-sync-works) for the user-facing version.
 
 ## FwHeadless: the bridge between CRDT and Mercurial
 

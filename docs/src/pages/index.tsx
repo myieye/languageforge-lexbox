@@ -6,10 +6,54 @@ import Heading from '@theme/Heading';
 
 import styles from './index.module.css';
 
-const sections = [
-  {to: '/user-guide/', label: 'User guide'},
-  {to: '/technical/', label: 'Technical documentation'},
+type Section = {to: string; title: string; description: string};
+
+const products: Section[] = [
+  {
+    to: '/fw-lite/',
+    title: 'FieldWorks Lite',
+    description:
+      'Build your dictionary on a phone, tablet or computer. Start here if you use the FieldWorks Lite app.',
+  },
+  {
+    to: '/lexbox/',
+    title: 'Lexbox',
+    description:
+      'Host your team’s projects online: Send/Receive, project members and roles, and getting a new project set up.',
+  },
 ];
+
+const more: Section[] = [
+  {
+    to: '/fw-lite/how-sync-works',
+    title: 'How sync works',
+    description:
+      'Follow an edit from FieldWorks Lite through Lexbox to a colleague’s FieldWorks Classic, step by step.',
+  },
+  {
+    to: '/technical/',
+    title: 'Technical documentation',
+    description: 'Architecture, sync internals and development setup, for developers.',
+  },
+];
+
+const SectionCards = ({sections, secondary = false}: {sections: Section[]; secondary?: boolean}) => (
+  <div className="row">
+    {sections.map((section) => (
+      <div key={section.to} className="col col--6 margin-bottom--lg">
+        <Link
+          to={section.to}
+          className={`card padding--lg ${styles.sectionCard} ${secondary ? styles.secondary : ''}`}
+        >
+          <Heading as="h2" className={secondary ? styles.secondaryTitle : undefined}>
+            {section.title}
+          </Heading>
+          <p className="margin-bottom--none">{section.description}</p>
+        </Link>
+      </div>
+    ))}
+  </div>
+);
 
 const Home = (): ReactNode => {
   const {siteConfig} = useDocusaurusContext();
@@ -18,16 +62,9 @@ const Home = (): ReactNode => {
       <main className="container margin-vert--xl">
         <Heading as="h1">{siteConfig.title}</Heading>
         <p>{siteConfig.tagline}</p>
-        <div className="row margin-top--lg">
-          {sections.map((section) => (
-            <div key={section.to} className="col col--6 margin-bottom--md">
-              <Link to={section.to} className={`card padding--lg ${styles.sectionCard}`}>
-                <Heading as="h2" className="margin-bottom--none">
-                  {section.label}
-                </Heading>
-              </Link>
-            </div>
-          ))}
+        <div className="margin-top--lg">
+          <SectionCards sections={products} />
+          <SectionCards sections={more} secondary />
         </div>
       </main>
     </Layout>

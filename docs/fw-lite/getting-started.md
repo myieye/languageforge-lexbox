@@ -32,7 +32,7 @@ connection.
 Choose **Open** on the project. Go to **Browse** to see the entries, pick one, and change
 a field. To add a word, use **New Entry**.
 
-:::note Coming soon
+:::note[Coming soon]
 A walk-through of the entry editor, with pictures.
 :::
 
@@ -41,5 +41,5 @@ A walk-through of the entry editor, with pictures.
 You do not have to save your work to the server by hand. FieldWorks Lite sends your
 changes to Lexbox and picks up other people's changes whenever it can reach the server.
 
-See [How sync works](/user-guide/how-sync-works) for what happens to your changes, what
+See [How sync works](/fw-lite/how-sync-works) for what happens to your changes, what
 to expect when you are offline, and how FieldWorks Classic fits in.

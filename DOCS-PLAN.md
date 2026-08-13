@@ -21,7 +21,9 @@ Docusaurus is the SIL convention: markdown in git, Crowdin for translation, stat
 
 ## Decisions
 
-- **One Docusaurus site, two doc sections** (`/user-guide/`, `/technical/`): one pipeline, one search index, one AI-chat corpus, but the user guide stays plain-language and translatable while technical docs stay English-first.
+- **One Docusaurus site, product-scoped sections** (`/fw-lite/`, `/lexbox/`, `/technical/`): one pipeline, one search index, one AI-chat corpus; the two product guides stay plain-language and translatable while technical docs stay English-first. Restructured 2026-08 from the original two sections (`/user-guide/` + `/technical/`): the audiences split cleanly by *product* — FieldWorks Lite app users vs people using the lexbox.org website and Send/Receive (FLEx, WeSay, OneStory Editor…) — and "which app do you use?" is a factual question, unlike persona labels ("I'm a manager"), which are NN/g's documented audience-navigation failure mode. The homepage routes with product tiles; the old `/user-guide/*` URLs redirect.
+- **Deep-link registry** — these URLs are what the apps should link to; don't move them without redirects: FieldWorks Lite help → `/fw-lite/`, lexbox.org help → `/lexbox/`, the project-page Sync button's help → `/fw-lite/how-sync-works`, "add FieldWorks Lite to a project" surfaces → `/lexbox/fw-lite`.
+- **The sync explainer stays canonical in `/fw-lite/`** (one copy: one translation, one search hit); managers and Send/Receive users reach it through the homepage card and the bridge page `/lexbox/fw-lite`, which frames the same story from the manager's side (enabling FieldWorks Lite, the Sync button rhythm).
 - **Source lives in this monorepo** (unlike Bloom/SF/Paratext, which use separate repos): docs next to code is what makes "the AI updates the docs in the same PR as the code change" real, and reviewers see doc drift in the diff.
 - **Terminology follows the shipped UI**: FieldWorks Lite, FieldWorks Classic, Lexbox, Send/Receive. CRDT/Harmony/Mercurial/FwHeadless are technical-section vocabulary only.
 - **Seed content is adapted from already-reviewed sources** (README, AGENTS.md files, DEVELOPER-*.md), not newly authored prose. `AGENTS.md` files are untouched in this PR; de-duplicating them to link into the site is a follow-up.
@@ -57,9 +59,12 @@ Hard caps are load-bearing (they fix the overwhelm that sank the static diagrams
 
 ```text
 docs/
-├── docusaurus.config.ts     # two docs instances, mermaid, no blog
-├── user-guide/              # plain-language, translatable
-│   └── how-sync-works.mdx   # ← SyncExplainer
+├── docusaurus.config.ts     # three docs instances, /user-guide/* redirects, mermaid, no blog
+├── fw-lite/                 # FieldWorks Lite app guide (plain-language, translatable)
+│   └── how-sync-works.mdx   # ← SyncExplainer (canonical home)
+├── lexbox/                  # lexbox.org + Send/Receive guide (plain-language, translatable)
+│   ├── send-receive/        # a folder from day one so per-program pages can grow
+│   └── fw-lite.md           # manager-facing bridge to the FW Lite guide
 ├── technical/               # architecture, integrations, dev setup
 └── src/components/SyncExplainer/
     ├── index.tsx            # rendering (writers never touch)

@@ -22,9 +22,10 @@ There are versions for Windows and Linux computers and for Android phones and ta
 
 ## In this guide
 
-- [Getting started](/user-guide/getting-started) — install the app, open a project and
+- [Getting started](/fw-lite/getting-started) — install the app, open a project and
   make your first edit.
-- [How sync works](/user-guide/how-sync-works) — what happens to your changes, and how
+- [How sync works](/fw-lite/how-sync-works) — what happens to your changes, and how
   they reach the rest of your team.
+- [Questions and answers](/fw-lite/faq) — common questions, and how to get help.
 
 Need help? Ask on the [community forum](https://community.software.sil.org/c/fwlite/48).
