@@ -21,8 +21,9 @@ it). The form asks for:
   [Members and roles](/lexbox/manage-members#confidential-projects)).
 
 Lexbox builds the project code from your answers — for example `abc-flex` for a
-FieldWorks project on language `abc`. If similar projects already exist, the form shows
-them and offers **Ask to join** instead, so teams don't split their work by accident.
+FieldWorks project on language `abc`. If similar projects already exist in the
+organization you selected, the form shows them and offers **Ask to join** instead, so
+teams don't split their work by accident.
 
 ## Approval
 

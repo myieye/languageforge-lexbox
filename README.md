@@ -87,8 +87,8 @@ The SvelteKit UI will be available at http://localhost:3000.
 - `task ui:only` starts the ui locally
 
 **If the k8s deployments are already running**
-- `infra-forward` forwards the infrastructure ports for the API
-- `backend-forward` forwards the infrastructure + backend ports for the UI
+- `task k8s:infra-forward` forwards the infrastructure ports for the API
+- `task k8s:backend-forward` forwards the infrastructure + backend ports for the UI
 
 ---
 ### Project urls

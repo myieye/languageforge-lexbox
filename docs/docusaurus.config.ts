@@ -16,8 +16,9 @@ const config: Config = {
     v4: true,
   },
 
-  // Deploy target and DNS are still a team decision.
-  // Overridable so CI can deploy previews to another host (e.g. a fork's GitHub Pages).
+  // The final home (probably somewhere on lexbox.org) is still a team decision.
+  // Until then, CI overrides these to the repo's GitHub Pages URL — the defaults
+  // here would 404 all assets when served under /<repo>/ (see docs.yaml).
   url: process.env.DOCS_URL ?? 'https://docs.lexbox.org',
   baseUrl: process.env.DOCS_BASE_URL ?? '/',
 

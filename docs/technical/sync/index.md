@@ -16,7 +16,7 @@ flowchart LR
         FLEX[Classic FieldWorks<br/>FwData XML]
     end
 
-    subgraph LEXBOX[LexBox server]
+    subgraph LEXBOX[Lexbox server]
         HARMONY[(Harmony commits<br/>Postgres)]
         HG[(Mercurial repo<br/>hgweb)]
         API[LexBoxApi<br/>+ SignalR hub]
@@ -36,7 +36,7 @@ flowchart LR
     style WORKER fill:#ff9,stroke:#333
 ```
 
-## Hop 1 — FieldWorks Lite ↔ LexBox (Harmony CRDT)
+## Hop 1 — FieldWorks Lite ↔ Lexbox (Harmony CRDT)
 
 | | |
 |---|---|
@@ -50,16 +50,16 @@ Failure modes: not signed in (`SyncStatus.NotLoggedIn`), server unreachable or t
 and never recovers is worse: edits still sync out on the next local edit, but incoming changes stop arriving
 until something else triggers a sync.
 
-## Hop 2 — LexBox → FwHeadless merge job
+## Hop 2 — Lexbox → FwHeadless merge job
 
 | | |
 |---|---|
-| Trigger | **A user, always.** FieldWorks Lite's Sync dialog, or "Sync FieldWorks Lite" on the LexBox project page. No scheduler, no hg hook. |
+| Trigger | **A user, always.** FieldWorks Lite's Sync dialog, or "Sync FieldWorks Lite" on the Lexbox project page. No scheduler, no hg hook. |
 | Travels | Only the project id: `POST /api/fw-lite/sync/trigger/{projectId}` → FwHeadless `POST /api/merge/execute`, which queues the job. |
 | Runs | One global sequential worker; a second project waits its turn. |
 | Code | `LexBoxApi/Controllers/SyncController.cs`, `FwHeadless/Routes/MergeRoutes.cs`, `FwHeadless/Services/SyncHostedService.cs` |
 
-Failure modes: 403 (FwHeadless cannot authenticate to LexBox), 404 (project unknown), 423 (project blocked from
+Failure modes: 403 (FwHeadless cannot authenticate to Lexbox), 404 (project unknown), 423 (project blocked from
 syncing). The client then polls for the result — details and the full status list in
 [The FwHeadless merge](./fwheadless-merge.md).
 

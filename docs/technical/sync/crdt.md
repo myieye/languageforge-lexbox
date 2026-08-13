@@ -27,15 +27,15 @@ Nothing is ever overwritten in the log: a sync only adds commits the other side 
 | Trigger | Where | Notes |
 |---|---|---|
 | A local edit | `MiniLcmJsInvokable.OnDataChanged` | Every write queues a sync; the background worker waits ~100 ms before running it. |
-| Opening a project | `ProjectServicesProvider` | Also starts the push listener for that project. |
+| Opening a project | `ProjectServicesProvider` | Queues a sync; the push listener starts when that sync completes (see the Successful-sync row). |
 | `OnProjectUpdated` push | `LexboxHubConnection` | The server pushes to everyone subscribed to the project after another client uploads commits. The pushing client's own id is passed along and that client ignores it. |
 | Push listener (re)connect | `LexboxHubConnection.OnConnected` | A reconnect moves no data by itself — the server only pushes changes made after subscribing — so a connect transition triggers a catch-up sync for every tracked project. |
 | Successful sync | `SyncService.ExecuteSync` | Best-effort restart of a listener that failed to start earlier (e.g. the user was offline at project open). |
 | 5-minute recovery check | `PushListenerRecoveryService` | Cross-platform backstop that revives a listener the event-driven paths missed. Idempotent: a healthy connection short-circuits. |
 
-Sync requests are queued on a channel and processed one project at a time
-(`FwLiteShared/Sync/BackgroundSyncService.cs`), so a burst of edits collapses into a few syncs rather than one
-request per keystroke.
+Sync requests are queued on a channel and processed one at a time, ~100 ms apart
+(`FwLiteShared/Sync/BackgroundSyncService.cs`). There is no deduplication: a burst of edits queues a sync each,
+run back to back — the later ones just find nothing new to exchange.
 
 ## When a sync does nothing
 

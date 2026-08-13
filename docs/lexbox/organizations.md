@@ -21,9 +21,9 @@ organization's projects and ask to join them.
 
 From the organization's page:
 
-- **Add Member** adds a person by email or login; entering an unknown email turns it
-  into an invitation. (Newly added members may need to log out and back in before they
-  see the organization.)
+- **Add Member** adds a person by email or login; if they don't have an account yet,
+  tick **Invite** to send them an invitation email instead. (Newly added members may
+  need to log out and back in before they see the organization.)
 - **Bulk Add Members** takes a list of logins or emails — unlike the project version,
   it does not create accounts for people who don't have one.
 - Any member can use **Add My Projects** to bring projects they manage into the

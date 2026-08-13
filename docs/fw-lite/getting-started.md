@@ -29,8 +29,8 @@ connection.
 
 ## 4. Open it and edit an entry
 
-Choose **Open** on the project. Go to **Browse** to see the entries, pick one, and change
-a field. To add a word, use **New Entry**.
+Tap the project in the list to open it. Go to **Browse** to see the entries, pick one,
+and change a field. To add a word, use **New Word**.
 
 :::note[Coming soon]
 A walk-through of the entry editor, with pictures.

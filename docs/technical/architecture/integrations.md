@@ -14,7 +14,7 @@ FLEx desktop sends and receives through Chorus, which is a Mercurial client. Lex
 | `/{project-code}` or `/hg/{project-code}` | hg Send/Receive. The bare `/{project-code}` form is the URL baked into Chorus clients around the world, so it has the lowest route precedence. |
 | `/api/v03` | hg-resumable Send/Receive |
 
-Production hostnames all route to `lexbox`: `hg-public.languagedepot.org`, `hg-private.languagedepot.org`, `resumable.languagedepot.org` (and the matching `*.languageforge.org` names). Staging uses `hg-staging.languageforge.org` / `resumable-staging.languagedepot.org`; develop uses `hg-develop.lexbox.org` / `resumable-develop.lexbox.org`.
+Production hostnames all route to `lexbox`: `hg-public.languagedepot.org`, `hg-private.languagedepot.org`, `resumable.languagedepot.org` (and the matching `*.languageforge.org` names). Staging uses `hg-staging.languageforge.org` / `resumable-staging.languagedepot.org`; develop uses `hg.lexbox.dev.languagetechnology.org` / `resumable.lexbox.dev.languagetechnology.org`.
 
 ## Legacy Language Depot API
 
@@ -73,7 +73,7 @@ flowchart LR
 
 | API | Where | Notes |
 | --- | --- | --- |
-| GraphQL | `/api/graphql` | Hot Chocolate; this is what the SvelteKit UI uses. Explorer (Banana Cake Pop) at `/api/graphql/ui`. |
+| GraphQL | `/api/graphql` | Hot Chocolate; this is what the SvelteKit UI uses. Explorer (Nitro, formerly Banana Cake Pop) at `/api/graphql/ui`. |
 | REST | `/api/**` | Includes `/api/crdt/*`, `/api/fw-lite/sync/*` and TUS project upload at `/api/project/upload-zip/{project-code}`. Swagger UI at `/api/swagger`. |
 | Health | `/api/healthz` | |
 | Security contact | `/.well-known/security.txt` | [security.txt standard](https://securitytxt.org/) |

@@ -17,22 +17,22 @@ produce divergent data that can't be reconciled. Read `backend/FwHeadless/AGENTS
 There is no scheduler, no cron and no Mercurial hook. A merge happens because someone pressed a button:
 
 - FieldWorks Lite → the Sync dialog's **Sync** button, or
-- LexBox → **Sync FieldWorks Lite** on the project page.
+- Lexbox → **Sync FieldWorks Lite** on the project page.
 
-Both go `POST /api/fw-lite/sync/trigger/{projectId}` (LexBox) → `POST /api/merge/execute` (FwHeadless), which
+Both go `POST /api/fw-lite/sync/trigger/{projectId}` (Lexbox) → `POST /api/merge/execute` (FwHeadless), which
 only *queues* the job. `SyncHostedService` runs one global sequential worker, so projects are processed one at a
 time and a queued project waits. Queuing is deduplicated: triggering a project that's already queued or running
 is a no-op.
 
 The client then polls `await-sync-finished` for the result. FieldWorks Lite gives up after **15 minutes**
-(re-requesting every 25 s to dodge the 30 s HTTP timeout); the LexBox web button keeps polling. The **first-ever**
+(re-requesting every 25 s to dodge the 30 s HTTP timeout); the Lexbox web button keeps polling. The **first-ever**
 sync for a project clones the hg repo and imports every entry into a new CRDT database, which takes minutes.
 
 ## The sync cycle
 
 ```mermaid
 flowchart TD
-    A[Queued job starts] --> B{Project code known?<br/>LexBox auth OK?<br/>Not blocked?}
+    A[Queued job starts] --> B{Project code known?<br/>Lexbox auth OK?<br/>Not blocked?}
     B -- no --> X[Return failure status]
     B -- yes --> C{FwData copy exists?}
     C -- no --> D[hg clone<br/>first sync only]
@@ -41,16 +41,16 @@ flowchart TD
     E -- no --> G
     D --> G[Open FwData + CRDT copies]
     F --> G
-    G --> H[Harmony sync with LexBox<br/>pull Lite changes down]
-    H --> I{Snapshot file exists?}
+    G --> I{Snapshot file exists?}
     I -- no --> J[Import: whole FwData project into CRDT]
-    I -- yes --> K[Merge: two directional diffs]
+    I -- yes --> H[Harmony sync with Lexbox<br/>pull Lite changes down]
+    H --> K[Merge: two directional diffs]
     K --> L{FwData changed?}
     L -- yes --> M[Send/Receive<br/>retry once on HTTP 500]
     L -- no --> N
     J --> N[Save fresh snapshot<br/>from the CRDT]
     M --> N
-    N --> O[Harmony sync with LexBox<br/>push FieldWorks-origin changes]
+    N --> O[Harmony sync with Lexbox<br/>push FieldWorks-origin changes]
 
     style K fill:#f99,stroke:#333
     style N fill:#ff9,stroke:#333
@@ -97,7 +97,7 @@ never resolves those itself.
 | `Success` | Merge completed; the result carries CRDT and FwData change counts. |
 | `SuccessHarmonyOnly` | Only the Harmony sync ran (the `sync-harmony` recovery endpoint). |
 | `ProjectNotFound` | No project with that id. |
-| `UnableToAuthenticate` | FwHeadless couldn't authenticate to LexBox — checked up front so the job fails fast. |
+| `UnableToAuthenticate` | FwHeadless couldn't authenticate to Lexbox — checked up front so the job fails fast. |
 | `SyncBlocked` | Project is blocked from syncing (HTTP 423 from the trigger endpoint). |
 | `ProjectIncompatible` | The clone produced no `.fwdata` file — e.g. the repo isn't a FieldWorks project. |
 | `SendReceiveFailed` | hg Send/Receive failed before or after the merge. |

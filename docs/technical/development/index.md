@@ -37,7 +37,7 @@ The whole app comes up at http://localhost.
 | Develop the .NET API | `task infra-up`, then `task api:only` |
 | Develop the SvelteKit UI | `task backend-up`, then `task ui:only` (or `task ui-dev` in one console) |
 | Develop both | `task infra-up`, then `task api:only` and `task ui:only` |
-| K8s already running | `task infra-forward` (API deps) or `task backend-forward` (UI deps) |
+| K8s already running | `task k8s:infra-forward` (API deps) or `task k8s:backend-forward` (UI deps) |
 
 The UI running directly is at http://localhost:3000. The k8s-hosted UI at http://localhost is always there, but is only reliable when the whole project was started with `task up`.
 

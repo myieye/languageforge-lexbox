@@ -12,7 +12,7 @@ sign in with their own accounts — teams should not share one login.
 | --- | --- |
 | **Manager** | Send/Receive, plus managing the project: members, name, description, settings. |
 | **Editor** | Send/Receive. |
-| **Viewer** | Looking at the project in FieldWorks Lite, without editing. Offered only on projects that use FieldWorks Lite. |
+| **Viewer** | Looking at the project in FieldWorks Lite, without editing. Offered only on FieldWorks projects. |
 
 ## Add people
 
@@ -25,8 +25,8 @@ For a whole class or workshop, **Bulk Add/Create Members** takes a list of login
 emails, one per line, and a shared password; accounts are created automatically for
 people who don't have one.
 
-People can also find your project themselves and **Ask to join** — you'll get an email
-with an **Approve Request** button.
+Members of an organization that owns your project can also find it themselves and
+**Ask to join** — you'll get an email with an **Approve Request** button.
 
 Each member's menu lets you **Change Role** or **Remove** them. Anyone can leave a
 project themselves (**Leave Project**, under More settings) — except the last manager,

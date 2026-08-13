@@ -19,17 +19,19 @@ project. Afterwards the project carries a **Using FieldWorks Lite** badge, and y
 can [install the app and download the project](/fw-lite/getting-started).
 
 FieldWorks Lite support is still in beta. If you don't see the button, a project manager
-can request early access from the project page.
+can request early access on the [Where is my project?](https://lexbox.org/wheresMyProject)
+page.
 
 ## Keep the two sides in step
 
 Your project now lives in Lexbox in two copies: one for FieldWorks Lite, one for
 FieldWorks Send/Receive. The **Sync FieldWorks Lite** button on the project page merges
-the two — and it only runs when someone presses it (in the website or in the app), so
-make it part of the team's rhythm:
+the two. The **Sync** button in the app (under **Synchronize**, on the **Lexbox** tab) is
+the same button in a different place — pressing either does exactly the same thing. It
+only runs when someone presses it, so make it part of the team's rhythm:
 
 1. FieldWorks users **Send/Receive** as usual.
-2. Someone presses **Sync FieldWorks Lite**.
+2. Someone presses **Sync FieldWorks Lite** (or **Sync** in the app).
 3. FieldWorks users **Send/Receive** again to pick up the FieldWorks Lite work.
 
 FieldWorks Lite users don't do anything — the app syncs with Lexbox on its own. To see
