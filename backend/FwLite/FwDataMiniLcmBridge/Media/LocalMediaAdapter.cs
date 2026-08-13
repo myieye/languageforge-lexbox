@@ -58,26 +58,30 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
     public MediaUri MediaUriFromPath(string path, LcmCache cache)
     {
         if (!Path.IsPathRooted(path)) throw new ArgumentException("Path must be absolute, " + path, nameof(path));
-        if (!IsInRootFolder(path, cache))
+        var rootedPath = PathUnderRoot(path, cache);
+        if (rootedPath is null)
         {
             //FW allows pictures to reference files anywhere on disk, we can only serve files under LinkedFilesRootDir
             logger.LogWarning("Media path {Path} is outside the LinkedFilesRootDir {Root}", path, cache.LangProject.LinkedFilesRootDir);
             return MediaUri.NotFound;
         }
-        if (!File.Exists(path)) return MediaUri.NotFound;
-        var uri = PathToUri(path);
+        if (!File.Exists(rootedPath)) return MediaUri.NotFound;
+        var uri = PathToUri(rootedPath);
         //this may be a new file, so we need to add it to the cache
-        Paths(cache)[uri.FileId] = path;
+        Paths(cache)[uri.FileId] = rootedPath;
         return uri;
     }
 
-    private static bool IsInRootFolder(string path, LcmCache cache)
+    //GetRelativePath applies the platform's separator and casing rules, a plain prefix check doesn't.
+    //Recombining with the root keeps the FileId stable, it's derived from the path string.
+    private static string? PathUnderRoot(string path, LcmCache cache)
     {
-        //GetRelativePath applies the platform's separator and casing rules, a plain prefix check doesn't
-        var relative = Path.GetRelativePath(cache.LangProject.LinkedFilesRootDir, path);
-        return !Path.IsPathRooted(relative)
-            && relative != ".."
-            && !relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal);
+        var root = cache.LangProject.LinkedFilesRootDir;
+        var relative = Path.GetRelativePath(root, path);
+        if (Path.IsPathRooted(relative)
+            || relative == ".."
+            || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)) return null;
+        return Path.Combine(root, relative);
     }
 
     private static MediaUri PathToUri(string path)

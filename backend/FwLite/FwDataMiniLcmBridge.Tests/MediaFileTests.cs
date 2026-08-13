@@ -107,12 +107,12 @@ public class MediaFileTests : IAsyncLifetime
     {
         if (!OperatingSystem.IsWindows()) return;
         var fileName = "MediaUriFromPath_IgnoresPathCasingOnWindows.txt";
-        await StoreFileContentsAsync(fileName, "test");
+        var fileId = await StoreFileContentsAsync(fileName, "test");
         var path = Path.Combine(_api.Cache.LangProject.LinkedFilesRootDir.ToUpperInvariant(),
             FwDataMiniLcmApi.AudioVisualFolder,
             fileName);
 
-        _mediaAdapter.MediaUriFromPath(path, _api.Cache).Should().NotBe(MediaUri.NotFound);
+        _mediaAdapter.MediaUriFromPath(path, _api.Cache).FileId.Should().Be(fileId);
     }
 
     [Fact]
