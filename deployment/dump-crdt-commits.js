@@ -52,7 +52,8 @@ ORDER BY "HybridDateTime_DateTime", "HybridDateTime_Counter", "Id";
 const syncStateSql = `
 SELECT COALESCE(json_object_agg("ClientId", max_ms), '{}'::json)
 FROM (
-  SELECT "ClientId", max(extract(epoch from "HybridDateTime_DateTime") * 1000)::bigint AS max_ms
+  -- floor, not round: must match C#'s ToUnixTimeMilliseconds truncation or heads land 1ms ahead
+  SELECT "ClientId", floor(max(extract(epoch from "HybridDateTime_DateTime")) * 1000)::bigint AS max_ms
   FROM "CrdtCommits"
   WHERE "ProjectId" = '${projectId}'
   GROUP BY "ClientId"
