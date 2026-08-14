@@ -1,0 +1,171 @@
+name: Fork FwLite
+# Fork-only workflow (this file doesn't exist upstream): the build/test subset of
+# fw-lite.yaml with no publishing, releases, benchmarks, or k8s E2E. See FORK.md.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'backend/FwLite/**'
+      - 'backend/Directory.Packages.props'
+      - 'backend/Harmony*.props'
+      - 'frontend/viewer/**'
+      - '.github/workflows/fork-fwlite.yaml'
+      - 'FwLiteCore.slnf'
+      - 'FwLiteOnly.slnf'
+    branches:
+      - develop
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet:
+    name: Build FW Lite and run tests
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+        with:
+          dotnet-version: '10.x'
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('backend/Directory.Packages.props', 'backend/Harmony*.props') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+      - name: Install Task
+        uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dotnet build
+        run: dotnet build FwLiteCore.slnf -p:BuildAndroid=false
+
+      - name: Check for pending EF model changes
+        run: task fw-lite:has-pending-model-changes -- --no-build
+
+      - name: Check for stale generated TypeScript types
+        run: task fw-lite:has-stale-generated-types -- --no-build
+
+      - name: Dotnet test
+        # TZ makes date bugs observable (#2092); hosted runners deny timedatectl, and .NET
+        # honours TZ for TimeZoneInfo.Local on Linux. Same reasoning as fw-lite.yaml.
+        env:
+          TZ: America/New_York
+        run: dotnet test FwLiteCore.slnf --logger GitHubActions --no-build -p:BuildAndroid=false --filter "Category!=Benchmark"
+
+  viewer-ui-tests:
+    name: Viewer UI tests and build
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          package_json_file: 'frontend/package.json'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: './frontend/package.json'
+          cache: 'pnpm'
+          cache-dependency-path: './frontend/pnpm-lock.yaml'
+      - name: Install Task
+        uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare frontend
+        working-directory: frontend
+        run: |
+          pnpm install
+      - name: Ensure all i18n strings have been extracted
+        working-directory: frontend/viewer
+        shell: bash
+        run: |
+          set -e
+          # GHA sets -o pipefail when shell is bash but we want to turn it off
+          set +o pipefail
+          rm -f src/locales/en.po.old
+          cp src/locales/en.po src/locales/en.po.old
+          pnpm i18n:extract
+          DIFFCOUNT=$(diff -u src/locales/en.po{.old,} | grep '+msgid' | wc -l)
+          if [ $DIFFCOUNT -gt 0 ]; then
+            # Unextracted strings found, fail the build
+            echo '***'
+            echo $DIFFCOUNT unextracted strings found:
+            echo '***'
+            diff -u src/locales/en.po{.old,} | grep '+msgid' | cut -c2-
+            echo '***'
+            echo Please run pnpm i18n:extract
+            exit 1
+          fi
+          rm -f src/locales/en.po.old
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: frontend/viewer
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: frontend/viewer
+        run: pnpm exec playwright install-deps chromium
+      - name: Run UI tests
+        working-directory: frontend/viewer
+        # --reporter replaces the config's CI reporters: the Argos upload there needs an
+        # Argos project for this fork, which doesn't exist (visual review happens upstream).
+        # --workers=2: the config pins CI to 1 worker; 2 halves the runtime on the 4-core
+        # runner. Revert to 1 if tests turn flaky.
+        run: task test:ui-standalone -- --reporter=list --workers=2
+      - name: Build viewer
+        working-directory: frontend/viewer
+        run: pnpm run build
+
+  viewer-vitest:
+    name: Viewer unit tests
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          package_json_file: 'frontend/package.json'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: './frontend/package.json'
+          cache: 'pnpm'
+          cache-dependency-path: './frontend/pnpm-lock.yaml'
+      - name: Prepare frontend
+        working-directory: frontend
+        run: |
+          pnpm install
+        # vitest runs browser-based tests on chromium AND firefox (see vitest.config.ts)
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-firefox-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: frontend/viewer
+        run: pnpm exec playwright install --with-deps chromium firefox
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: frontend/viewer
+        run: pnpm exec playwright install-deps chromium firefox
+      - name: vitest
+        working-directory: frontend/viewer
+        run: pnpm run test --retry=2 --reporter=default

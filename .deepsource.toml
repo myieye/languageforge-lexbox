@@ -1,0 +1,28 @@
+version = 1
+
+[[analyzers]]
+name = "javascript"
+
+  [analyzers.meta]
+  module_system = "es-modules"
+
+[[analyzers]]
+name = "csharp"
+
+[[analyzers]]
+name = "docker"
+
+[[analyzers]]
+name = "shell"
+
+[[analyzers]]
+name = "sql"
+
+[[analyzers]]
+name = "secrets"
+
+[[analyzers]]
+name = "powershell"
+
+[[analyzers]]
+name = "css"
