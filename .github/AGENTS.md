@@ -76,13 +76,17 @@ flowchart TD
     RP[release-pipeline.yaml] -->|calls| API[lexbox-api.yaml]
     RP -->|calls| UI[lexbox-ui.yaml]
     RP -->|calls| FWH[lexbox-fw-headless.yaml]
-    
-    API --> IT[integration-test-gha.yaml]
-    UI --> IT
-    FWH --> IT
-    
-    IT --> DEP[deploy.yaml]
+    RP -->|calls| HGW[lexbox-hgweb.yaml]
+
+    API --> DEPS[deploy.yaml<br/>staging]
+    UI --> DEPS
+    FWH --> DEPS
+    HGW --> DEPS
+    DEPS --> IT[integration-test.yaml<br/>against staging]
+    IT --> DEPP[deploy.yaml<br/>production]
 ```
+
+Integration tests run after the staging deploy and gate only production — and deploy-prod proceeds even on a test failure (they're flaky); the real gate is the production environment approval. `integration-test-gha.yaml` runs on develop PRs/pushes in parallel with the develop deploy; it gates no deployment.
 
 ### FwLite is Separate
 
@@ -123,8 +127,8 @@ Images are tagged with:
 | Environment | Domain | When deployed |
 |-------------|--------|---------------|
 | `develop` | develop.lexbox.org | Every develop push |
-| `staging` | staging.languagedepot.org | Manual |
-| `production` | lexbox.org | Manual with approval |
+| `staging` | staging.languagedepot.org | Every main push |
+| `production` | lexbox.org | After staging + integration tests, with approval |
 
 ---
 
@@ -221,7 +225,7 @@ This is the most complex workflow because it:
 - Builds core .NET on Linux, MAUI on Windows
 - Builds viewer (Node.js)
 - Runs Playwright tests
-- Publishes for 5 platforms (Windows, Mac x64, Mac ARM, Linux x64, Linux ARM)
+- Publishes for Windows, Mac (x64 + ARM), Linux (x64 + ARM) and Android (only Windows, Linux and Android are released)
 
 ### Jobs
 
