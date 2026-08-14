@@ -75,13 +75,16 @@ function findPod() {
 // pod's memory. POSIX sh has no pipefail, so an ok-marker file propagates a psql failure past gzip
 // (ON_ERROR_STOP makes psql actually report one).
 function psql(pod, sql) {
+  // Same kubectl transport workaround as download-fw-headless-project.js: websockets are
+  // unreliable for large streams.
+  const env = {...process.env, KUBECTL_REMOTE_COMMAND_WEBSOCKETS: "false"};
   const gz = execFileSync("kubectl", [
     "exec", "-i", "--context", context, "-n", namespace, "-c", "db", pod, "--",
     "sh", "-c",
     'ok=$(mktemp); trap \'rm -f "$ok"\' EXIT; ' +
     '{ PGPASSWORD="$POSTGRES_PASSWORD" psql -q -v ON_ERROR_STOP=1 -v FETCH_COUNT=1000 -U postgres -d "$POSTGRES_DB" -t -A -f - || rm -f "$ok"; } | gzip -c; ' +
     'test -e "$ok"'
-  ], {input: sql, maxBuffer: 2 * 1024 * 1024 * 1024});
+  ], {input: sql, env, maxBuffer: 2 * 1024 * 1024 * 1024});
   return zlib.gunzipSync(gz).toString("utf8");
 }
 
