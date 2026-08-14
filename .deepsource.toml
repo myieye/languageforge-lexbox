@@ -1,29 +1,28 @@
-# Fork-only file (doesn't exist upstream). The DeepSource app is installed on this fork
-# only; it reviews every PR automatically. See FORK.md.
 version = 1
-
-exclude_patterns = [
-  "frontend/viewer/src/lib/dotnet-types/generated-types/**",
-  "**/Migrations/**",
-]
-
-test_patterns = [
-  "**/*.test.ts",
-  "**/*.spec.ts",
-  "frontend/tests/**",
-  "frontend/viewer/tests/**",
-  "backend/**/*.Tests/**",
-  "backend/Testing/**",
-]
-
-[[analyzers]]
-name = "csharp"
 
 [[analyzers]]
 name = "javascript"
+
+  [analyzers.meta]
+  module_system = "es-modules"
+
+[[analyzers]]
+name = "csharp"
 
 [[analyzers]]
 name = "docker"
 
 [[analyzers]]
 name = "shell"
+
+[[analyzers]]
+name = "sql"
+
+[[analyzers]]
+name = "secrets"
+
+[[analyzers]]
+name = "powershell"
+
+[[analyzers]]
+name = "css"
