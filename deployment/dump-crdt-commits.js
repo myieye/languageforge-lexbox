@@ -15,6 +15,15 @@ if (args.length < 4) {
   process.exit(1);
 }
 const [projectId, projectCode, context, namespace] = args;
+// projectId is interpolated into SQL below; projectCode into the output filename.
+if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(projectId)) {
+  console.error(`Not a project id (expected a UUID): ${projectId}`);
+  process.exit(1);
+}
+if (!/^[a-z0-9][a-z0-9-]*$/i.test(projectCode)) {
+  console.error(`Not a project code: ${projectCode}`);
+  process.exit(1);
+}
 
 const timestamp = new Date().toISOString().replace(/[-:T]/g, "").split(".")[0];
 const outDir = path.resolve("_downloads");
@@ -61,12 +70,14 @@ function findPod() {
 }
 
 // Runs psql inside the pod, SQL fed on stdin, output gzipped in-pod to keep the transfer small
-// and the db pod's memory low. Returns the decompressed stdout.
+// and the db pod's memory low. Staged through a temp file so a psql failure fails the command —
+// piping straight into gzip would return gzip's exit status and hide the error.
 function psql(pod, sql) {
   const gz = execFileSync("kubectl", [
     "exec", "-i", "--context", context, "-n", namespace, "-c", "db", pod, "--",
     "sh", "-c",
-    'PGPASSWORD="$POSTGRES_PASSWORD" psql -U postgres -d "$POSTGRES_DB" -t -A -f - | gzip -c'
+    'set -e; tmp=$(mktemp); trap \'rm -f "$tmp"\' EXIT; ' +
+    'PGPASSWORD="$POSTGRES_PASSWORD" psql -v ON_ERROR_STOP=1 -U postgres -d "$POSTGRES_DB" -t -A -f - > "$tmp"; gzip -c "$tmp"'
   ], {input: sql, maxBuffer: 2 * 1024 * 1024 * 1024});
   return zlib.gunzipSync(gz).toString("utf8");
 }
