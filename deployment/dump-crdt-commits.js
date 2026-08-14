@@ -69,15 +69,17 @@ function findPod() {
   return pod;
 }
 
-// Runs psql inside the pod, SQL fed on stdin, output gzipped in-pod to keep the transfer small
-// and the db pod's memory low. Staged through a temp file so a psql failure fails the command —
-// piping straight into gzip would return gzip's exit status and hide the error.
+// Runs psql inside the pod, SQL fed on stdin, output gzipped in-pod to keep the transfer small.
+// FETCH_COUNT makes psql stream through a cursor instead of buffering the whole result in the db
+// pod's memory. POSIX sh has no pipefail, so an ok-marker file propagates a psql failure past gzip
+// (ON_ERROR_STOP makes psql actually report one).
 function psql(pod, sql) {
   const gz = execFileSync("kubectl", [
     "exec", "-i", "--context", context, "-n", namespace, "-c", "db", pod, "--",
     "sh", "-c",
-    'set -e; tmp=$(mktemp); trap \'rm -f "$tmp"\' EXIT; ' +
-    'PGPASSWORD="$POSTGRES_PASSWORD" psql -v ON_ERROR_STOP=1 -U postgres -d "$POSTGRES_DB" -t -A -f - > "$tmp"; gzip -c "$tmp"'
+    'ok=$(mktemp); trap \'rm -f "$ok"\' EXIT; ' +
+    '{ PGPASSWORD="$POSTGRES_PASSWORD" psql -v ON_ERROR_STOP=1 -v FETCH_COUNT=1000 -U postgres -d "$POSTGRES_DB" -t -A -f - || rm -f "$ok"; } | gzip -c; ' +
+    'test -e "$ok"'
   ], {input: sql, maxBuffer: 2 * 1024 * 1024 * 1024});
   return zlib.gunzipSync(gz).toString("utf8");
 }
@@ -96,6 +98,9 @@ function main() {
   const commits = commitLines.map(line => {
     const c = JSON.parse(line);
     for (const ce of c.ChangeEntities ?? []) {
+      // Old rows store the change as a JSON *string*; the server's read converter unwraps it
+      // (see ServerJsonChangeConverter in CommitEntityConfiguration.cs), so do the same.
+      if (typeof ce.Change === "string") ce.Change = JSON.parse(ce.Change);
       const ch = ce.Change;
       if (ch && typeof ch === "object" && "$type" in ch) {
         const {["$type"]: type, ...rest} = ch;
