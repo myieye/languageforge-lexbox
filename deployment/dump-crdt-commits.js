@@ -79,18 +79,30 @@ function psql(pod, sql) {
     "exec", "-i", "--context", context, "-n", namespace, "-c", "db", pod, "--",
     "sh", "-c",
     'ok=$(mktemp); trap \'rm -f "$ok"\' EXIT; ' +
-    '{ PGPASSWORD="$POSTGRES_PASSWORD" psql -v ON_ERROR_STOP=1 -v FETCH_COUNT=1000 -U postgres -d "$POSTGRES_DB" -t -A -f - || rm -f "$ok"; } | gzip -c; ' +
+    '{ PGPASSWORD="$POSTGRES_PASSWORD" psql -q -v ON_ERROR_STOP=1 -v FETCH_COUNT=1000 -U postgres -d "$POSTGRES_DB" -t -A -f - || rm -f "$ok"; } | gzip -c; ' +
     'test -e "$ok"'
   ], {input: sql, maxBuffer: 2 * 1024 * 1024 * 1024});
   return zlib.gunzipSync(gz).toString("utf8");
 }
 
+const headsMarker = "===CLIENT_HEADS===";
+
 function main() {
   const pod = findPod();
 
-  console.log("Dumping commits...");
-  const commitsRaw = psql(pod, commitsSql);
-  const commitLines = commitsRaw.split("\n").map(l => l.trim()).filter(Boolean);
+  console.log("Dumping commits and sync state...");
+  // One transaction so the sync state can't claim commits the dump doesn't contain.
+  const raw = psql(pod, `
+BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
+${commitsSql}
+SELECT '${headsMarker}';
+${syncStateSql}
+COMMIT;
+`);
+  const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
+  const sep = lines.indexOf(headsMarker);
+  if (sep < 0) throw new Error("psql output is missing the sync-state marker");
+  const commitLines = lines.slice(0, sep);
   console.log(`Got ${commitLines.length} commits.`);
 
   // Postgres jsonb reorders object keys by length, but the sync wire format (ServerJsonChange)
@@ -111,8 +123,7 @@ function main() {
     return JSON.stringify(c);
   });
 
-  console.log("Computing sync state...");
-  const clientHeads = psql(pod, syncStateSql).trim() || "{}";
+  const clientHeads = lines[sep + 1] || "{}";
 
   fs.mkdirSync(outDir, {recursive: true});
   const out = fs.createWriteStream(outFile);
