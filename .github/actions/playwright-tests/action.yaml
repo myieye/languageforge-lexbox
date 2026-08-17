@@ -17,7 +17,7 @@ runs:
     # First we need to setup Node...
     - uses: actions/setup-node@v4
       with:
-        node-version-file: 'frontend/package.json'
+        node-version-file: 'frontend/.node-version'
     # Then we can set up pnpm...
     - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
       with:
@@ -25,7 +25,7 @@ runs:
     # Then we can have Node set up package caching
     - uses: actions/setup-node@v4
       with:
-        node-version-file: 'frontend/package.json'
+        node-version-file: 'frontend/.node-version'
         cache: 'pnpm'
         cache-dependency-path: 'frontend/pnpm-lock.yaml'
     - name: Playwright setup
