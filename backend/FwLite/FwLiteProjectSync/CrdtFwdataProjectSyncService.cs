@@ -92,6 +92,15 @@ public class CrdtFwdataProjectSyncService(MiniLcmImport miniLcmImport,
             // Repair any missing translation IDs before doing the full sync, so the sync doesn't have to deal with them
             await CrdtRepairs.SyncMissingTranslationIds(projectSnapshot.Entries, fwdata, crdt);
 
+            // Siblings sharing an Order make the position between them unrepresentable, so this sync
+            // can never reproduce fwdata's order and "corrects" fwdata towards the crdt instead,
+            // reordering the entry on every run. Break the ties first; renumbering follows the
+            // existing read order, so nothing a user sees moves.
+            var repairedTies = await crdt.RepairDuplicateOrders();
+            if (repairedTies > 0)
+                logger.LogWarning("Renumbered {Count} sibling orders to break duplicate-order ties before syncing {Project}",
+                    repairedTies, fwdata.Project.Name);
+
             // Patch legacy snapshots that were created before morph-type support.
             // After seeding, the CRDT has morph-types but the snapshot still has [].
             // Without this patch, the diff would see all morph-types as "new" and try to re-add them.

@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using FluentValidation;
 using SIL.Harmony;
 using SIL.Harmony.Changes;
@@ -116,7 +116,7 @@ public class CrdtMiniLcmApi(
         await using var repo = await repoFactory.CreateRepoAsync();
         var ws = await repo.GetWritingSystem(id, type) ?? throw NotFoundException.ForWs(id, type);
         var betweenIds = await between.MapAsync(async wsId => wsId is null ? null : (await repo.GetWritingSystem(wsId.Value, type))?.Id);
-        var order = await OrderPicker.PickOrder(repo.WritingSystems.Where(s => s.Type == type), betweenIds);
+        var order = await OrderPicker.PickOrder(repo.WritingSystems.Where(s => s.Type == type), betweenIds, ws.Id);
         await AddChange(new Changes.SetOrderChange<WritingSystem>(ws.Id, order));
     }
 
@@ -385,7 +385,7 @@ public class CrdtMiniLcmApi(
             throw NotFoundException.ForType<ComplexFormComponent>("missing ID");
         }
         var betweenIds = await between.MapAsync(async c => (await repo.FindComplexFormComponent(c))?.Id);
-        var order = await OrderPicker.PickOrder(repo.ComplexFormComponents.Where(s => s.ComplexFormEntryId == component.ComplexFormEntryId), betweenIds);
+        var order = await OrderPicker.PickOrder(repo.ComplexFormComponents.Where(s => s.ComplexFormEntryId == component.ComplexFormEntryId), betweenIds, id.Value);
         await AddChange(new Changes.SetOrderChange<ComplexFormComponent>(id.Value, order));
     }
 
@@ -802,7 +802,7 @@ public class CrdtMiniLcmApi(
     public async Task MoveSense(Guid entryId, Guid senseId, BetweenPosition between)
     {
         await using var repo = await repoFactory.CreateRepoAsync();
-        var order = await OrderPicker.PickOrder(repo.Senses.Where(s => s.EntryId == entryId), between);
+        var order = await OrderPicker.PickOrder(repo.Senses.Where(s => s.EntryId == entryId), between, senseId);
         var currentEntryId = await repo.Senses.Where(s => s.Id == senseId).Select(s => s.EntryId).FirstOrDefaultAsync();
         if (currentEntryId != default && currentEntryId != entryId)
         {
@@ -889,7 +889,7 @@ public class CrdtMiniLcmApi(
     public async Task MoveExampleSentence(Guid entryId, Guid senseId, Guid exampleId, BetweenPosition between)
     {
         await using var repo = await repoFactory.CreateRepoAsync();
-        var order = await OrderPicker.PickOrder(repo.ExampleSentences.Where(s => s.SenseId == senseId), between);
+        var order = await OrderPicker.PickOrder(repo.ExampleSentences.Where(s => s.SenseId == senseId), between, exampleId);
         await AddChange(new Changes.SetOrderChange<ExampleSentence>(exampleId, order));
     }
 
@@ -990,7 +990,7 @@ public class CrdtMiniLcmApi(
         await using var repo = await repoFactory.CreateRepoAsync();
         var sense = await repo.GetSense(senseId);
         if (sense is null) throw NotFoundException.ForType<Sense>(senseId);
-        var order = OrderPicker.PickOrder(sense.Pictures, between);
+        var order = OrderPicker.PickOrder(sense.Pictures, between, pictureId);
         await AddChange(new ReorderSensePictureChange(pictureId, senseId, order));
     }
 
@@ -1235,6 +1235,61 @@ public class CrdtMiniLcmApi(
     {
         if (comment.AuthorId == RequireCommentUserId()) return;
         throw new UnauthorizedAccessException("Only the comment author can edit or delete this comment.");
+    }
+
+    /// <summary>
+    /// Renumbers any sibling group that contains duplicate Order values to 1..n.
+    /// </summary>
+    /// <remarks>
+    /// Two siblings sharing an Order is not cosmetic: no value fits between x and x, so no item can
+    /// ever be placed between them again. The fwdata sync then cannot reproduce fwdata's order in
+    /// the CRDT, "corrects" fwdata towards the CRDT instead, and reorders the entry on every run.
+    /// Renumbering follows the existing read-back order (Order, then Id), so this changes nothing
+    /// anyone sees, it only makes the positions addressable again and resets the bisection
+    /// precision budget. Idempotent: groups without duplicates produce no changes.
+    /// Pictures are not covered; their order is picked during change replay, which is frozen.
+    /// </remarks>
+    public async Task<int> RepairDuplicateOrders()
+    {
+        await using var repo = await repoFactory.CreateRepoAsync();
+        var changes = new List<IChange>();
+
+        CollectRenumbering<Sense>(
+            await repo.Senses.Select(s => new OrderRow(s.Id, s.Order, s.EntryId)).ToArrayAsync(), changes);
+        CollectRenumbering<ExampleSentence>(
+            await repo.ExampleSentences.Select(s => new OrderRow(s.Id, s.Order, s.SenseId)).ToArrayAsync(), changes);
+        CollectRenumbering<ComplexFormComponent>(
+            await repo.ComplexFormComponents.Select(c => new OrderRow(c.Id, c.Order, c.ComplexFormEntryId)).ToArrayAsync(), changes);
+        // Writing systems tie-break in SQL, where SQLite's Guid ordering differs from .NET's, so
+        // take the order the read path actually produces rather than re-sorting here.
+        var writingSystems = await repo.WritingSystemsOrdered
+            .Select(ws => new OrderRow(ws.Id, ws.Order, ws.Type)).ToArrayAsync();
+        CollectRenumberingPreSorted<WritingSystem>(writingSystems, changes);
+
+        if (changes.Count > 0) await AddChanges(changes);
+        return changes.Count;
+    }
+
+    // ParentKey is boxed because sibling groups are keyed by a Guid for most types and by
+    // WritingSystemType for writing systems.
+    private readonly record struct OrderRow(Guid Id, double Order, object ParentKey);
+
+    private static void CollectRenumbering<T>(OrderRow[] rows, List<IChange> changes) where T : class, IOrderableNoId
+    {
+        CollectRenumberingPreSorted<T>([.. rows.OrderBy(r => r.Order).ThenBy(r => r.Id)], changes);
+    }
+
+    private static void CollectRenumberingPreSorted<T>(OrderRow[] rowsInReadOrder, List<IChange> changes) where T : class, IOrderableNoId
+    {
+        foreach (var group in rowsInReadOrder.GroupBy(r => r.ParentKey))
+        {
+            var ordered = group.ToArray();
+            if (ordered.Select(r => r.Order).Distinct().Count() == ordered.Length) continue;
+            for (var i = 0; i < ordered.Length; i++)
+            {
+                if (ordered[i].Order != i + 1) changes.Add(new Changes.SetOrderChange<T>(ordered[i].Id, i + 1));
+            }
+        }
     }
 
     public void Dispose()

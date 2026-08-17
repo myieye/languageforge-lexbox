@@ -57,22 +57,30 @@ public class OrderPickerTests : IAsyncLifetime
         yield return new("no between → append", [1, 2, 3], null, 4);
         // 3. between {null,null} → append after max (async ToListAsync path, distinct from #2)
         yield return new("between {null,null} → append", [1, 2, 3], Between(), 4);
-        // 4. previous only → just after previous
-        yield return new("previous only", [10, 20], Between(previous: 0), 11);
-        // 5. next only → just before next
-        yield return new("next only", [10, 20], Between(next: 1), 19);
+        // 4. previous only → bisect the gap above previous, rather than striding to previous + 1,
+        //    which would land on a sibling whenever one sits directly above.
+        yield return new("previous only", [10, 20], Between(previous: 0), 15);
+        // 5. next only → bisect the gap below next
+        yield return new("next only", [10, 20], Between(next: 1), 15);
         // 6. previous < next → midpoint
         yield return new("previous < next → midpoint", [10, 20], Between(previous: 0, next: 1), 15);
-        // 7. previous > next (shifted past each other) → revert to previous + 1
+        // 7. previous > next (shifted past each other) → previous wins, into the gap above it
         yield return new("inverted previous > next", [20, 10], Between(previous: 0, next: 1), 21);
-        // 8. previous == next order (distinct items, equal order) → previous + 1 (not strictly <)
+        // 8. previous == next order (distinct items, equal order) → previous wins; nothing sits
+        //    above 10, so append past it
         yield return new("equal orders", [10, 10], Between(previous: 0, next: 1), 11);
         // 9. deleted references
         yield return new("both refs deleted → append", [1, 2, 3], Between(previous: Missing, next: Missing), 4);
-        yield return new("previous deleted, next present", [10, 20], Between(previous: Missing, next: 1), 19);
-        yield return new("next deleted, previous present", [10, 20], Between(previous: 0, next: Missing), 11);
+        yield return new("previous deleted, next present", [10, 20], Between(previous: Missing, next: 1), 15);
+        yield return new("next deleted, previous present", [10, 20], Between(previous: 0, next: Missing), 15);
         // 10. siblings supplied out of Order sequence → result unaffected by list ordering
         yield return new("unordered siblings → midpoint", [30, 10, 20], Between(previous: 1, next: 2), 15);
+        // 11. the collision cases: a sibling occupies the slot the old code strode onto. These are
+        //     what the fwdata sync hits, because the between window is diffed from the merge base
+        //     and fwdata while the order is computed against the live crdt siblings.
+        yield return new("occupied slot above previous", [2, 3], Between(previous: 0), 2.5);
+        yield return new("occupied slot below next", [1, 2], Between(next: 1), 1.5);
+        yield return new("interloper inside the window", [2, 2.5, 3], Between(previous: 0, next: 2), 2.25);
     }
 
     public static IEnumerable<object[]> Scenarios()
@@ -96,6 +104,29 @@ public class OrderPickerTests : IAsyncLifetime
         };
 
         result.Should().Be(scenario.Expected);
+        scenario.ExistingOrders.Should().NotContain(result,
+            "no result may land on an order a sibling already holds, whatever the between window says");
+    }
+
+    [Theory]
+    [InlineData(Variant.List)]
+    [InlineData(Variant.Async)]
+    public async Task PickOrder_TreatsAMovedItemAsAbsentFromItsOwnSiblings(Variant variant)
+    {
+        // Moving an item to where it already is must be a no-op. Counting the item as its own
+        // neighbour would bisect against its own order and mint a fresh value on every sync.
+        double[] existingOrders = [2, 3];
+        var movingId = ItemId(1); // the item at order 3
+        var between = Between(previous: 0);
+
+        var result = variant switch
+        {
+            Variant.List => OrderPicker.PickOrder(BuildList(existingOrders), between, movingId),
+            Variant.Async => await OrderPicker.PickOrder(await SeedAndQuery(existingOrders), between, movingId),
+            _ => throw new ArgumentOutOfRangeException(nameof(variant))
+        };
+
+        result.Should().Be(3, "the only sibling above order 2 is the item being moved, so it keeps its place");
     }
 
     [Theory]
@@ -150,6 +181,34 @@ public class OrderPickerTests : IAsyncLifetime
         results.Should().OnlyContain(o => o > 0 && o < 1, "every insertion lands strictly between the two neighbors");
         results.Should().BeInDescendingOrder("each insertion bisects the shrinking gap above the lower neighbor");
         results.Distinct().Should().HaveCount(results.Count, "no two insertions collapse to the same order");
+    }
+
+    [Theory]
+    [InlineData(Variant.List)]
+    [InlineData(Variant.Async)]
+    public async Task PickOrder_DoesNotLandOnAnOrderASiblingAlreadyHas(Variant variant)
+    {
+        // `previous.Order + 1` is returned without checking whether a sibling already sits there,
+        // so inserting after the sense at order 1 returns 2 when a sense already holds order 2.
+        //
+        // A duplicate order is not cosmetic: nothing can then be placed *between* those two senses,
+        // because there is no representable value between x and x. The fwdata->crdt pass can no
+        // longer reproduce fwdata's order, so the crdt->fwdata pass "corrects" fwdata instead, and
+        // the two stores swap that entry's senses back and forth on every sync.
+        // Observed on a real project: 13 entries carrying duplicate sense orders, all created
+        // within one sync run.
+        double[] existingOrders = [1, 2];
+        var between = Between(previous: 0);
+
+        var result = variant switch
+        {
+            Variant.List => OrderPicker.PickOrder(BuildList(existingOrders), between),
+            Variant.Async => await OrderPicker.PickOrder(await SeedAndQuery(existingOrders), between),
+            _ => throw new ArgumentOutOfRangeException(nameof(variant))
+        };
+
+        existingOrders.Should().NotContain(result,
+            "an order that a sibling already holds makes the gap either side of it unaddressable");
     }
 
     private static List<Sense> BuildList(double[] orders) =>

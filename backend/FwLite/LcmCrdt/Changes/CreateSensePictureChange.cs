@@ -34,7 +34,8 @@ public class CreateSensePictureChange: EditChange<Sense>, ISelfNamedType<CreateS
     {
         // Skip creating if this is a duplicate change
         if (entity.Pictures.Any(pic => pic.Id == PictureId)) return ValueTask.CompletedTask;
-        Order = OrderPicker.PickOrder(entity.Pictures, Between);
+        // Runs during change application, so the algorithm is frozen across app versions.
+        Order = OrderPicker.PickOrderV1ForChangeReplay(entity.Pictures, Between);
         var pic = new Picture
         {
             Id = PictureId,
