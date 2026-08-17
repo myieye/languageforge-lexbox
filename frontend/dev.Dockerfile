@@ -2,7 +2,7 @@
 # TODO: can't use vanilla alpine version since python is needed for gql-codegen stuff.
 FROM node:26 AS builder
 
-# Keep in step with the packageManager field in package.json
+# Bootstrap only: pnpm self-switches to the packageManager version in package.json
 RUN npm install -g pnpm@10.24.0
 WORKDIR /app
 

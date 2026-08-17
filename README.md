@@ -58,7 +58,7 @@ There are some additional urls below to access specific parts of the system.
 ### Local workflow
 
 #### Prerequisites
-- The SvelteKit UI requires: node v20+
+- The SvelteKit UI requires: node v22+ (`frontend/.node-version` has the version CI and the containers use) and [pnpm](https://pnpm.io/installation)
 - The .NET API requires: dotnet sdk v8+
 
 #### Running the project
