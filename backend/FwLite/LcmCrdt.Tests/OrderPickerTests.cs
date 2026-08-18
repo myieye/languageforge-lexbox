@@ -132,6 +132,27 @@ public class OrderPickerTests : IAsyncLifetime
     [Theory]
     [InlineData(Variant.List)]
     [InlineData(Variant.Async)]
+    public async Task PickOrder_AppendingAnItemThatIsAlreadyLastKeepsItsOrder(Variant variant)
+    {
+        // No between means "append", which the async path answers from max(Order) without loading
+        // the siblings. That shortcut must drop the moving item too, or re-appending the last item
+        // hands it a bigger order every sync.
+        double[] existingOrders = [1, 2, 3];
+        var movingId = ItemId(2); // the item at order 3
+
+        var result = variant switch
+        {
+            Variant.List => OrderPicker.PickOrder(BuildList(existingOrders), null, movingId),
+            Variant.Async => await OrderPicker.PickOrder(await SeedAndQuery(existingOrders), null, movingId),
+            _ => throw new ArgumentOutOfRangeException(nameof(variant))
+        };
+
+        result.Should().Be(3, "the highest remaining sibling is at 2, so the moving item stays at 3");
+    }
+
+    [Theory]
+    [InlineData(Variant.List)]
+    [InlineData(Variant.Async)]
     public async Task RepeatedInsertionIntoSameGap_StaysBetweenNeighborsAndDistinct(Variant variant)
     {
         // Two fixed neighbors at orders 0 and 1. We repeatedly insert between the lower

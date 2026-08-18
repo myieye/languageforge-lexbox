@@ -11,7 +11,8 @@ public static class OrderPicker
         // a common case that we can optimize by not querying whole objects
         if (between is null or { Previous: null, Next: null })
         {
-            var currMaxOrder = await siblings.Select(s => s.Order).DefaultIfEmpty().MaxAsync();
+            var others = movingId is { } id ? siblings.Where(s => s.Id != id) : siblings;
+            var currMaxOrder = await others.Select(s => s.Order).DefaultIfEmpty().MaxAsync();
             return currMaxOrder + 1;
         }
 
@@ -48,7 +49,7 @@ public static class OrderPicker
             // another user deleted items in the meantime?
             (null, null) => items.Select(i => i.Order).DefaultIfEmpty().Max() + 1,
             // when next is missing, deleted, or has shifted before previous, "between" is not
-            // representable and previous wins: place directly after it
+            // representable and previous wins: place into the first free gap above it
             (not null, _) => FirstGapAbove(previous.Order, items),
             (null, not null) => FirstGapBelow(next.Order, items),
         };
@@ -67,7 +68,8 @@ public static class OrderPicker
     }
 
     // ~50 bisections of the same gap exhaust double precision; the midpoint then equals a bound and
-    // mints a duplicate after all. RepairDuplicateOrders renumbers such ties away at the next sync.
+    // mints a duplicate after all. RepairDuplicateOrders renumbers such ties away at the next fwdata
+    // sync; a crdt-only project would keep the tie.
     private static double Midpoint(double lower, double upper) => lower + (upper - lower) / 2;
 
     /// <summary>

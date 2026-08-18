@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using FluentValidation;
 using SIL.Harmony;
 using SIL.Harmony.Changes;
