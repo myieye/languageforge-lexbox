@@ -85,6 +85,9 @@ export const mockUpdateService: IUpdateService = {
       }
     });
   },
+  closeForUpdate(): Promise<void> {
+    return Promise.resolve();
+  },
   async applyUpdate(_update: IAvailableUpdate): Promise<UpdateResult> {
     await delay(2000);
     return Promise.resolve(UpdateResult.Success);

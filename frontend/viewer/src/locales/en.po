@@ -127,11 +127,6 @@ msgstr "A similar word already exists"
 msgid "a word"
 msgstr "a word"
 
-#. Dialog title
-#: src/lib/about/AboutDialog.svelte
-msgid "About"
-msgstr "About"
-
 #. Sidebar menu item
 #: src/project/ProjectSidebar.svelte
 msgid "Account"
@@ -450,7 +445,6 @@ msgid "clear"
 msgstr "clear"
 
 #. Button to close popup
-#: src/lib/about/AboutDialog.svelte
 #: src/lib/components/field-editors/multi-select.svelte
 #: src/lib/components/ui/button/x-button.svelte
 #: src/lib/entry-editor/CommentDialog.svelte
@@ -465,6 +459,10 @@ msgstr "Close"
 #: src/project/ProjectSidebar.svelte
 msgid "Close Dictionary"
 msgstr "Close Dictionary"
+
+#: src/lib/updates/UpdateDialogContent.svelte
+msgid "Close FieldWorks Lite"
+msgstr "Close FieldWorks Lite"
 
 #: src/lib/entry-editor/CommentDialog.svelte
 msgid "Closed"
@@ -2765,10 +2763,9 @@ msgstr "Update available: {0}"
 msgid "Update failed to install."
 msgstr "Update failed to install."
 
-#. Success message after update installs
 #: src/lib/updates/UpdateDialogContent.svelte
-msgid "Update installed successfully! Please restart the application."
-msgstr "Update installed successfully! Please restart the application."
+msgid "Update ready. It finishes installing when you close FieldWorks Lite, and the new version starts the next time you open it."
+msgstr "Update ready. It finishes installing when you close FieldWorks Lite, and the new version starts the next time you open it."
 
 #. Info message when update runs in background
 #: src/lib/updates/UpdateDialogContent.svelte

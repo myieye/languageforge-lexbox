@@ -132,11 +132,6 @@ msgstr ""
 msgid "a word"
 msgstr "한 마디"
 
-#. Dialog title
-#: src/lib/about/AboutDialog.svelte
-msgid "About"
-msgstr "정보"
-
 #. Sidebar menu item
 #: src/project/ProjectSidebar.svelte
 msgid "Account"
@@ -455,7 +450,6 @@ msgid "clear"
 msgstr "clear"
 
 #. Button to close popup
-#: src/lib/about/AboutDialog.svelte
 #: src/lib/components/field-editors/multi-select.svelte
 #: src/lib/components/ui/button/x-button.svelte
 #: src/lib/entry-editor/CommentDialog.svelte
@@ -470,6 +464,10 @@ msgstr "닫기"
 #: src/project/ProjectSidebar.svelte
 msgid "Close Dictionary"
 msgstr "사전 닫기"
+
+#: src/lib/updates/UpdateDialogContent.svelte
+msgid "Close FieldWorks Lite"
+msgstr ""
 
 #: src/lib/entry-editor/CommentDialog.svelte
 msgid "Closed"
@@ -2770,10 +2768,9 @@ msgstr "업데이트 사용 가능: {0}"
 msgid "Update failed to install."
 msgstr "업데이트를 설치하지 못했습니다."
 
-#. Success message after update installs
 #: src/lib/updates/UpdateDialogContent.svelte
-msgid "Update installed successfully! Please restart the application."
-msgstr "업데이트가 성공적으로 설치되었습니다! 애플리케이션을 다시 시작하세요."
+msgid "Update ready. It finishes installing when you close FieldWorks Lite, and the new version starts the next time you open it."
+msgstr ""
 
 #. Info message when update runs in background
 #: src/lib/updates/UpdateDialogContent.svelte

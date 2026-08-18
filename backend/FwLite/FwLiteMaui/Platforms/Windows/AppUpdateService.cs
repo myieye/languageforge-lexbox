@@ -203,6 +203,13 @@ public class AppUpdateService(ILogger<AppUpdateService> logger, IPreferences pre
         return UpdateResult.Success;
     }
 
+    public Task CloseForUpdate()
+    {
+        logger.LogInformation("Closing so Windows can register the staged update");
+        //Quit has to run on the UI thread, and JSInterop calls in on a background one
+        return MainThread.InvokeOnMainThreadAsync(() => Application.Current?.Quit());
+    }
+
     private void NotifyInstallProgress(uint percentage, FwLiteRelease release)
     {
         eventBus.PublishEvent(new AppUpdateProgressEvent(percentage, release));

@@ -32,4 +32,11 @@ public class CorePlatformUpdateService: IPlatformUpdateService
     {
         return Task.FromResult(true);
     }
+
+    public Task CloseForUpdate()
+    {
+        //unreachable: only the Windows MSIX app stages updates, and only it reports UpdateResult.Success,
+        //which is the only state that offers this to the user
+        throw new NotSupportedException("This platform doesn't close itself to finish an update");
+    }
 }

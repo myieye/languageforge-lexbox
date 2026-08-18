@@ -68,7 +68,8 @@
       {checkPromise}
       {installPromise}
       {installUpdate}
-      {installProgress} />
+      {installProgress}
+      closeApp={() => updateService.closeForUpdate()} />
 
     <div class="flex justify-center gap-3">
       <Anchor
