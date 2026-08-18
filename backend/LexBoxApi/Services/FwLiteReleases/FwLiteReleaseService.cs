@@ -10,6 +10,9 @@ namespace LexBoxApi.Services.FwLiteReleases;
 public class FwLiteReleaseService(IHttpClientFactory factory, HybridCache cache, IOptions<FwLiteReleaseConfig> config)
 {
     public const string HttpClientName = "Github";
+    //Baked into every install as the update source, so it must stay stable. The .appinstaller file name
+    //is load-bearing: AddPackageByAppInstallerFileAsync rejects a URI without that extension.
+    public const string AppInstallerUrl = "https://lexbox.org/api/fwlite-release/FieldWorksLite.appinstaller";
     private const string GithubLatestRelease = "GithubLatestRelease";
     public const string FwLiteClientVersionTag = "app.fw-lite.client.version";
     public const string FwLiteEditionTag = "app.fw-lite.edition";
@@ -111,7 +114,7 @@ public class FwLiteReleaseService(IHttpClientFactory factory, HybridCache cache,
         return $"""
 <?xml version="1.0" encoding="utf-8"?>
 <AppInstaller
- Uri="https://lexbox.org/api/fwlite-release/download-latest?edition=windowsAppInstaller"
+ Uri="{AppInstallerUrl}"
  Version="{version}"
  xmlns="http://schemas.microsoft.com/appx/appinstaller/2021">
  <MainBundle

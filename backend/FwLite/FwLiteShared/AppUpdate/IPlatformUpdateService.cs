@@ -10,6 +10,12 @@ public interface IPlatformUpdateService
     bool SupportsAutoUpdate { get; }
     Task<UpdateResult> ApplyUpdate(FwLiteRelease latestRelease);
     Task<bool> RequestPermissionToUpdate(FwLiteRelease latestRelease);
+
+    /// <summary>
+    /// Restarts the app so the OS can finish installing an update that's staged and waiting on it. Windows
+    /// otherwise force-terminates the app to do this at some later activation.
+    /// </summary>
+    Task RestartForUpdate();
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

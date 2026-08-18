@@ -127,11 +127,6 @@ msgstr "A similar word already exists"
 msgid "a word"
 msgstr "a word"
 
-#. Dialog title
-#: src/lib/about/AboutDialog.svelte
-msgid "About"
-msgstr "About"
-
 #. Sidebar menu item
 #: src/project/ProjectSidebar.svelte
 msgid "Account"
@@ -450,7 +445,6 @@ msgid "clear"
 msgstr "clear"
 
 #. Button to close popup
-#: src/lib/about/AboutDialog.svelte
 #: src/lib/components/field-editors/multi-select.svelte
 #: src/lib/components/ui/button/x-button.svelte
 #: src/lib/entry-editor/CommentDialog.svelte
@@ -2102,6 +2096,10 @@ msgstr "Report a technical problem"
 msgid "Reset"
 msgstr "Reset"
 
+#: src/lib/updates/UpdateDialogContent.svelte
+msgid "Restart now"
+msgstr "Restart now"
+
 #. Button label to restore a deleted Entry or Word inside EntryView
 #: src/project/browse/EntryView.svelte
 msgid "Restore"
@@ -2760,15 +2758,14 @@ msgstr "Update {0}"
 msgid "Update available: {0}"
 msgstr "Update available: {0}"
 
+#: src/lib/updates/UpdateDialogContent.svelte
+msgid "Update downloaded. FieldWorks Lite needs to restart to finish installing it."
+msgstr "Update downloaded. FieldWorks Lite needs to restart to finish installing it."
+
 #. Error message when update fails to install
 #: src/lib/updates/UpdateDialogContent.svelte
 msgid "Update failed to install."
 msgstr "Update failed to install."
-
-#. Success message after update installs
-#: src/lib/updates/UpdateDialogContent.svelte
-msgid "Update installed successfully! Please restart the application."
-msgstr "Update installed successfully! Please restart the application."
 
 #. Info message when update runs in background
 #: src/lib/updates/UpdateDialogContent.svelte

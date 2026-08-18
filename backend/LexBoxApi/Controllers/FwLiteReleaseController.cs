@@ -35,6 +35,19 @@ public class FwLiteReleaseController(FwLiteReleaseService releaseService) : Cont
         return Redirect(latestRelease.Url);
     }
 
+    //AddPackageByAppInstallerFileAsync rejects any URI whose file name doesn't end in .appinstaller, so
+    //the client can't use download-latest?edition=windowsAppInstaller. That route stays for packages
+    //already recording it as their update source.
+    [HttpGet("FieldWorksLite.appinstaller")]
+    [AllowAnonymous]
+    public async Task<ActionResult> AppInstaller()
+    {
+        using var activity = LexBoxActivitySource.Get().StartActivity();
+        activity?.AddTag(FwLiteReleaseService.FwLiteEditionTag, FwLiteEdition.WindowsAppInstaller.ToString());
+        var appInstallerContent = await releaseService.GenerateAppInstaller();
+        return File(Encoding.UTF8.GetBytes(appInstallerContent), "application/appinstaller", "FieldWorksLite.appinstaller");
+    }
+
     [HttpGet("latest")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

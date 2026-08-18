@@ -102,4 +102,13 @@ public class FwLiteReleaseServiceTests
     {
         FwLiteReleaseService.ConvertVersionToAppInstallerVersion(tag).Should().Be(expected);
     }
+
+    [Fact]
+    public async Task GeneratedAppInstallerPointsAtADotAppInstallerUrl()
+    {
+        //AddPackageByAppInstallerFileAsync throws ArgumentException on a URI without this extension
+        var appInstaller = await _fwLiteReleaseService.GenerateAppInstaller();
+        appInstaller.Should().Contain($"Uri=\"{FwLiteReleaseService.AppInstallerUrl}\"");
+        FwLiteReleaseService.AppInstallerUrl.Should().EndWith(".appinstaller");
+    }
 }

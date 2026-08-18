@@ -132,11 +132,6 @@ msgstr ""
 msgid "a word"
 msgstr "một từ"
 
-#. Dialog title
-#: src/lib/about/AboutDialog.svelte
-msgid "About"
-msgstr "Giới thiệu"
-
 #. Sidebar menu item
 #: src/project/ProjectSidebar.svelte
 msgid "Account"
@@ -455,7 +450,6 @@ msgid "clear"
 msgstr "xóa"
 
 #. Button to close popup
-#: src/lib/about/AboutDialog.svelte
 #: src/lib/components/field-editors/multi-select.svelte
 #: src/lib/components/ui/button/x-button.svelte
 #: src/lib/entry-editor/CommentDialog.svelte
@@ -2107,6 +2101,10 @@ msgstr "Báo lỗi kỹ thuật"
 msgid "Reset"
 msgstr ""
 
+#: src/lib/updates/UpdateDialogContent.svelte
+msgid "Restart now"
+msgstr ""
+
 #. Button label to restore a deleted Entry or Word inside EntryView
 #: src/project/browse/EntryView.svelte
 msgid "Restore"
@@ -2765,15 +2763,14 @@ msgstr "Cập nhật {0}"
 msgid "Update available: {0}"
 msgstr "Cập nhật có sẵn: {0}"
 
+#: src/lib/updates/UpdateDialogContent.svelte
+msgid "Update downloaded. FieldWorks Lite needs to restart to finish installing it."
+msgstr ""
+
 #. Error message when update fails to install
 #: src/lib/updates/UpdateDialogContent.svelte
 msgid "Update failed to install."
 msgstr "Cập nhật không thể cài đặt."
-
-#. Success message after update installs
-#: src/lib/updates/UpdateDialogContent.svelte
-msgid "Update installed successfully! Please restart the application."
-msgstr "Cập nhật đã được cài đặt thành công! Vui lòng khởi động lại ứng dụng."
 
 #. Info message when update runs in background
 #: src/lib/updates/UpdateDialogContent.svelte
