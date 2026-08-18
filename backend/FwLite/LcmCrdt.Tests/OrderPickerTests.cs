@@ -207,6 +207,72 @@ public class OrderPickerTests : IAsyncLifetime
     [Theory]
     [InlineData(Variant.List)]
     [InlineData(Variant.Async)]
+    public async Task PickOrder_SubdividesTheSameGapNTimesBeforePrecisionRunsOut(Variant variant)
+    {
+        // Worst case: every insertion bisects the gap above the same fixed lower neighbor,
+        // against the item inserted immediately before it, so the gap halves each time until
+        // double precision can no longer represent a midpoint distinct from its bounds.
+        //
+        // This count is the reordering budget available within one sibling group between
+        // fwdata syncs: CrdtMiniLcmApi.RepairDuplicateOrders renumbers siblings to integers at
+        // each sync, which resets the gap back to full width. A later PR adds jitter to the
+        // order picker, which will burn through this budget faster than plain bisection does;
+        // the diff of the asserted count below is how reviewers see that cost.
+        var lowerId = ItemId(0);
+        var items = new List<Sense>
+        {
+            new() { Id = lowerId, EntryId = _entryId, Order = 1 },
+            new() { Id = ItemId(1), EntryId = _entryId, Order = 2 },
+        };
+        if (variant == Variant.Async)
+        {
+            _fixture.DbContext.AddRange(items);
+            await _fixture.DbContext.SaveChangesAsync();
+        }
+
+        const double lowerOrder = 1;
+        var seenOrders = new HashSet<double> { 1, 2 };
+        var upperId = ItemId(1);
+        var upperOrder = 2.0;
+        var subdivisions = 0;
+
+        for (var i = 2; ; i++)
+        {
+            var between = new BetweenPosition(lowerId, upperId);
+            var order = variant switch
+            {
+                Variant.List => OrderPicker.PickOrder(items, between),
+                Variant.Async => await OrderPicker.PickOrder(
+                    _fixture.DbContext.Senses.Where(s => s.EntryId == _entryId), between),
+                _ => throw new ArgumentOutOfRangeException(nameof(variant))
+            };
+
+            if (order <= lowerOrder || order >= upperOrder || !seenOrders.Add(order)) break;
+            subdivisions++;
+
+            var newId = ItemId(i);
+            var sense = new Sense { Id = newId, EntryId = _entryId, Order = order };
+            if (variant == Variant.Async)
+            {
+                _fixture.DbContext.Add(sense);
+                await _fixture.DbContext.SaveChangesAsync();
+            }
+            else
+            {
+                items.Add(sense);
+            }
+            upperId = newId;
+            upperOrder = order;
+        }
+
+        // Measured, not derived: one mantissa bit per halving predicts 52, and that is what
+        // both variants produce, but this asserts the observed count rather than the formula.
+        subdivisions.Should().Be(52);
+    }
+
+    [Theory]
+    [InlineData(Variant.List)]
+    [InlineData(Variant.Async)]
     public async Task PickOrder_DoesNotLandOnAnOrderASiblingAlreadyHas(Variant variant)
     {
         // `previous.Order + 1` is returned without checking whether a sibling already sits there,
