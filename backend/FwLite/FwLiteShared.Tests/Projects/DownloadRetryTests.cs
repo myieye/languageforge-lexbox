@@ -1,7 +1,9 @@
+using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
 using FwLiteShared.Projects;
 using LcmCrdt.RemoteSync;
+using Refit;
 
 namespace FwLiteShared.Tests.Projects;
 
@@ -17,6 +19,23 @@ public class DownloadRetryTests
             new IOException("net_io_readfailure", new SocketException((int)SocketError.ConnectionAborted)));
 
         CombinedProjectsService.IsConnectionFailure(droppedMidDownload).Should().BeTrue();
+    }
+
+    [Fact]
+    public void AFailureBeforeAnyResponseIsWorthRetrying()
+    {
+        // Token refresh runs before the sync's own offline handling, so its failures arrive here raw.
+        CombinedProjectsService.IsConnectionFailure(new HttpRequestException("name resolution failed")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AServerErrorIsNotWorthRetrying()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://lexbox.org/api/crdt/changes");
+        using var response = new HttpResponseMessage(HttpStatusCode.InternalServerError) { RequestMessage = request };
+        var refused = await ApiException.Create(request, HttpMethod.Post, response, new RefitSettings());
+
+        CombinedProjectsService.IsConnectionFailure(refused).Should().BeFalse();
     }
 
     [Fact]

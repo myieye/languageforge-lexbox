@@ -203,7 +203,7 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
             project.Code,
             projectId,
             server.Authority,
-            (provider, _) => DownloadChanges(provider, server, project.Name),
+            async (provider, _) => await DownloadChanges(provider, server, project.Name),
             AuthenticatedUser: currentUser?.Name,
             AuthenticatedUserId: currentUser?.Id,
             Role: ToRole(project.Role))));
@@ -219,36 +219,39 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
     private async Task DownloadChanges(IServiceProvider provider, LexboxServer server, string projectName)
     {
         var syncService = provider.GetRequiredService<SyncService>();
-        for (var attempt = 0; ; attempt++)
+        foreach (var retryDelay in DownloadRetryDelays)
         {
-            var outOfAttempts = attempt >= DownloadRetryDelays.Length;
             try
             {
                 // ExecuteSync reports most ways of losing the connection as an unsynced result rather than
-                // throwing, so an unsynced download is a failure worth retrying, not an empty project to
-                // keep (#2292).
+                // throwing, so an unsynced download is a failure worth retrying.
                 if ((await syncService.ExecuteSync(true)).IsSynced) return;
-                if (outOfAttempts)
-                    throw new InvalidOperationException($"Failed to download {projectName}, the sync did not complete.");
             }
-            catch (Exception e) when (!outOfAttempts && IsConnectionFailure(e))
+            catch (Exception e) when (IsConnectionFailure(e))
             {
                 logger.LogWarning(e, "Lost the connection downloading {ProjectName}, retrying", projectName);
             }
 
-            await Task.Delay(DownloadRetryDelays[attempt]);
+            await Task.Delay(retryDelay);
             // Each sync health-checks the server first and caches a failure for half an hour, so without this
             // every retry would be answered by the verdict from while we were offline.
             CrdtHttpSyncService.InvalidateServerHealth(cache, server.Authority.Authority);
         }
+
+        // Out of retries: let a connection failure through, and don't leave behind a project that downloaded
+        // nothing but claims it synced (#2292).
+        if (!(await syncService.ExecuteSync(true)).IsSynced)
+            throw new InvalidOperationException($"Failed to download {projectName}, the sync did not complete.");
     }
 
     internal static bool IsConnectionFailure(Exception exception)
     {
         for (var e = exception; e is not null; e = e.InnerException)
         {
-            // Deliberately not IOException, which also covers the sqlite writes made while applying commits.
-            if (e is SocketException or HttpIOException) return true;
+            // Deliberately not IOException, which also covers the sqlite writes made while applying commits. A
+            // HttpRequestException carrying no status code never got a response, so it's the connection
+            // failing rather than the server turning us down (which retrying wouldn't fix).
+            if (e is SocketException or HttpIOException or HttpRequestException { StatusCode: null }) return true;
         }
 
         return false;
