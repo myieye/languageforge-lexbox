@@ -199,7 +199,11 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
             server.Authority,
             async (provider, project) =>
             {
-                await provider.GetRequiredService<SyncService>().ExecuteSync(true);
+                var results = await provider.GetRequiredService<SyncService>().ExecuteSync(true);
+                // ExecuteSync reports an unreachable server as an unsynced result rather than throwing, which
+                // would leave a project that says it downloaded and holds nothing (#2292).
+                if (!results.IsSynced)
+                    throw new InvalidOperationException($"Failed to download {project.Name}, the sync did not complete.");
             },
             AuthenticatedUser: currentUser?.Name,
             AuthenticatedUserId: currentUser?.Id,
