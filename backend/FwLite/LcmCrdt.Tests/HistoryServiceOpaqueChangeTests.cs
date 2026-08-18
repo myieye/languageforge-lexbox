@@ -1,19 +1,14 @@
 using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
 using SIL.Harmony.Changes;
-using SIL.Harmony.Config;
 
 namespace LcmCrdt.Tests;
 
-// With UnknownChangeHandling.Fallback, a change type from a newer client that this client doesn't
-// have registered deserializes as OpaqueChange (null EntityType, apply skipped) — the activity view
-// must tolerate it. Production still uses the default Throw (sync fails instead); these tests cover
-// the activity view for when Fallback is turned on.
+// With UnknownChangeHandling.Fallback (set in AddTestLcmCrdtClient), a change type from a newer
+// client that this client doesn't have registered deserializes as OpaqueChange (null EntityType,
+// apply skipped) — the activity view must tolerate it. Production still uses the default Throw
+// (sync fails instead); these tests cover the activity view for when Fallback is turned on.
 public class HistoryServiceOpaqueChangeTests : HistoryServiceActivityTestsBase
 {
-    protected override MiniLcmApiFixture CreateFixture() => MiniLcmApiFixture.Create(configureServices: services =>
-        services.Configure<HarmonyConfig>(config => config.UnknownChangeHandling = UnknownChangeHandling.Fallback));
-
     private static OpaqueChange UnknownChange(Guid entityId)
     {
         using var doc = JsonDocument.Parse(

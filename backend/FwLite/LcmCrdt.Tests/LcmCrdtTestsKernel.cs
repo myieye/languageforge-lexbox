@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using MiniLcm.Project;
+using SIL.Harmony.Config;
 
 namespace LcmCrdt.Tests;
 
@@ -15,6 +16,10 @@ public static class LcmCrdtTestsKernel
         services.AddSingleton<IServerHttpClientProvider, FakeHttpClientProvider>();
         services.AddLcmCrdtClient();
         services.Configure<LcmCrdtConfig>(config => config.EnableProjectDataFileCache = false);
+        // Must be set here, not per-fixture: the IChange converter (which bakes in UnknownChangeHandling)
+        // lives in the EF model, and EF caches the model process-wide, so the first fixture's setting
+        // would win for the whole test run. Production keeps the default Throw.
+        services.Configure<HarmonyConfig>(config => config.UnknownChangeHandling = UnknownChangeHandling.Fallback);
         if (project is not null)
         {
             var initializedNewDb = false;
