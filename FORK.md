@@ -1,7 +1,7 @@
 # The sandbox
 
 This is myieye/languageforge-lexbox, "the sandbox": Tim's staging fork of
-sillsdev/languageforge-lexbox. AI agents (Claude, Devin, CodeRabbit, DeepSource) churn on
+sillsdev/languageforge-lexbox. AI agents (Claude, Devin, CodeRabbit) churn on
 "sandbox PRs" here so the noise never reaches the real repo. ("Sandbox", not "staging":
 the real repo has a staging deploy environment.)
 Identify remotes by URL, not name: locally `origin` = sillsdev and `sandbox` = this fork,
@@ -54,10 +54,9 @@ gh api repos/myieye/languageforge-lexbox/actions/workflows --paginate \
 
 1. Push the branch to this fork and open a PR against `develop` here.
 2. Run the Devin + CI loop on the staging PR (make-devin-and-ci-green with the PR URL)
-   until both are clean at the same HEAD. DeepSource reviews every push automatically;
-   triage its PR-check findings along the way. A check that fails identically on develop
-   itself is not the branch's problem: never fix it on the branch, treat it as
-   expected-fail, and flag that develop needs its own fix.
+   until both are clean at the same HEAD. A check that fails identically on develop itself
+   is not the branch's problem: never fix it on the branch, treat it as expected-fail, and
+   flag that develop needs its own fix.
 3. Only then spend CodeRabbit quota: comment `@coderabbitai review` on the PR
    (auto-review is off via `.coderabbit.yaml` to protect the free-tier quota).
 4. Promote: push the branch to sillsdev, open the real PR there, close the staging PR
