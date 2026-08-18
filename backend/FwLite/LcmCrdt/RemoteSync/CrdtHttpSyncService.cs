@@ -125,8 +125,9 @@ internal class CrdtProjectSync(ISyncHttp restSyncClient, Guid projectId, Guid cl
     {
         // ApiException derives from HttpRequestException, so it has to be matched before the connection cases.
         ApiException apiException => $"Failed to download dictionary changes, the server returned {(int)apiException.StatusCode}.",
-        // A change we can't read is usually one that's too new for this version of FieldWorks Lite.
-        JsonException => "FieldWorks Lite is likely out of date. Failed to download dictionary changes.",
+        // Usually a change that's too new for this version, but a body cut short reads the same way, so don't
+        // state the version as fact.
+        JsonException => "Failed to download dictionary changes. FieldWorks Lite may be out of date, or the download was cut short.",
         IOException or SocketException or HttpRequestException => "Lost the connection while downloading dictionary changes.",
         _ => "Failed to download dictionary changes.",
     };

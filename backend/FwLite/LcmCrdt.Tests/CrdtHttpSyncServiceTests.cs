@@ -73,8 +73,8 @@ public class CrdtHttpSyncServiceTests
     [Fact]
     public async Task ServerError_ReportsTheStatusCode()
     {
-        var request = new HttpRequestMessage(HttpMethod.Post, $"https://{Authority}/api/crdt/changes");
-        var response = new HttpResponseMessage(HttpStatusCode.InternalServerError) { RequestMessage = request };
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"https://{Authority}/api/crdt/changes");
+        using var response = new HttpResponseMessage(HttpStatusCode.InternalServerError) { RequestMessage = request };
         var apiException = await ApiException.Create(request, HttpMethod.Post, response, new RefitSettings());
 
         CrdtProjectSync.DownloadFailureMessage(apiException).Should().Be("Failed to download dictionary changes, the server returned 500.");
