@@ -162,8 +162,7 @@ public class OAuthClient
         try
         {
             _authResult = null;
-            await ConfigureCache();
-            var accounts = await _application.GetAccountsAsync();
+            var accounts = await GetCachedAccounts();
             foreach (var account in accounts)
             {
                 await _application.RemoveAsync(account);
@@ -177,6 +176,12 @@ public class OAuthClient
         _globalEventBus.PublishEvent(new AuthenticationChangedEvent(_lexboxServer));
     }
 
+    private async ValueTask<IEnumerable<IAccount>> GetCachedAccounts()
+    {
+        await ConfigureCache();
+        return await _application.GetAccountsAsync();
+    }
+
     /// <summary>
     /// Whether an account is present in the local MSAL cache. Purely a local read — never touches the
     /// network — so callers can distinguish "not logged in" from "offline" without triggering a token
@@ -186,9 +191,19 @@ public class OAuthClient
     /// </summary>
     public async ValueTask<bool> IsSignedIn()
     {
-        await ConfigureCache();
-        var accounts = await _application.GetAccountsAsync();
-        return accounts.Any();
+        return (await GetCachedAccounts()).Any();
+    }
+
+    /// <summary>
+    /// The signed-in user's identity read straight from the local MSAL account cache (no token acquisition,
+    /// so no network). Optimistic in the same way as <see cref="IsSignedIn"/>: non-null means "was signed in",
+    /// not "can get a token right now". Null when no account is cached. To get who the user is *and* a usable
+    /// token, use <see cref="GetCurrentUser"/>.
+    /// </summary>
+    public async ValueTask<LexboxUser?> GetCachedUser()
+    {
+        var account = (await GetCachedAccounts()).FirstOrDefault();
+        return account?.Username is null ? null : new LexboxUser(account.Username, account.HomeAccountId.ObjectId);
     }
 
     /// <summary>
@@ -216,8 +231,7 @@ public class OAuthClient
                 return _authResult;
             }
 
-            await ConfigureCache();
-            var accounts = await _application.GetAccountsAsync();
+            var accounts = await GetCachedAccounts();
             var account = accounts.FirstOrDefault();
             if (account is null) return null;
             try

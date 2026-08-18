@@ -5,5 +5,6 @@ export * from './IAuthenticationChangedEvent';
 export * from './IEntriesChangedEvent';
 export * from './IFwEvent';
 export * from './IJsEventListener';
+export * from './IProjectDataChangedEvent';
 export * from './IProjectEvent';
 export * from './ISyncEvent';

@@ -17,6 +17,9 @@ public class ProjectServicesProvider(
     CrdtProjectsService crdtProjectsService,
     IServiceProvider serviceProvider,
     LexboxProjectService lexboxProjectService,
+    OAuthClientFactory oAuthClientFactory,
+    ProjectServerInfoService projectServerInfoService,
+    ILogger<ProjectServicesProvider> logger,
     IEnumerable<IProjectProvider> projectProviders
 ): IAsyncDisposable
 {
@@ -60,6 +63,7 @@ public class ProjectServicesProvider(
                 var server = lexboxProjectService.GetServer(project.Data);
                 var currentProjectService = scopedServices.GetRequiredService<CurrentProjectService>();
                 var projectData = await currentProjectService.SetupProjectContext(project);
+                projectData = await ResolveOriginUser(server, currentProjectService, projectData);
                 scopedServices.GetRequiredService<BackgroundSyncService>().TriggerSync(project);
                 var miniLcm = ActivatorUtilities.CreateInstance<MiniLcmJsInvokable>(scopedServices, project);
                 scope = ProjectScope.Create(serviceScope, this, projectData.Name, miniLcm);
@@ -80,6 +84,38 @@ public class ProjectServicesProvider(
                 throw;
             }
         });
+    }
+
+    // Self-heals the persisted user from the local MSAL cache before the UI reads identity, so it's right from
+    // first render. This is the safety net for state the login-time stamping (ProjectServerInfoService) can't
+    // reach: a crash between login and stamping, or a project file that arrived from another machine. Fast
+    // local read (see GetCachedUser); null means signed out, so keep the persisted value.
+    private async Task<ProjectData> ResolveOriginUser(LexboxServer? server,
+        CurrentProjectService currentProjectService,
+        ProjectData projectData)
+    {
+        if (server is null) return projectData;
+        LexboxUser? currentUser;
+        try
+        {
+            currentUser = await oAuthClientFactory.GetClient(server).GetCachedUser();
+        }
+        catch (Exception e)
+        {
+            //best-effort: a cache-read failure must not block opening the project
+            logger.LogWarning(e, "Failed to read cached user for {ProjectName}; keeping persisted origin user", projectData.Name);
+            return projectData;
+        }
+        if (currentUser is null) return projectData;
+        if (projectData.LastUserId is not null && projectData.LastUserId != currentUser.Id)
+        {
+            //the stored role belongs to the previous user, so trust neither (same rule as
+            //ProjectServerInfoService.ResolveRole) and fetch this user's real role in the background
+            await currentProjectService.UpdateUserRole(UserProjectRole.Unknown);
+            _ = projectServerInfoService.RefreshProjectsServerInfo(server);
+        }
+        await currentProjectService.UpdateLastUser(currentUser.Name, currentUser.Id);
+        return await currentProjectService.GetProjectData();
     }
 
     [JSInvokable]

@@ -8,6 +8,7 @@ import type {IProjectEvent} from '$lib/dotnet-types/generated-types/FwLiteShared
 import {type ProjectContext, useProjectContext} from '$project/project-context.svelte';
 import {onDestroy} from 'svelte';
 import type {ISyncEvent} from '$lib/dotnet-types/generated-types/FwLiteShared/Events/ISyncEvent';
+import type {IProjectDataChangedEvent} from '$lib/dotnet-types/generated-types/FwLiteShared/Events/IProjectDataChangedEvent';
 
 export enum CloseReason {
   User = 0,
@@ -150,6 +151,14 @@ export class ProjectEventBus {
     });
   }
 
+  public onProjectDataChanged(callback: (event: IProjectDataChangedEvent) => void) {
+    this.onProjectEvent(event => {
+      if (isProjectDataChangedEvent(event)) {
+        callback(event);
+      }
+    });
+  }
+
   private onProjectEvent(callback: (event: IFwEvent) => void) {
     const onProjectEventCallback = (event: IFwEvent) => {
       if (isProjectEvent(event) && event.project.name === this.projectCode) {
@@ -180,4 +189,8 @@ function isProjectEvent(event: IFwEvent): event is IProjectEvent {
 
 function isSyncEvent(event: IFwEvent): event is ISyncEvent {
   return event.type === FwEventType.Sync;
+}
+
+function isProjectDataChangedEvent(event: IFwEvent): event is IProjectDataChangedEvent {
+  return event.type === FwEventType.ProjectDataChanged;
 }

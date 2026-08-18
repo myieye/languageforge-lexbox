@@ -14,9 +14,14 @@ public class JsEventListener : IDisposable
 
     private readonly GlobalEventBus _globalEventBus;
 
-    //just a guess, this may need to be adjusted if we start losing events
-    private const int MaxJsEventQueueSize = 10;
-    private readonly Channel<IFwEvent> _jsEventChannel = Channel.CreateBounded<IFwEvent>(MaxJsEventQueueSize);
+    //just a guess, this may need to be adjusted if we start losing events. Sized to absorb a login
+    //re-stamping user state on many projects at once (one ProjectDataChangedEvent each) without
+    //dropping unrelated events like Sync/EntriesChanged.
+    private const int MaxJsEventQueueSize = 64;
+    //DropOldest: under pressure, losing an old event beats losing the newest — state-typed events
+    //(sync status, project data) are superseded by later ones, so the final state always gets through
+    private readonly Channel<IFwEvent> _jsEventChannel = Channel.CreateBounded<IFwEvent>(
+        new BoundedChannelOptions(MaxJsEventQueueSize) { FullMode = BoundedChannelFullMode.DropOldest });
     private readonly IDisposable _globalBusSubscription;
 
     private static readonly Type[] ValidEventTypes = typeof(IFwEvent).GetCustomAttributes<JsonDerivedTypeAttribute>()
@@ -26,14 +31,8 @@ public class JsEventListener : IDisposable
     {
         _logger = logger;
         _globalEventBus = globalEventBus;
-        _globalBusSubscription = globalEventBus.OnGlobalEvent.Subscribe(e =>
-        {
-            if (_jsEventChannel.Writer.TryWrite(e))
-            {
-                return;
-            }
-            _logger.LogError("Failed to write js event, channel is full");
-        });
+        //TryWrite only fails once the listener is disposed (DropOldest absorbs a full channel)
+        _globalBusSubscription = globalEventBus.OnGlobalEvent.Subscribe(e => _jsEventChannel.Writer.TryWrite(e));
     }
 
     /// <summary>

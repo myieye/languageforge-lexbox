@@ -95,6 +95,10 @@ export class ProjectContext {
   public get projectData(): IProjectData | undefined {
     return this.#projectData;
   }
+  /** Applies fresh backend state (e.g. after a mid-session login updates the current user or role). */
+  public updateProjectData(value: IProjectData): void {
+    this.#projectData = value;
+  }
   public get features(): IMiniLcmFeatures {
     const features = this.#features.current;
     // Dev-only override lets a developer force the UI readonly by turning off write.

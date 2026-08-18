@@ -30,7 +30,8 @@ public class SyncService(
     IOptions<AuthConfig> authOptions,
     ILogger<SyncService> logger,
     SyncRepository syncRepository,
-    LocalCommentReadStatusService commentReadStatusService)
+    LocalCommentReadStatusService commentReadStatusService,
+    ProjectServerInfoService projectServerInfoService)
 {
     public async Task<SyncResults> SafeExecuteSync(bool skipNotifications = false)
     {
@@ -85,9 +86,6 @@ public class SyncService(
 
         try
         {
-            var currentUser = await oAuthClient.GetCurrentUser();
-            await currentProjectService.UpdateLastUser(currentUser?.Name, currentUser?.Id);
-
             var remoteModel = await remoteSyncServiceServer.CreateProjectSyncable(project, httpClient);
             if (!await remoteModel.ShouldSync())
             {
@@ -107,7 +105,10 @@ public class SyncService(
             }
             logger.LogInformation("Synced project {ProjectName} with server", project.Name);
             UpdateSyncStatus(SyncStatus.Success);
-            await ApplySyncedCommentReadStatus(syncResults, project.LastUserId);
+            //read from the MSAL cache, not project.LastUserId: a login moments ago (e.g. from the sync
+            //dialog) is already in the cache but may not have been stamped onto the project yet
+            var currentUser = await oAuthClient.GetCachedUser();
+            await ApplySyncedCommentReadStatus(syncResults, currentUser?.Id ?? project.LastUserId);
             await syncRepository.UpdateSyncDate(syncDate);
             // Best-effort: if the push listener failed to start at project-open (e.g. user was offline), this
             // restarts it now that we know auth + network are healthy. If it's already running, the cache
@@ -309,5 +310,7 @@ public class SyncService(
 
         //todo maybe decouple this
         lexboxProjectService.InvalidateProjectsCache(server);
+        //the project just gained an origin server, so stamp the uploader and their role onto it
+        await projectServerInfoService.RefreshProjectsServerInfo(server);
     }
 }
