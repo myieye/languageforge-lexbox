@@ -8,7 +8,7 @@
       installUpdate: async () => {
         await new Promise(resolve => setTimeout(resolve, 750));
       },
-      closeApp: () => Promise.resolve(),
+      restartApp: () => Promise.resolve(),
     },
   });
 </script>

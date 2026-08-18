@@ -465,10 +465,6 @@ msgstr "Funga"
 msgid "Close Dictionary"
 msgstr "Funga Kamusi"
 
-#: src/lib/updates/UpdateDialogContent.svelte
-msgid "Close FieldWorks Lite"
-msgstr ""
-
 #: src/lib/entry-editor/CommentDialog.svelte
 msgid "Closed"
 msgstr ""
@@ -2105,6 +2101,10 @@ msgstr "Ripoti tatizo la kiufundi"
 msgid "Reset"
 msgstr ""
 
+#: src/lib/updates/UpdateDialogContent.svelte
+msgid "Restart now"
+msgstr ""
+
 #. Button label to restore a deleted Entry or Word inside EntryView
 #: src/project/browse/EntryView.svelte
 msgid "Restore"
@@ -2763,14 +2763,14 @@ msgstr "Sasisha {0}"
 msgid "Update available: {0}"
 msgstr "Sasisho linapatikana: {0}"
 
+#: src/lib/updates/UpdateDialogContent.svelte
+msgid "Update downloaded. FieldWorks Lite needs to restart to finish installing it."
+msgstr ""
+
 #. Error message when update fails to install
 #: src/lib/updates/UpdateDialogContent.svelte
 msgid "Update failed to install."
 msgstr "Sasisho limeshindwa kusakinishwa."
-
-#: src/lib/updates/UpdateDialogContent.svelte
-msgid "Update ready. It finishes installing when you close FieldWorks Lite, and the new version starts the next time you open it."
-msgstr ""
 
 #. Info message when update runs in background
 #: src/lib/updates/UpdateDialogContent.svelte

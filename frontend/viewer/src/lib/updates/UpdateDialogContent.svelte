@@ -11,7 +11,7 @@
     installPromise?: Promise<UpdateResult>;
     installUpdate: (update: IAvailableUpdate) => Promise<void>;
     installProgress?: number;
-    closeApp?: () => Promise<void>;
+    restartApp?: () => Promise<void>;
   }
 
   let {
@@ -19,7 +19,7 @@
     installPromise,
     installUpdate,
     installProgress,
-    closeApp
+    restartApp
   }: Props = $props();
 
 </script>
@@ -57,8 +57,8 @@
     <div class="flex items-center gap-4 p-4 rounded-lg bg-muted">
       {#if updateResult === UpdateResult.Success}
         <Icon icon="i-mdi-check-circle" />
-        <!-- The update is downloaded, but Windows can only swap it in once this app closes -->
-        <p>{$t`Update ready. It finishes installing when you close FieldWorks Lite, and the new version starts the next time you open it.`}</p>
+        <!-- The update is downloaded, but Windows can only swap it in while the app isn't running -->
+        <p>{$t`Update downloaded. FieldWorks Lite needs to restart to finish installing it.`}</p>
       {:else if updateResult === UpdateResult.Started}
         <Icon icon="i-mdi-information" />
         <!-- Apparently there's some unreliability in the update process.
@@ -83,10 +83,10 @@
         <XButton onclick={() => installPromise = undefined} class="ml-auto border"/>
       {/if}
     </div>
-    {#if updateResult === UpdateResult.Success && closeApp}
-      <!-- Closing now means a clean shutdown; leaving it open means Windows force-closes the app itself later -->
-      <Button onclick={closeApp} class="w-full" icon="i-mdi-power">
-        {$t`Close FieldWorks Lite`}
+    {#if updateResult === UpdateResult.Success && restartApp}
+      <!-- Restarting now is a clean shutdown; leaving it running means Windows force-closes the app itself later -->
+      <Button onclick={restartApp} class="w-full" icon="i-mdi-restart">
+        {$t`Restart now`}
       </Button>
     {/if}
   {/await}

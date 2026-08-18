@@ -3,8 +3,10 @@ using Windows.Foundation;
 using Windows.Management.Deployment;
 using Windows.Networking.Connectivity;
 using LexCore.Entities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Toolkit.Uwp.Notifications;
+using Microsoft.Windows.AppLifecycle;
 using FwLiteShared.AppUpdate;
 using FwLiteShared.Events;
 
@@ -24,9 +26,11 @@ public class AppUpdateService(ILogger<AppUpdateService> logger, IPreferences pre
     private const string ActionKey = "action";
     private const string ResultRefKey = "resultRef";
     private static readonly Dictionary<string, TaskCompletionSource<string?>> NotificationCompletionSources = new();
+    private IServiceProvider? _services;
 
     public void Initialize(IServiceProvider services)
     {
+        _services = services;
         ToastNotificationManagerCompat.OnActivated += toastArgs =>
         {
             ToastArguments args = ToastArguments.Parse(toastArgs.Argument);
@@ -203,11 +207,25 @@ public class AppUpdateService(ILogger<AppUpdateService> logger, IPreferences pre
         return UpdateResult.Success;
     }
 
-    public Task CloseForUpdate()
+    /// <remarks>
+    /// AppInstance.Restart terminates the process outright rather than running MAUI's shutdown, so stop the
+    /// hosted services first: that's what closes open FwData projects. It only returns if the restart failed.
+    /// </remarks>
+    public async Task RestartForUpdate()
     {
-        logger.LogInformation("Closing so Windows can register the staged update");
-        //Quit has to run on the UI thread, and JSInterop calls in on a background one
-        return MainThread.InvokeOnMainThreadAsync(() => Application.Current?.Quit());
+        logger.LogInformation("Restarting so Windows can register the staged update");
+        if (_services?.GetService<FwLiteMauiKernel.HostedServiceAdapter>() is { } hostedServices)
+        {
+            await hostedServices.DisposeAsync();
+        }
+
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            var failureReason = AppInstance.Restart(string.Empty);
+            logger.LogError("Restart failed ({FailureReason}), closing instead so the update still installs",
+                failureReason);
+            Application.Current?.Quit();
+        });
     }
 
     private void NotifyInstallProgress(uint percentage, FwLiteRelease release)

@@ -69,7 +69,7 @@
       {installPromise}
       {installUpdate}
       {installProgress}
-      closeApp={() => updateService.closeForUpdate()} />
+      restartApp={() => updateService.restartForUpdate()} />
 
     <div class="flex justify-center gap-3">
       <Anchor

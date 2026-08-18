@@ -460,10 +460,6 @@ msgstr "Close"
 msgid "Close Dictionary"
 msgstr "Close Dictionary"
 
-#: src/lib/updates/UpdateDialogContent.svelte
-msgid "Close FieldWorks Lite"
-msgstr "Close FieldWorks Lite"
-
 #: src/lib/entry-editor/CommentDialog.svelte
 msgid "Closed"
 msgstr "Closed"
@@ -2100,6 +2096,10 @@ msgstr "Report a technical problem"
 msgid "Reset"
 msgstr "Reset"
 
+#: src/lib/updates/UpdateDialogContent.svelte
+msgid "Restart now"
+msgstr "Restart now"
+
 #. Button label to restore a deleted Entry or Word inside EntryView
 #: src/project/browse/EntryView.svelte
 msgid "Restore"
@@ -2758,14 +2758,14 @@ msgstr "Update {0}"
 msgid "Update available: {0}"
 msgstr "Update available: {0}"
 
+#: src/lib/updates/UpdateDialogContent.svelte
+msgid "Update downloaded. FieldWorks Lite needs to restart to finish installing it."
+msgstr "Update downloaded. FieldWorks Lite needs to restart to finish installing it."
+
 #. Error message when update fails to install
 #: src/lib/updates/UpdateDialogContent.svelte
 msgid "Update failed to install."
 msgstr "Update failed to install."
-
-#: src/lib/updates/UpdateDialogContent.svelte
-msgid "Update ready. It finishes installing when you close FieldWorks Lite, and the new version starts the next time you open it."
-msgstr "Update ready. It finishes installing when you close FieldWorks Lite, and the new version starts the next time you open it."
 
 #. Info message when update runs in background
 #: src/lib/updates/UpdateDialogContent.svelte

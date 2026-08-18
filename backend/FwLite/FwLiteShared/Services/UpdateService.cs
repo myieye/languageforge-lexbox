@@ -19,8 +19,8 @@ public class UpdateService(UpdateChecker updateChecker, IPlatformUpdateService p
     }
 
     [JSInvokable]
-    public async Task CloseForUpdate()
+    public async Task RestartForUpdate()
     {
-        await platformUpdateService.CloseForUpdate();
+        await platformUpdateService.RestartForUpdate();
     }
 }

@@ -12,10 +12,10 @@ public interface IPlatformUpdateService
     Task<bool> RequestPermissionToUpdate(FwLiteRelease latestRelease);
 
     /// <summary>
-    /// Closes the app so the OS can finish installing an update that's staged and waiting on it. Windows
+    /// Restarts the app so the OS can finish installing an update that's staged and waiting on it. Windows
     /// otherwise force-terminates the app to do this at some later activation.
     /// </summary>
-    Task CloseForUpdate();
+    Task RestartForUpdate();
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
