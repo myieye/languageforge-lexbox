@@ -1,9 +1,11 @@
+using System.Net.Sockets;
 using System.Text.Json.Serialization;
 using FwLiteShared.Auth;
 using FwLiteShared.Sync;
 using LcmCrdt;
 using LexCore.Entities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MiniLcm.Models;
 using MiniLcm.Project;
@@ -43,7 +45,8 @@ public record ServerProjects(LexboxServer Server, ProjectModel[] Projects, bool 
 public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
     CrdtProjectsService crdtProjectsService,
     IEnumerable<IProjectProvider> projectProviders,
-    OAuthClientFactory oAuthClientFactory)
+    OAuthClientFactory oAuthClientFactory,
+    ILogger<CombinedProjectsService> logger)
 {
     private IProjectProvider? FwDataProjectProvider => projectProviders.FirstOrDefault(p => p.DataFormat == ProjectDataFormat.FwData);
     [JSInvokable]
@@ -197,13 +200,51 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
             project.Code,
             projectId,
             server.Authority,
-            async (provider, project) =>
-            {
-                await provider.GetRequiredService<SyncService>().ExecuteSync(true);
-            },
+            (provider, _) => DownloadChanges(provider, project.Name),
             AuthenticatedUser: currentUser?.Name,
             AuthenticatedUserId: currentUser?.Id,
             Role: ToRole(project.Role))));
+    }
+
+    private static readonly TimeSpan[] DownloadRetryDelays = [TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(10)];
+
+    /// <summary>
+    /// A large project is downloaded by a single request that can run for many minutes, so a few seconds
+    /// without connectivity loses all of it: CreateProject deletes the half-built project and the user has to
+    /// start over. Connectivity is usually back within seconds, so retry before giving up.
+    /// </summary>
+    private async Task DownloadChanges(IServiceProvider provider, string projectName)
+    {
+        var syncService = provider.GetRequiredService<SyncService>();
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                var results = await syncService.ExecuteSync(true);
+                // ExecuteSync reports an unreachable server as an unsynced result instead of throwing. Retrying
+                // wouldn't help (the health check verdict is cached), but a project we downloaded nothing into
+                // must not look downloaded, so fail and let CreateProject clean it up.
+                if (!results.IsSynced)
+                    throw new InvalidOperationException($"Failed to download {projectName}, the server was unreachable.");
+                return;
+            }
+            catch (Exception e) when (attempt < DownloadRetryDelays.Length && IsConnectionFailure(e))
+            {
+                var delay = DownloadRetryDelays[attempt];
+                logger.LogWarning(e, "Lost the connection downloading {ProjectName}, retrying in {Delay}", projectName, delay);
+                await Task.Delay(delay);
+            }
+        }
+    }
+
+    internal static bool IsConnectionFailure(Exception exception)
+    {
+        for (var e = exception; e is not null; e = e.InnerException)
+        {
+            if (e is IOException or SocketException) return true;
+        }
+
+        return false;
     }
 
     [JSInvokable]
