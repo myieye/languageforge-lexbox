@@ -944,7 +944,11 @@ public class CrdtMiniLcmApi(
         BetweenPosition? between = null)
     {
         await using var repo = await repoFactory.CreateRepoAsync();
-        var change = new CreateSensePictureChange(picture, senseId, between);
+        var sense = await repo.GetSense(senseId);
+        var change = new CreateSensePictureChange(picture, senseId, between)
+        {
+            PickedOrder = OrderPicker.PickOrder(sense?.Pictures ?? [], between)
+        };
         await AddChange(change);
         return await GetPicture(entryId, senseId, change.PictureId) ?? throw NotFoundException.ForType<Picture>(change.PictureId);
     }

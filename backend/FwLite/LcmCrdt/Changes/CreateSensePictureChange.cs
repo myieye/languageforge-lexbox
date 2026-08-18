@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using MiniLcm.Media;
 using MiniLcm.SyncHelpers;
 using SIL.Harmony.Changes;
@@ -26,6 +26,7 @@ public class CreateSensePictureChange: EditChange<Sense>, ISelfNamedType<CreateS
 
     public Guid PictureId { get; set; }
     public double Order { get; set; }
+    public double? PickedOrder { get; set; }
     public RichMultiString? Caption { get; set; }
     public MediaUri MediaUri { get; set; }
     public BetweenPosition? Between { get; set; }
@@ -34,8 +35,10 @@ public class CreateSensePictureChange: EditChange<Sense>, ISelfNamedType<CreateS
     {
         // Skip creating if this is a duplicate change
         if (entity.Pictures.Any(pic => pic.Id == PictureId)) return ValueTask.CompletedTask;
-        // Runs during change application, so the algorithm is frozen across app versions.
-        Order = OrderPicker.PickOrderV1ForChangeReplay(entity.Pictures, Between);
+        // Only pre-existing changes lack PickedOrder; new ones carry the order the api picked.
+        // Replaying those must use the frozen algorithm, not the current picker, or the same
+        // history projects to different values depending on the app version applying it.
+        Order = PickedOrder ?? OrderPicker.PickOrderV1ForChangeReplay(entity.Pictures, Between);
         var pic = new Picture
         {
             Id = PictureId,

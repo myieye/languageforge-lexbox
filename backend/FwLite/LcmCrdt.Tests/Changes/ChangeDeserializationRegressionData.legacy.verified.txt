@@ -706,5 +706,102 @@
       "UpdatedAt": "2026-07-02T07:20:03.8842896+07:00",
       "EntityId": "ed481334-f9d2-ec59-fa0d-70d7dc2e2aa2"
     }
+  },
+  {
+    "Input": {
+      "$type": "CreateSensePictureChange",
+      "PictureId": "ea235f25-c0eb-eead-811e-e68a39c055a9",
+      "Order": 0.623824122246817,
+      "Caption": {
+        "mvl": {
+          "Spans": [
+            {
+              "Text": "Run",
+              "Ws": "sso",
+              "Bold": "On",
+              "FontSize": -1025374372,
+              "ForeColor": "#ADFF2F",
+              "Tags": [
+                "f99e1091-279a-6e3e-18e0-49f9aba4eb69"
+              ]
+            },
+            {
+              "Text": "monitor",
+              "Ws": "uks",
+              "Bold": "On",
+              "FontSize": -1061805835,
+              "ForeColor": "#0000FF",
+              "Tags": [
+                "4c6179f1-6270-d103-b943-73b82516e7de"
+              ]
+            },
+            {
+              "Text": "Money Market Account",
+              "Ws": "uum",
+              "Bold": "Invert",
+              "FontSize": -340849323,
+              "ForeColor": "#A52A2A",
+              "Tags": [
+                "45cf6f51-b486-f3ce-4eee-3131a4c1d081"
+              ]
+            }
+          ]
+        }
+      },
+      "MediaUri": "sil-media://lexbox/5d4d0fdb-7734-4c5b-9ad4-6e865a9e8b8c",
+      "Between": {
+        "Previous": "8d9db6e7-b1a3-211c-1bc4-40deddbfca78",
+        "Next": "0d77c2e3-133d-e964-313c-66b3e8323acd"
+      },
+      "EntityId": "4dc2b41e-ec36-267f-91e2-e84bd00fd77c"
+    },
+    "Output": {
+      "$type": "CreateSensePictureChange",
+      "PictureId": "ea235f25-c0eb-eead-811e-e68a39c055a9",
+      "Order": 0.623824122246817,
+      "PickedOrder": null,
+      "Caption": {
+        "mvl": {
+          "Spans": [
+            {
+              "Text": "Run",
+              "Ws": "sso",
+              "Bold": "On",
+              "FontSize": -1025374372,
+              "ForeColor": "#ADFF2F",
+              "Tags": [
+                "f99e1091-279a-6e3e-18e0-49f9aba4eb69"
+              ]
+            },
+            {
+              "Text": "monitor",
+              "Ws": "uks",
+              "Bold": "On",
+              "FontSize": -1061805835,
+              "ForeColor": "#0000FF",
+              "Tags": [
+                "4c6179f1-6270-d103-b943-73b82516e7de"
+              ]
+            },
+            {
+              "Text": "Money Market Account",
+              "Ws": "uum",
+              "Bold": "Invert",
+              "FontSize": -340849323,
+              "ForeColor": "#A52A2A",
+              "Tags": [
+                "45cf6f51-b486-f3ce-4eee-3131a4c1d081"
+              ]
+            }
+          ]
+        }
+      },
+      "MediaUri": "sil-media://lexbox/5d4d0fdb-7734-4c5b-9ad4-6e865a9e8b8c",
+      "Between": {
+        "Previous": "8d9db6e7-b1a3-211c-1bc4-40deddbfca78",
+        "Next": "0d77c2e3-133d-e964-313c-66b3e8323acd"
+      },
+      "EntityId": "4dc2b41e-ec36-267f-91e2-e84bd00fd77c"
+    }
   }
 ]

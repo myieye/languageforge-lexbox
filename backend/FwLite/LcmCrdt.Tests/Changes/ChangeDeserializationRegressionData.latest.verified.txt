@@ -1232,6 +1232,7 @@
     "$type": "CreateSensePictureChange",
     "PictureId": "ea235f25-c0eb-eead-811e-e68a39c055a9",
     "Order": 0.623824122246817,
+    "PickedOrder": null,
     "Caption": {
       "mvl": {
         "Spans": [
@@ -1274,6 +1275,34 @@
       "Next": "0d77c2e3-133d-e964-313c-66b3e8323acd"
     },
     "EntityId": "4dc2b41e-ec36-267f-91e2-e84bd00fd77c"
+  },
+  {
+    "$type": "CreateSensePictureChange",
+    "PictureId": "bf8e0dcd-99c4-b8ad-bcb2-cc3ed9c89a72",
+    "Order": 0.3782994051318008,
+    "PickedOrder": 0.6792988025303789,
+    "Caption": {
+      "khh": {
+        "Spans": [
+          {
+            "Text": "applications",
+            "Ws": "nnm",
+            "Bold": "Off",
+            "FontSize": -179893168,
+            "ForeColor": "#A52A2A",
+            "Tags": [
+              "2e1e2286-8412-c12f-4bc5-9fe49dd6e075"
+            ]
+          }
+        ]
+      }
+    },
+    "MediaUri": "sil-media://not-found/00000000-0000-0000-0000-000000000000",
+    "Between": {
+      "Previous": "13c24137-dc3c-6c53-4371-469fdc199c8d",
+      "Next": "24d0d66f-24ac-09cd-3470-a502df583836"
+    },
+    "EntityId": "afc5112b-ed36-7822-0087-4afd0a99aa54"
   },
   {
     "$type": "UpdateSensePictureChange",
