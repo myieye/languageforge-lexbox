@@ -25,7 +25,7 @@ public class CrdtProjectSyncTests
     public void UnreadableChange_PointsAtTheAppVersion()
     {
         CrdtProjectSync.DownloadFailureMessage(new JsonException("unknown change type"))
-            .Should().Contain("out of date");
+            .Should().Contain("out of date").And.Contain("cut short");
     }
 
     [Fact]
