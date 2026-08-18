@@ -356,3 +356,35 @@ These were the open items at research time. All three were tested manually and *
 - [Troubleshoot installation issues with the App Installer file](https://learn.microsoft.com/en-us/windows/msix/app-installer/troubleshoot-appinstaller-issues) — Content-Type "correct MIME type" requirement; Content-Length required on GET and HEAD (0x80072F76); `Add-AppxPackage -AppInstaller` local test; vanity-URL/redirect restriction for `ms-appinstaller`; per-build sideload feature table; trusted-cert store guidance.
 - [Package.GetAppInstallerInfo](https://learn.microsoft.com/en-us/uwp/api/windows.applicationmodel.package.getappinstallerinfo) and [AppInstallerInfo.UpdateUris](https://learn.microsoft.com/en-us/uwp/api/windows.applicationmodel.appinstallerinfo.updateuris) — inspect the per-package AppInstaller association / update URIs (1–10).
 - **Live header check (corroborating, not first-party docs):** `HEAD` of the current FW Lite release asset `https://github.com/sillsdev/languageforge-lexbox/releases/download/v2026-07-06-915ca19d/FieldWorksLiteInstaller.msixbundle` → `HTTP 200`, `Accept-Ranges: bytes`, `Content-Length: 172556267`, `Content-Type: application/octet-stream`. Confirms GitHub's CDN supports range requests and correct Content-Length but serves the bundle as octet-stream.
+
+---
+
+## Correction (2026-08-18): the in-app updater never worked on the track
+
+`AddPackageByAppInstallerFileAsync` rejects any URI whose file name doesn't end in `.appinstaller`,
+throwing `ArgumentException` synchronously before it touches the network. The URL this doc shipped,
+`download-latest?edition=windowsAppInstaller`, sets that name only via `Content-Disposition`, so every
+manual test (download the file, double-click) passed while every in-app update failed from #2496 until
+the `FieldWorksLite.appinstaller` route was added. Redirects to a `.appinstaller` URL are documented to
+fail the same way, so the route serves the content directly.
+
+What the two paths actually do, from a tester machine's deployment log:
+
+- **The OS background task works and is not subject to that rule.** It updates through the URI recorded
+  at install time, staging the *bundle* (`StagePackage`), then registering at the next activation —
+  force-terminating a running instance to do so (`0x80073D02` until then). Why the API check doesn't
+  apply to it isn't documented; treat that as inference.
+- **`0x80073D02` is not a failure.** It means the update staged but couldn't register while the app runs.
+  Windows registers it at the next activation, so it's the "installs when you close the app" outcome.
+
+Constraints worth not re-discovering:
+
+- There is no stage-only or deferred-registration API for `.appinstaller` files. `AddPackageByAppInstallerOptions`
+  is only `None`, `InstallAllResources`, `ForceTargetAppShutdown`, `RequiredContentGroupOnly`,
+  `LimitToExistingPackages`, and the WindowsAppSDK `PackageDeploymentManager` (which does have
+  `DeferRegistrationWhenPackagesAreInUse`) can't consume `.appinstaller` files at all.
+- The `packageManagement` restricted capability is **not** needed to update our own same-publisher package:
+  "this is required for cross-publisher scenario, but managing your own app should work without having to
+  declare the capability" ([non-store developer updates](https://learn.microsoft.com/en-us/windows/msix/non-store-developer-updates)).
+- `PackageCatalog.PackageUpdating` is telemetry only. No veto, no delay, and no documented guarantee that it
+  fires before a forced shutdown, so don't build save-my-work-first logic on it.

@@ -13,6 +13,12 @@ namespace FwLiteMaui;
 public class AppUpdateService(ILogger<AppUpdateService> logger, IPreferences preferences, GlobalEventBus eventBus)
     : IMauiInitializeService, IPlatformUpdateService
 {
+    //Must keep the .appinstaller file name: AddPackageByAppInstallerFileAsync rejects any other URI.
+    //Kept in sync with FwLiteReleaseService.AppInstallerUrl, which the server bakes into the file itself.
+    private const string AppInstallerUrl = "https://lexbox.org/api/fwlite-release/FieldWorksLite.appinstaller";
+    //Staged but not registered because this app is still running. Windows registers it at the next
+    //activation, so it's a pending update rather than a failure.
+    private const int ErrorPackagesInUse = unchecked((int)0x80073D02);
     private const string LastUpdateCheckKey = "lastUpdateChecked";
     private  const string NotificationIdKey = "notificationId";
     private const string ActionKey = "action";
@@ -113,14 +119,19 @@ public class AppUpdateService(ILogger<AppUpdateService> logger, IPreferences pre
         //must update through the App Installer API. Updating the raw bundle via AddPackageByUriAsync
         //would detach it from that track (see App Installer non-store update docs). Installs from a plain
         //.msixbundle - how most users are installed today - have no association and take the fallback path.
-        var appInstallerUri = GetAppInstallerUri();
         IAsyncOperationWithProgress<DeploymentResult, DeploymentProgress> asyncOperation;
-        if (appInstallerUri is not null)
+        if (IsOnAppInstallerTrack())
         {
+            //Not the URI the package recorded: the API rejects any URI whose file name isn't *.appinstaller,
+            //and installs attached before the FieldWorksLite.appinstaller route existed recorded a query-string URL.
+            var appInstallerUri = new Uri(AppInstallerUrl);
             logger.LogInformation("Updating via App Installer file {AppInstallerUri}", appInstallerUri);
-            //ForceUpdateFromAnyVersion is controlled by the .appinstaller XML, not these options.
+            //Never ForceTargetAppShutdown: that terminates this process without letting us close FwData
+            //projects. None stages the update instead and Windows registers it at the next activation, which
+            //is the same outcome the OS background updater produces. ForceUpdateFromAnyVersion is controlled
+            //by the .appinstaller XML, not these options.
             asyncOperation = packageManager.AddPackageByAppInstallerFileAsync(appInstallerUri,
-                quitOnUpdate ? AddPackageByAppInstallerOptions.ForceTargetAppShutdown : AddPackageByAppInstallerOptions.None,
+                AddPackageByAppInstallerOptions.None,
                 packageManager.GetDefaultPackageVolume());
         }
         else
@@ -148,20 +159,48 @@ public class AppUpdateService(ILogger<AppUpdateService> logger, IPreferences pre
         //note this asyncOperation is not reliable, it's possible the update will install and this will never resolve
         var updateTask = asyncOperation.AsTask();
         var completedTask = await Task.WhenAny(updateTask, Task.Delay(TimeSpan.FromMinutes(2)));
-        if (completedTask == updateTask)
-        {
-            var result = await updateTask;
-            if (!string.IsNullOrEmpty(result.ErrorText))
-            {
-                logger.LogError(result.ExtendedErrorCode, "Failed to download update: {ErrorText}", result.ErrorText);
-                return UpdateResult.Failed;
-            }
+        if (completedTask == updateTask) return InterpretUpdateResult(await updateTask, latestRelease);
 
-            logger.LogInformation("Update downloaded, will install on next restart");
+        //deployment carries on in AppXSvc after we stop waiting, so record how it ends instead of dropping the
+        //result: an update that fails here is otherwise indistinguishable from one that worked
+        _ = LogOutcomeWhenDone();
+        return UpdateResult.Started;
+
+        async Task LogOutcomeWhenDone()
+        {
+            try
+            {
+                //VSTHRD003: nothing awaits this local function, so awaiting a task from the enclosing scope
+                //can't deadlock a caller
+#pragma warning disable VSTHRD003
+                InterpretUpdateResult(await updateTask, latestRelease);
+#pragma warning restore VSTHRD003
+            }
+            catch (Exception e)
+            {
+                //nobody awaits this, so an exception would otherwise surface as an unobserved task exception
+                logger.LogError(e, "Update to {Version} failed after we stopped waiting on it", latestRelease.Version);
+            }
+        }
+    }
+
+    private UpdateResult InterpretUpdateResult(DeploymentResult result, FwLiteRelease latestRelease)
+    {
+        if (result.ExtendedErrorCode?.HResult == ErrorPackagesInUse)
+        {
+            logger.LogInformation("Update to {Version} is staged, Windows will register it once this app closes",
+                latestRelease.Version);
             return UpdateResult.Success;
         }
 
-        return UpdateResult.Started;
+        if (!string.IsNullOrEmpty(result.ErrorText))
+        {
+            logger.LogError(result.ExtendedErrorCode, "Failed to download update: {ErrorText}", result.ErrorText);
+            return UpdateResult.Failed;
+        }
+
+        logger.LogInformation("Update downloaded, will install on next restart");
+        return UpdateResult.Success;
     }
 
     private void NotifyInstallProgress(uint percentage, FwLiteRelease release)
@@ -170,20 +209,20 @@ public class AppUpdateService(ILogger<AppUpdateService> logger, IPreferences pre
     }
 
     /// <summary>
-    /// The .appinstaller URI this install is associated with, or null if it wasn't installed via an
-    /// .appinstaller file (i.e. it's not on the OS update track and should use the direct-bundle path).
+    /// Whether this install was deployed from an .appinstaller file, i.e. it's on the OS update track and
+    /// must be updated through the App Installer API rather than the direct-bundle path.
     /// </summary>
-    private Uri? GetAppInstallerUri()
+    private bool IsOnAppInstallerTrack()
     {
         try
         {
-            return Windows.ApplicationModel.Package.Current.GetAppInstallerInfo()?.Uri;
+            return Windows.ApplicationModel.Package.Current.GetAppInstallerInfo() is not null;
         }
         catch (Exception e)
         {
             //Package.Current throws for unpackaged/portable apps; treat as "not on the track".
             logger.LogWarning(e, "Unable to read App Installer info; falling back to direct bundle update");
-            return null;
+            return false;
         }
     }
 
