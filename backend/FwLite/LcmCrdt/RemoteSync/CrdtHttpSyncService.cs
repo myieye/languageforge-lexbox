@@ -1,3 +1,5 @@
+using System.Net.Sockets;
+using System.Text.Json;
 using LcmCrdt.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -103,11 +105,10 @@ internal class CrdtProjectSync(ISyncHttp restSyncClient, Guid projectId, Guid cl
         var changesResponse = await restSyncClient.GetChanges(projectId, otherHeads);
         if (changesResponse.Error is not null)
         {
-            // The inner exception is almost certainly more interesting than the wrapping ApiException
-            // (e.g. a JsonException if trying to download a change object that is too new for this version of FieldWorks Lite)
+            // Refit reports an HTTP error and a failure part-way through reading the response body the same way,
+            // so the wrapping ApiException says nothing about which happened; the inner exception does.
             var error = changesResponse.Error?.InnerException ?? changesResponse.Error!;
-            throw new CrdtSyncException("FieldWorks Lite is likely out of date. Failed to download dictionary changes.",
-                CrdtSyncException.CrdtSyncStep.Download, error);
+            throw new CrdtSyncException(DownloadFailureMessage(error), CrdtSyncException.CrdtSyncStep.Download, error);
         }
 
         var changes = changesResponse.Content;
@@ -119,6 +120,16 @@ internal class CrdtProjectSync(ISyncHttp restSyncClient, Guid projectId, Guid cl
         }
         return changes;
     }
+
+    internal static string DownloadFailureMessage(Exception error) => error switch
+    {
+        // ApiException derives from HttpRequestException, so it has to be matched before the connection cases.
+        ApiException apiException => $"Failed to download dictionary changes, the server returned {(int)apiException.StatusCode}.",
+        // A change we can't read is usually one that's too new for this version of FieldWorks Lite.
+        JsonException => "FieldWorks Lite is likely out of date. Failed to download dictionary changes.",
+        IOException or SocketException or HttpRequestException => "Lost the connection while downloading dictionary changes.",
+        _ => "Failed to download dictionary changes.",
+    };
 
     async Task<SyncState> ISyncable.GetSyncState()
     {
