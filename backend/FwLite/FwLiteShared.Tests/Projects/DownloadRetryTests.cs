@@ -20,6 +20,13 @@ public class DownloadRetryTests
     }
 
     [Fact]
+    public void ALocalWriteFailureIsNotWorthRetrying()
+    {
+        // Harmony writes downloaded commits to sqlite, so an IOException here isn't necessarily the network.
+        CombinedProjectsService.IsConnectionFailure(new IOException("disk full")).Should().BeFalse();
+    }
+
+    [Fact]
     public void AChangeWeCannotReadIsNotWorthRetrying()
     {
         var tooNewForThisVersion = new CrdtSyncException("Out of date.",

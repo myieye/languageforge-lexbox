@@ -3,7 +3,9 @@ using System.Text.Json.Serialization;
 using FwLiteShared.Auth;
 using FwLiteShared.Sync;
 using LcmCrdt;
+using LcmCrdt.RemoteSync;
 using LexCore.Entities;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -46,6 +48,7 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
     CrdtProjectsService crdtProjectsService,
     IEnumerable<IProjectProvider> projectProviders,
     OAuthClientFactory oAuthClientFactory,
+    IMemoryCache cache,
     ILogger<CombinedProjectsService> logger)
 {
     private IProjectProvider? FwDataProjectProvider => projectProviders.FirstOrDefault(p => p.DataFormat == ProjectDataFormat.FwData);
@@ -200,7 +203,7 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
             project.Code,
             projectId,
             server.Authority,
-            (provider, _) => DownloadChanges(provider, project.Name),
+            (provider, _) => DownloadChanges(provider, server, project.Name),
             AuthenticatedUser: currentUser?.Name,
             AuthenticatedUserId: currentUser?.Id,
             Role: ToRole(project.Role))));
@@ -213,27 +216,30 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
     /// without connectivity loses all of it: CreateProject deletes the half-built project and the user has to
     /// start over. Connectivity is usually back within seconds, so retry before giving up.
     /// </summary>
-    private async Task DownloadChanges(IServiceProvider provider, string projectName)
+    private async Task DownloadChanges(IServiceProvider provider, LexboxServer server, string projectName)
     {
         var syncService = provider.GetRequiredService<SyncService>();
         for (var attempt = 0; ; attempt++)
         {
+            var outOfAttempts = attempt >= DownloadRetryDelays.Length;
             try
             {
-                var results = await syncService.ExecuteSync(true);
-                // ExecuteSync reports an unreachable server as an unsynced result instead of throwing. Retrying
-                // wouldn't help (the health check verdict is cached), but a project we downloaded nothing into
-                // must not look downloaded, so fail and let CreateProject clean it up.
-                if (!results.IsSynced)
-                    throw new InvalidOperationException($"Failed to download {projectName}, the server was unreachable.");
-                return;
+                // ExecuteSync reports most ways of losing the connection as an unsynced result rather than
+                // throwing, so an unsynced download is a failure worth retrying, not an empty project to
+                // keep (#2292).
+                if ((await syncService.ExecuteSync(true)).IsSynced) return;
+                if (outOfAttempts)
+                    throw new InvalidOperationException($"Failed to download {projectName}, the sync did not complete.");
             }
-            catch (Exception e) when (attempt < DownloadRetryDelays.Length && IsConnectionFailure(e))
+            catch (Exception e) when (!outOfAttempts && IsConnectionFailure(e))
             {
-                var delay = DownloadRetryDelays[attempt];
-                logger.LogWarning(e, "Lost the connection downloading {ProjectName}, retrying in {Delay}", projectName, delay);
-                await Task.Delay(delay);
+                logger.LogWarning(e, "Lost the connection downloading {ProjectName}, retrying", projectName);
             }
+
+            await Task.Delay(DownloadRetryDelays[attempt]);
+            // Each sync health-checks the server first and caches a failure for half an hour, so without this
+            // every retry would be answered by the verdict from while we were offline.
+            CrdtHttpSyncService.InvalidateServerHealth(cache, server.Authority.Authority);
         }
     }
 
@@ -241,7 +247,8 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
     {
         for (var e = exception; e is not null; e = e.InnerException)
         {
-            if (e is IOException or SocketException) return true;
+            // Deliberately not IOException, which also covers the sqlite writes made while applying commits.
+            if (e is SocketException or HttpIOException) return true;
         }
 
         return false;
