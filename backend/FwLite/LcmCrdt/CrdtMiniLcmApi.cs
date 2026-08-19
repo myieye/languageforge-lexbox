@@ -944,7 +944,11 @@ public class CrdtMiniLcmApi(
         BetweenPosition? between = null)
     {
         await using var repo = await repoFactory.CreateRepoAsync();
-        var change = new CreateSensePictureChange(picture, senseId, between);
+        var sense = await repo.GetSense(senseId);
+        var change = new CreateSensePictureChange(picture, senseId, between)
+        {
+            PickedOrder = OrderPicker.PickOrder(sense?.Pictures ?? [], between)
+        };
         await AddChange(change);
         return await GetPicture(entryId, senseId, change.PictureId) ?? throw NotFoundException.ForType<Picture>(change.PictureId);
     }
@@ -1247,7 +1251,8 @@ public class CrdtMiniLcmApi(
     /// Renumbering follows the existing read-back order (Order, then Id), so this changes nothing
     /// anyone sees, it only makes the positions addressable again and resets the bisection
     /// precision budget. Idempotent: groups without duplicates produce no changes.
-    /// Pictures are not covered; their order is picked during change replay, which is frozen.
+    /// Pictures are not covered: they live on the sense rather than in a table of their own, so
+    /// renumbering them would take a ReorderSensePictureChange each instead of a SetOrderChange.
     /// </remarks>
     public async Task<int> RepairDuplicateOrders()
     {

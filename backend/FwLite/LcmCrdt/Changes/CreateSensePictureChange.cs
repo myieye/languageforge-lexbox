@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using MiniLcm.Media;
 using MiniLcm.SyncHelpers;
 using SIL.Harmony.Changes;
@@ -26,6 +26,7 @@ public class CreateSensePictureChange: EditChange<Sense>, ISelfNamedType<CreateS
 
     public Guid PictureId { get; set; }
     public double Order { get; set; }
+    public double? PickedOrder { get; set; }
     public RichMultiString? Caption { get; set; }
     public MediaUri MediaUri { get; set; }
     public BetweenPosition? Between { get; set; }
@@ -34,8 +35,23 @@ public class CreateSensePictureChange: EditChange<Sense>, ISelfNamedType<CreateS
     {
         // Skip creating if this is a duplicate change
         if (entity.Pictures.Any(pic => pic.Id == PictureId)) return ValueTask.CompletedTask;
-        // Runs during change application, so the algorithm is frozen across app versions.
-        Order = OrderPicker.PickOrderV1ForChangeReplay(entity.Pictures, Between);
+        // Only pre-existing changes lack PickedOrder; new ones carry the order the api picked.
+        // Replaying those must use the frozen algorithm, not the current picker, or the same
+        // history projects to different values depending on the app version applying it.
+        //
+        // The reverse direction is accepted, not fixed: a client older than PickedOrder skips the
+        // unknown property and re-derives the order with the frozen picker, so it can place a picture
+        // this client authored somewhere else until it upgrades. A new change class would close that,
+        // but an unregistered type reads as OpaqueChange there, so those clients would drop the
+        // picture rather than misplace it.
+        //
+        // Authoring the order also gives up something the frozen picker had: replaying computed each
+        // order against the sibling list as already projected, so two concurrent appends were applied
+        // in commit order and the second saw the first and cleared it. Two authored appends both carry
+        // the same value and both land verbatim, and RepairDuplicateOrders does not cover pictures.
+        // The order picker's own jitter is what makes them distinct again, so this change class must
+        // not ship without it.
+        Order = PickedOrder ?? OrderPicker.PickOrderV1ForChangeReplay(entity.Pictures, Between);
         var pic = new Picture
         {
             Id = PictureId,
