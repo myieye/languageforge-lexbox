@@ -43,8 +43,14 @@ public class CreateSensePictureChange: EditChange<Sense>, ISelfNamedType<CreateS
         // unknown property and re-derives the order with the frozen picker, so it can place a picture
         // this client authored somewhere else until it upgrades. A new change class would close that,
         // but an unregistered type reads as OpaqueChange there, so those clients would drop the
-        // picture rather than misplace it. CreateSensePictureChangeV2, wanted anyway for the tie the
-        // frozen picker still mints on concurrent adds, can carry this too.
+        // picture rather than misplace it.
+        //
+        // Authoring the order also gives up something the frozen picker had: replaying computed each
+        // order against the sibling list as already projected, so two concurrent appends were applied
+        // in commit order and the second saw the first and cleared it. Two authored appends both carry
+        // the same value and both land verbatim, and RepairDuplicateOrders does not cover pictures.
+        // The order picker's own jitter is what makes them distinct again, so this change class must
+        // not ship without it.
         Order = PickedOrder ?? OrderPicker.PickOrderV1ForChangeReplay(entity.Pictures, Between);
         var pic = new Picture
         {
