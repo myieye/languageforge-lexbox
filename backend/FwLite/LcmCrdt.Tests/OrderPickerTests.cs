@@ -215,9 +215,8 @@ public class OrderPickerTests : IAsyncLifetime
         //
         // This count is the reordering budget available within one sibling group between
         // fwdata syncs: CrdtMiniLcmApi.RepairDuplicateOrders renumbers siblings to integers at
-        // each sync, which resets the gap back to full width. A later PR adds jitter to the
-        // order picker, which will burn through this budget faster than plain bisection does;
-        // the diff of the asserted count below is how reviewers see that cost.
+        // each sync, which resets the gap back to full width. A later PR adds jitter to the order
+        // picker; the count below is where its cost to this budget shows up, if it has one.
         var lowerId = ItemId(0);
         var items = new List<Sense>
         {
@@ -230,25 +229,23 @@ public class OrderPickerTests : IAsyncLifetime
             await _fixture.DbContext.SaveChangesAsync();
         }
 
+        // Measured, not derived: one mantissa bit per halving predicts 52, and that is what both
+        // variants produce, but this pins the observed count rather than the formula.
+        const int subdivisions = 52;
         const double lowerOrder = 1;
         var seenOrders = new HashSet<double> { 1, 2 };
         var upperId = ItemId(1);
         var upperOrder = 2.0;
-        var subdivisions = 0;
 
-        for (var i = 2; ; i++)
+        // Asserting inside the loop rather than breaking out of it: a loop that stops on any
+        // unusable value would report the same count whether the 53rd pick collapsed onto the
+        // lower bound (what exhaustion looks like) or escaped the gap entirely (a different bug).
+        for (var i = 2; i < 2 + subdivisions; i++)
         {
-            var between = new BetweenPosition(lowerId, upperId);
-            var order = variant switch
-            {
-                Variant.List => OrderPicker.PickOrder(items, between),
-                Variant.Async => await OrderPicker.PickOrder(
-                    _fixture.DbContext.Senses.Where(s => s.EntryId == _entryId), between),
-                _ => throw new ArgumentOutOfRangeException(nameof(variant))
-            };
+            var order = await Pick(variant, items, new BetweenPosition(lowerId, upperId));
 
-            if (order <= lowerOrder || order >= upperOrder || !seenOrders.Add(order)) break;
-            subdivisions++;
+            order.Should().BeGreaterThan(lowerOrder).And.BeLessThan(upperOrder);
+            seenOrders.Add(order).Should().BeTrue("every subdivision within the budget yields a fresh order");
 
             var newId = ItemId(i);
             var sense = new Sense { Id = newId, EntryId = _entryId, Order = order };
@@ -265,10 +262,18 @@ public class OrderPickerTests : IAsyncLifetime
             upperOrder = order;
         }
 
-        // Measured, not derived: one mantissa bit per halving predicts 52, and that is what
-        // both variants produce, but this asserts the observed count rather than the formula.
-        subdivisions.Should().Be(52);
+        // One past the budget the gap is a single ulp wide, so the midpoint is the lower bound
+        // itself: the duplicate order that RepairDuplicateOrders exists to renumber away.
+        (await Pick(variant, items, new BetweenPosition(lowerId, upperId))).Should().Be(lowerOrder);
     }
+
+    private async Task<double> Pick(Variant variant, List<Sense> items, BetweenPosition between) => variant switch
+    {
+        Variant.List => OrderPicker.PickOrder(items, between),
+        Variant.Async => await OrderPicker.PickOrder(
+            _fixture.DbContext.Senses.Where(s => s.EntryId == _entryId), between),
+        _ => throw new ArgumentOutOfRangeException(nameof(variant))
+    };
 
     [Theory]
     [InlineData(Variant.List)]
