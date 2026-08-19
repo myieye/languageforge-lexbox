@@ -181,6 +181,8 @@ public abstract class ExampleSentenceTestsBase : MiniLcmTestBase
 
         var recreated = await Api.CreateExampleSentence(_entryId, _senseId, initial);
         recreated.Should().NotBeNull();
-        recreated.Should().BeEquivalentTo(initial);
+        // Create picks an order rather than honouring the input's, so a recreated example does not
+        // get its old one back. See the same note in SenseTestsBase.RecreateDeletedSense.
+        recreated.Should().BeEquivalentTo(initial, options => options.Excluding(s => s.Order));
     }
 }
