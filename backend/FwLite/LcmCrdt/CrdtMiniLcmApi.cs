@@ -91,7 +91,7 @@ public class CrdtMiniLcmApi(
         var exists = await repo.WritingSystems.AnyAsync(ws => ws.WsId == writingSystem.WsId && ws.Type == wsType);
         if (exists) throw new DuplicateObjectException($"Writing system {writingSystem.WsId.Code} ({wsType}) already exists");
         var betweenIds = between is null ? null : await between.MapAsync(async wsId => wsId is null ? null : (await repo.GetWritingSystem(wsId.Value, wsType))?.Id);
-        var order = await OrderPicker.PickOrder(repo.WritingSystems.Where(ws => ws.Type == wsType), betweenIds);
+        var order = await OrderPicker.PickOrder(repo.WritingSystems.Where(ws => ws.Type == wsType), entityId, betweenIds);
         await AddChange(new CreateWritingSystemChange(writingSystem, entityId, order));
         return await repo.GetWritingSystem(writingSystem.WsId, wsType) ?? throw NotFoundException.ForWs(writingSystem);
     }
@@ -116,7 +116,7 @@ public class CrdtMiniLcmApi(
         await using var repo = await repoFactory.CreateRepoAsync();
         var ws = await repo.GetWritingSystem(id, type) ?? throw NotFoundException.ForWs(id, type);
         var betweenIds = await between.MapAsync(async wsId => wsId is null ? null : (await repo.GetWritingSystem(wsId.Value, type))?.Id);
-        var order = await OrderPicker.PickOrder(repo.WritingSystems.Where(s => s.Type == type), betweenIds, ws.Id);
+        var order = await OrderPicker.PickOrder(repo.WritingSystems.Where(s => s.Type == type), ws.Id, betweenIds);
         await AddChange(new Changes.SetOrderChange<WritingSystem>(ws.Id, order));
     }
 
@@ -385,7 +385,7 @@ public class CrdtMiniLcmApi(
             throw NotFoundException.ForType<ComplexFormComponent>("missing ID");
         }
         var betweenIds = await between.MapAsync(async c => (await repo.FindComplexFormComponent(c))?.Id);
-        var order = await OrderPicker.PickOrder(repo.ComplexFormComponents.Where(s => s.ComplexFormEntryId == component.ComplexFormEntryId), betweenIds, id.Value);
+        var order = await OrderPicker.PickOrder(repo.ComplexFormComponents.Where(s => s.ComplexFormEntryId == component.ComplexFormEntryId), id.Value, betweenIds);
         await AddChange(new Changes.SetOrderChange<ComplexFormComponent>(id.Value, order));
     }
 
@@ -759,7 +759,10 @@ public class CrdtMiniLcmApi(
     public async Task SubmitCreateSense(Guid entryId, Sense sense, BetweenPosition? between = null)
     {
         await using var repo = await repoFactory.CreateRepoAsync();
-        sense.Order = await OrderPicker.PickOrder(repo.Senses.Where(s => s.EntryId == entryId), between);
+        // settle the id before picking: the picked order is offset by it, and CreateSenseChange would
+        // otherwise mint a different one
+        if (sense.Id == Guid.Empty) sense.Id = Guid.NewGuid();
+        sense.Order = await OrderPicker.PickOrder(repo.Senses.Where(s => s.EntryId == entryId), sense.Id, between);
         await AddChanges(await CreateSenseChanges(entryId, sense, repo.SemanticDomains).ToArrayAsync());
     }
 
@@ -802,7 +805,7 @@ public class CrdtMiniLcmApi(
     public async Task MoveSense(Guid entryId, Guid senseId, BetweenPosition between)
     {
         await using var repo = await repoFactory.CreateRepoAsync();
-        var order = await OrderPicker.PickOrder(repo.Senses.Where(s => s.EntryId == entryId), between, senseId);
+        var order = await OrderPicker.PickOrder(repo.Senses.Where(s => s.EntryId == entryId), senseId, between);
         var currentEntryId = await repo.Senses.Where(s => s.Id == senseId).Select(s => s.EntryId).FirstOrDefaultAsync();
         if (currentEntryId != default && currentEntryId != entryId)
         {
@@ -840,7 +843,8 @@ public class CrdtMiniLcmApi(
         BetweenPosition? between = null)
     {
         await using var repo = await repoFactory.CreateRepoAsync();
-        exampleSentence.Order = await OrderPicker.PickOrder(repo.ExampleSentences.Where(s => s.SenseId == senseId), between);
+        if (exampleSentence.Id == Guid.Empty) exampleSentence.Id = Guid.NewGuid();
+        exampleSentence.Order = await OrderPicker.PickOrder(repo.ExampleSentences.Where(s => s.SenseId == senseId), exampleSentence.Id, between);
         await AddChange(new CreateExampleSentenceChange(exampleSentence, senseId));
     }
 
@@ -889,7 +893,7 @@ public class CrdtMiniLcmApi(
     public async Task MoveExampleSentence(Guid entryId, Guid senseId, Guid exampleId, BetweenPosition between)
     {
         await using var repo = await repoFactory.CreateRepoAsync();
-        var order = await OrderPicker.PickOrder(repo.ExampleSentences.Where(s => s.SenseId == senseId), between, exampleId);
+        var order = await OrderPicker.PickOrder(repo.ExampleSentences.Where(s => s.SenseId == senseId), exampleId, between);
         await AddChange(new Changes.SetOrderChange<ExampleSentence>(exampleId, order));
     }
 
@@ -945,10 +949,9 @@ public class CrdtMiniLcmApi(
     {
         await using var repo = await repoFactory.CreateRepoAsync();
         var sense = await repo.GetSense(senseId);
-        var change = new CreateSensePictureChange(picture, senseId, between)
-        {
-            PickedOrder = OrderPicker.PickOrder(sense?.Pictures ?? [], between)
-        };
+        var change = new CreateSensePictureChange(picture, senseId, between);
+        // the change settles the picture's id, and the picked order is offset by it
+        change.PickedOrder = OrderPicker.PickOrder(sense?.Pictures ?? [], change.PictureId, between);
         await AddChange(change);
         return await GetPicture(entryId, senseId, change.PictureId) ?? throw NotFoundException.ForType<Picture>(change.PictureId);
     }
@@ -994,7 +997,7 @@ public class CrdtMiniLcmApi(
         await using var repo = await repoFactory.CreateRepoAsync();
         var sense = await repo.GetSense(senseId);
         if (sense is null) throw NotFoundException.ForType<Sense>(senseId);
-        var order = OrderPicker.PickOrder(sense.Pictures, between, pictureId);
+        var order = OrderPicker.PickOrder(sense.Pictures, pictureId, between);
         await AddChange(new ReorderSensePictureChange(pictureId, senseId, order));
     }
 

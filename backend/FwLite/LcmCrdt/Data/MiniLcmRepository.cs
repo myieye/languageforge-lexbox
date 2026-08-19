@@ -102,8 +102,12 @@ public class MiniLcmRepository(
         ComplexFormComponent complexFormComponent,
         BetweenPosition? between = null)
     {
+        // settle the id before picking: the picked order is offset by it, and
+        // AddEntryComponentChange would otherwise mint a different one
+        complexFormComponent.Id = complexFormComponent.MaybeId ?? Guid.NewGuid();
         complexFormComponent.Order = await OrderPicker.PickOrder(
             dbContext.ComplexFormComponents.Where(c => c.ComplexFormEntryId == complexFormComponent.ComplexFormEntryId),
+            complexFormComponent.Id,
             between);
         return new AddEntryComponentChange(complexFormComponent);
     }
