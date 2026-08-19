@@ -38,6 +38,13 @@ public class CreateSensePictureChange: EditChange<Sense>, ISelfNamedType<CreateS
         // Only pre-existing changes lack PickedOrder; new ones carry the order the api picked.
         // Replaying those must use the frozen algorithm, not the current picker, or the same
         // history projects to different values depending on the app version applying it.
+        //
+        // The reverse direction is accepted, not fixed: a client older than PickedOrder skips the
+        // unknown property and re-derives the order with the frozen picker, so it can place a picture
+        // this client authored somewhere else until it upgrades. A new change class would close that,
+        // but an unregistered type reads as OpaqueChange there, so those clients would drop the
+        // picture rather than misplace it. CreateSensePictureChangeV2, wanted anyway for the tie the
+        // frozen picker still mints on concurrent adds, can carry this too.
         Order = PickedOrder ?? OrderPicker.PickOrderV1ForChangeReplay(entity.Pictures, Between);
         var pic = new Picture
         {
