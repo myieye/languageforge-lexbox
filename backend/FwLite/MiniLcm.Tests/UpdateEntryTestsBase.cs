@@ -142,18 +142,31 @@ public abstract class UpdateEntryTestsBase : MiniLcmTestBase
             options => options.Excluding(e => e.LexemeForm));
     }
 
+    // One expectation per item of the new sequence: a number is an order the item must still hold,
+    // because nothing repositioned it; "*" is an order the picker chose, whose exact value is not
+    // pinned because it carries an offset derived from the item's id (see LcmCrdt.OrderPicker).
+    private static void AssertOrders(IEnumerable<double> actual, string expectedOrders)
+    {
+        var expected = expectedOrders.Split(',');
+        var orders = actual.ToList();
+        orders.Should().HaveCount(expected.Length).And.OnlyHaveUniqueItems();
+        var pattern = string.Join(',', orders.Select((order, i) =>
+            expected[i] == "*" ? "*" : order.ToString(CultureInfo.InvariantCulture)));
+        pattern.Should().Be(expectedOrders);
+    }
+
     [Theory]
-    [InlineData("a,b", "a,b,c,d", "1,2,3,4")] // append
-    [InlineData("a,b", "c,a,b", "0,1,2")] // single prepend
-    [InlineData("a,b", "d,c,a,b", "0,0.5,1,2")] // multi prepend
-    [InlineData("a,b,c,d", "d,a,b,c", "0,1,2,3")] // move to back
-    [InlineData("a,b,c,d", "b,c,d,a", "2,3,4,5")] // move to front
-    [InlineData("a,b,c,d,e", "a,b,e,c,d", "1,2,2.5,3,4")] // move to middle
-    [InlineData("a,b,c", "c,b,a", "3,4,5")] // reverse
-    // Swapping the ends moves the first item below the old first: it bisects into 1.5 rather than
-    // taking order 1, which the item being swapped out still holds at that moment.
-    [InlineData("a,b,c,d", "d,b,c,a", "1.5,2,3,4")] // swap
-    public async Task UpdateEntry_CanReorderSenses(string before, string after, string expectedOrderValues)
+    [InlineData("a,b", "a,b,c,d", "1,2,*,*")] // append
+    [InlineData("a,b", "c,a,b", "*,1,2")] // single prepend
+    [InlineData("a,b", "d,c,a,b", "*,*,1,2")] // multi prepend
+    [InlineData("a,b,c,d", "d,a,b,c", "*,1,2,3")] // move to back
+    [InlineData("a,b,c,d", "b,c,d,a", "2,3,4,*")] // move to front
+    [InlineData("a,b,c,d,e", "a,b,e,c,d", "1,2,*,3,4")] // move to middle
+    [InlineData("a,b,c", "c,b,a", "3,*,*")] // reverse
+    // Swapping the ends places the incoming first item below the order the outgoing one still holds
+    // at that moment, so neither end keeps its old order.
+    [InlineData("a,b,c,d", "d,b,c,a", "*,2,3,*")] // swap
+    public async Task UpdateEntry_CanReorderSenses(string before, string after, string expectedOrders)
     {
         // arrange
         var entryId = Guid.NewGuid();
@@ -193,23 +206,22 @@ public abstract class UpdateEntryTestsBase : MiniLcmTestBase
 
         if (!ApiUsesImplicitOrdering)
         {
-            var actualOrderValues = string.Join(',', actual.Senses.Select(s => s.Order.ToString(CultureInfo.GetCultureInfo("en-US"))));
-            actualOrderValues.Should().Be(expectedOrderValues);
+            AssertOrders(actual.Senses.Select(s => s.Order), expectedOrders);
         }
     }
 
     [Theory]
-    [InlineData("a,b", "a,b,c,d", "1,2,3,4")] // append
-    [InlineData("a,b", "c,a,b", "0,1,2")] // single prepend
-    [InlineData("a,b", "d,c,a,b", "0,0.5,1,2")] // multi prepend
-    [InlineData("a,b,c,d", "d,a,b,c", "0,1,2,3")] // move to back
-    [InlineData("a,b,c,d", "b,c,d,a", "2,3,4,5")] // move to front
-    [InlineData("a,b,c,d,e", "a,b,e,c,d", "1,2,2.5,3,4")] // move to middle
-    [InlineData("a,b,c", "c,b,a", "3,4,5")] // reverse
-    // Swapping the ends moves the first item below the old first: it bisects into 1.5 rather than
-    // taking order 1, which the item being swapped out still holds at that moment.
-    [InlineData("a,b,c,d", "d,b,c,a", "1.5,2,3,4")] // swap
-    public async Task UpdateEntry_CanReorderExampleSentence(string before, string after, string expectedOrderValues)
+    [InlineData("a,b", "a,b,c,d", "1,2,*,*")] // append
+    [InlineData("a,b", "c,a,b", "*,1,2")] // single prepend
+    [InlineData("a,b", "d,c,a,b", "*,*,1,2")] // multi prepend
+    [InlineData("a,b,c,d", "d,a,b,c", "*,1,2,3")] // move to back
+    [InlineData("a,b,c,d", "b,c,d,a", "2,3,4,*")] // move to front
+    [InlineData("a,b,c,d,e", "a,b,e,c,d", "1,2,*,3,4")] // move to middle
+    [InlineData("a,b,c", "c,b,a", "3,*,*")] // reverse
+    // Swapping the ends places the incoming first item below the order the outgoing one still holds
+    // at that moment, so neither end keeps its old order.
+    [InlineData("a,b,c,d", "d,b,c,a", "*,2,3,*")] // swap
+    public async Task UpdateEntry_CanReorderExampleSentence(string before, string after, string expectedOrders)
     {
         // arrange
         var entryId = Guid.NewGuid();
@@ -260,23 +272,22 @@ public abstract class UpdateEntryTestsBase : MiniLcmTestBase
 
         if (!ApiUsesImplicitOrdering)
         {
-            var actualOrderValues = string.Join(',', actual.ExampleSentences.Select(s => s.Order.ToString(CultureInfo.GetCultureInfo("en-US"))));
-            actualOrderValues.Should().Be(expectedOrderValues);
+            AssertOrders(actual.ExampleSentences.Select(s => s.Order), expectedOrders);
         }
     }
 
     [Theory]
-    [InlineData("a,b", "a,b,c,d", "1,2,3,4")] // append
-    [InlineData("a,b", "c,a,b", "0,1,2")] // single prepend
-    [InlineData("a,b", "d,c,a,b", "0,0.5,1,2")] // multi prepend
-    [InlineData("a,b,c,d", "d,a,b,c", "0,1,2,3")] // move to back
-    [InlineData("a,b,c,d", "b,c,d,a", "2,3,4,5")] // move to front
-    [InlineData("a,b,c,d,e", "a,b,e,c,d", "1,2,2.5,3,4")] // move to middle
-    [InlineData("a,b,c", "c,b,a", "3,4,5")] // reverse
-    // Swapping the ends moves the first item below the old first: it bisects into 1.5 rather than
-    // taking order 1, which the item being swapped out still holds at that moment.
-    [InlineData("a,b,c,d", "d,b,c,a", "1.5,2,3,4")] // swap
-    public async Task UpdateEntry_CanReorderComponents(string before, string after, string expectedOrderValues)
+    [InlineData("a,b", "a,b,c,d", "1,2,*,*")] // append
+    [InlineData("a,b", "c,a,b", "*,1,2")] // single prepend
+    [InlineData("a,b", "d,c,a,b", "*,*,1,2")] // multi prepend
+    [InlineData("a,b,c,d", "d,a,b,c", "*,1,2,3")] // move to back
+    [InlineData("a,b,c,d", "b,c,d,a", "2,3,4,*")] // move to front
+    [InlineData("a,b,c,d,e", "a,b,e,c,d", "1,2,*,3,4")] // move to middle
+    [InlineData("a,b,c", "c,b,a", "3,*,*")] // reverse
+    // Swapping the ends places the incoming first item below the order the outgoing one still holds
+    // at that moment, so neither end keeps its old order.
+    [InlineData("a,b,c,d", "d,b,c,a", "*,2,3,*")] // swap
+    public async Task UpdateEntry_CanReorderComponents(string before, string after, string expectedOrders)
     {
         // arrange
         var entryId = Guid.NewGuid();
@@ -342,8 +353,7 @@ public abstract class UpdateEntryTestsBase : MiniLcmTestBase
 
         if (!ApiUsesImplicitOrdering)
         {
-            var actualOrderValues = string.Join(',', actual.Components.Select(s => s.Order.ToString(CultureInfo.GetCultureInfo("en-US"))));
-            actualOrderValues.Should().Be(expectedOrderValues);
+            AssertOrders(actual.Components.Select(s => s.Order), expectedOrders);
         }
     }
 

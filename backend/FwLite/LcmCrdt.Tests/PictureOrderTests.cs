@@ -29,4 +29,23 @@ public class PictureOrderTests : IAsyncLifetime
             .Should().Equal(pictureA.Id, pictureB.Id, pictureC.Id);
         new[] { pictureA.Order, pictureB.Order, pictureC.Order }.Should().OnlyHaveUniqueItems();
     }
+
+    [Fact]
+    public async Task CreatePicture_FirstPictureOfASenseTakesAnOrderOffItsOwnId()
+    {
+        // Two clients adding the first picture to a sense while offline pick against the same (empty)
+        // sibling list, so the only thing that can tell their orders apart is the picture's id. Both
+        // used to get max + 1, which merged into a tie no repair pass covers. Two senses stage the
+        // same arithmetic without needing two clients: one call each, identical sibling state.
+        var entry = await _fixture.Api.CreateEntry(new Entry { LexemeForm = { ["en"] = "test" } });
+        var senseA = await _fixture.Api.CreateSense(entry.Id, new Sense { Id = Guid.NewGuid() });
+        var senseB = await _fixture.Api.CreateSense(entry.Id, new Sense { Id = Guid.NewGuid() });
+
+        var first = await _fixture.Api.CreatePicture(entry.Id, senseA.Id, NewPicture());
+        var second = await _fixture.Api.CreatePicture(entry.Id, senseB.Id, NewPicture());
+
+        first.Order.Should().NotBe(second.Order,
+            "the picked order carries an offset derived from the picture's id, so two clients picking " +
+            "into the same position do not collide");
+    }
 }

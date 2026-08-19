@@ -63,7 +63,10 @@ public abstract class SenseTestsBase : MiniLcmTestBase
 
         var recreated = await Api.CreateSense(_entryId, initial);
         recreated.Should().NotBeNull();
-        recreated.Should().BeEquivalentTo(initial);
+        // Create picks an order rather than honouring the input's, so a recreated sense does not get
+        // its old one back. It used to look like it did: the last sibling had just been deleted, so
+        // the picker's integer stride happened to hand out the same value again.
+        recreated.Should().BeEquivalentTo(initial, options => options.Excluding(s => s.Order));
     }
 
     [Fact]

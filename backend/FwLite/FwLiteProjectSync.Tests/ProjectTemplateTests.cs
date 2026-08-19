@@ -100,6 +100,9 @@ public class ProjectTemplateTests : IAsyncLifetime
         var actualFr = actual.WritingSystems.Vernacular.Single(ws => ws.WsId == fr.WsId);
         // Id is a fresh Guid.NewGuid() and Order is assigned by OrderPicker at creation, so neither is
         // knowable up front; everything else (including every preserved template entity Id) must match.
+        // The template's own writing systems are different: their Ids survive the restore, and a picked
+        // order is a pure function of the Id and the sibling orders, so their orders are reproducible and
+        // the committed template records them. Regenerate the template if the picker's arithmetic changes.
         fr.Id = actualFr.Id;
         fr.Order = actualFr.Order;
         var expected = template with
