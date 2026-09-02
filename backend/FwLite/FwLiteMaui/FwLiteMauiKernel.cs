@@ -1,10 +1,13 @@
 using SIL.Harmony.Config;
 using FwLiteMaui.Services;
 using FwLiteShared;
+using FwLiteShared.Analytics;
 using FwLiteShared.Auth;
+using FwLiteShared.KeepAwake;
 using FwLiteShared.Services;
 using LcmCrdt;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging;
@@ -36,6 +39,8 @@ public static class FwLiteMauiKernel
         services.AddBlazorWebViewDeveloperTools();
         //must be added after blazor as it modifies IJSRuntime in order to intercept it's constructor
         services.AddFwLiteShared(env);
+        services.Configure<AnalyticsConfig>(config => config.Host = MixpanelAnalytics.MauiHost);
+        services.AddSingleton<IAnalyticsEventEnricher, MauiAnalyticsEventEnricher>();
         services.AddSingleton<HostedServiceAdapter>();
         services.AddSingleton<IMauiInitializeService>(sp => sp.GetRequiredService<HostedServiceAdapter>());
         services.Configure<AuthConfig>(config =>
@@ -69,6 +74,7 @@ public static class FwLiteMauiKernel
 #endif
 #if ANDROID
         services.Configure<AuthConfig>(config => config.ParentActivityOrWindow = Platform.CurrentActivity);
+        services.Replace(ServiceDescriptor.Singleton<IKeepAwakePlatform, AndroidKeepAwakePlatform>());
 #endif
         services.AddSingleton<IAppLauncher, AppLauncher>();
 

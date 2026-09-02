@@ -425,7 +425,11 @@ public class FwDataMiniLcmApi(
         {
             Id = semanticDomain.Guid,
             Name = FromLcmMultiString(semanticDomain.Name),
+            Abbreviation = FromLcmMultiString(semanticDomain.Abbreviation),
             Code = LcmHelpers.GetSemanticDomainCode(semanticDomain),
+            Description = FromLcmMultiString(semanticDomain.Description),
+            OcmCodes = semanticDomain.OcmCodes,
+            LouwNidaCodes = semanticDomain.LouwNidaCodes,
             Predefined = CanonicalGuidsSemanticDomain.CanonicalSemDomGuids.Contains(semanticDomain.Guid),
         };
     }
@@ -456,10 +460,11 @@ public class FwDataMiniLcmApi(
             {
                 var lcmSemanticDomain = Cache.ServiceLocator.GetInstance<ICmSemanticDomainFactory>()
                     .Create(semanticDomain.Id, Cache.LangProject.SemanticDomainListOA);
-                lcmSemanticDomain.OcmCodes = semanticDomain.Code;
                 UpdateLcmMultiString(lcmSemanticDomain.Name, semanticDomain.Name);
-                // TODO: Find out if semantic domains are guaranteed to have an "en" writing system, or if we should use lcmCache.DefautlAnalWs instead
-                UpdateLcmMultiString(lcmSemanticDomain.Abbreviation, new MultiString(){{"en", semanticDomain.Code}});
+                UpdateLcmMultiString(lcmSemanticDomain.Abbreviation, semanticDomain.Abbreviation);
+                UpdateLcmMultiString(lcmSemanticDomain.Description, semanticDomain.Description);
+                lcmSemanticDomain.OcmCodes = semanticDomain.OcmCodes;
+                lcmSemanticDomain.LouwNidaCodes = semanticDomain.LouwNidaCodes;
             });
         return await GetSemanticDomain(semanticDomain.Id) ?? throw new InvalidOperationException("Semantic domain was not created");
     }
@@ -851,13 +856,14 @@ public class FwDataMiniLcmApi(
         for (var i = 0; i < multiString.StringCount; i++)
         {
             var tsString = multiString.GetStringFromIndex(i, out var ws);
+            // Text is null if TsStringUtils.MakeString was called with an empty string. Empty means absent
+            // everywhere else in MiniLcm (the json converter drops empties, the validators reject them), so
+            // don't surface one here.
+            if (string.IsNullOrEmpty(tsString.Text)) continue;
             var wsId = GetWritingSystemId(ws);
             if (!wsId.IsAudio)
             {
-                // Text is null if TsStringUtils.MakeString was called with an empty string.
-                // So, we map it back for consistent round-tripping and
-                // so we can continue to assume that MultiStrings never have null values.
-                result.Values.Add(wsId, tsString.Text ?? string.Empty);
+                result.Values.Add(wsId, tsString.Text);
             }
             else
             {
@@ -891,19 +897,43 @@ public class FwDataMiniLcmApi(
 
     private string ToMediaUri(string tsString)
     {
-        //rooted media paths aren't supported
+        var audioVisualRoot = Path.Join(Cache.LangProject.LinkedFilesRootDir, AudioVisualFolder);
+        string fullFilePath;
         if (Path.IsPathRooted(tsString))
-            throw new ArgumentException("Media path must be relative", nameof(tsString));
-        var fullFilePath = Path.Join(Cache.LangProject.LinkedFilesRootDir, AudioVisualFolder, tsString);
+        {
+            // Normalize-then-classify (ticket 13): a rooted path under AudioVisual is a managed file
+            // expressed absolutely — resolve it normally. A genuinely out-of-tree path can't be resolved
+            // to a managed media file, so it becomes the not-found sentinel (never crash on read).
+            // GetRelativePath is case-insensitive on Windows and separator-aware, so it won't misclassify a
+            // managed file (which would turn a real reference into the sentinel = data loss). The path escapes
+            // AudioVisual only when the relative result begins with a parent-directory (..) SEGMENT or is rooted
+            // (a different drive). Match the segment, not a raw ".." prefix, so a filename that merely starts
+            // with ".." (e.g. "..foo.wav") stays resolvable.
+            var relative = Path.GetRelativePath(audioVisualRoot, tsString);
+            if (relative == ".."
+                || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                || relative.StartsWith(".." + Path.AltDirectorySeparatorChar, StringComparison.Ordinal)
+                || Path.IsPathRooted(relative))
+                return MediaUri.NotFound.ToString();
+            fullFilePath = tsString;
+        }
+        else
+        {
+            fullFilePath = Path.Join(audioVisualRoot, tsString);
+        }
         return mediaAdapter.MediaUriFromPath(fullFilePath, Cache).ToString();
     }
 
-    internal string FromMediaUri(string mediaUriString)
+    internal string? FromMediaUri(string mediaUriString)
     {
         //path includes `AudioVisual` currently
         var mediaUri = new MediaUri(mediaUriString);
+        // not found, return null
+        if (mediaUri == MediaUri.NotFound) return null;
         var path = mediaAdapter.PathFromMediaUri(mediaUri, Cache);
-        if (path is null) throw new NotFoundException($"File ID: {mediaUri.FileId}.", nameof(MediaFile));
+        // An unresolvable reference (no Files row / not on disk) is skipped on write, not a crash
+        // the entry otherwise syncs and the field heals on a later sync once the binary is resolvable.
+        if (path is null) return null;
         return Path.GetRelativePath(Path.Join(Cache.LangProject.LinkedFilesRootDir, AudioVisualFolder), path);
     }
 
