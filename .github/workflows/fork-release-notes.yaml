@@ -1,0 +1,23 @@
+name: fork-release-notes
+# Fork-only (see FORK.md): dispatches the upstream release-notes drafting workflow from a
+# staging branch so the Claude step can be tested here before promotion. Needs the
+# CLAUDE_CODE_OAUTH_TOKEN secret on this fork. Drafts only: no release, no Play upload.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag the notes are for (default is the tag a release of this commit would get today)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  draft:
+    uses: ./.github/workflows/fw-lite-release-notes.yaml
+    with:
+      tag: ${{ inputs.tag }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
