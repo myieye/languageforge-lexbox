@@ -578,7 +578,8 @@ jobs:
         with:
           tag_name: ${{ needs.build-and-test.outputs.version }}
           target_commitish: ${{ github.sha }}
-          generate_release_notes: true
+          # release-pipeline.yaml owns the release notes; don't generate them here too, or
+          # both writers' notes end up concatenated on the shared release (duplicated body).
           files: |
             fw-lite-msix/*
             fw-lite-portable.zip
