@@ -17,7 +17,6 @@
   import DictionaryEntry from '$lib/components/dictionary/DictionaryEntry.svelte';
   import {pt} from '$lib/views/view-text';
   import {useViewService} from '$lib/views/view-service.svelte';
-  import {useWritingSystemService} from '$project/data';
 
   let {
     entry = $bindable(),
@@ -36,26 +35,23 @@
     onCompletedSubject?: (subject: TaskSubject) => void,
   } = $props();
   const viewService = useViewService();
-  const writingSystemService = useWritingSystemService();
   const shownFields = $derived([...task.subjectFields, ...task.optionalFields ?? []]);
   const overrides = $derived.by((): Overrides => {
     if (!task.subjectWritingSystemId) return {};
     const ws = {wsId: task.subjectWritingSystemId};
-    // An optional field of the other writing system type would otherwise render no inputs
-    // at all, since the type the task isn't about is emptied.
-    const analysis = writingSystemService.defaultAnalysis;
-    const otherType = task.optionalFields?.length && analysis ? [{wsId: analysis.wsId}] : [];
     if (task.subjectWritingSystemType === WritingSystemType.Analysis) {
       return {
         analysis: [ws],
         vernacular: [],
       };
-    } else {
-      return {
-        analysis: otherType,
-        vernacular: [ws],
-      };
     }
+    // Emptying the type the task isn't about would leave an optional field of that type
+    // with no inputs at all, so leave it to the view, as every other editor does.
+    if (task.optionalFields?.length) return {vernacular: [ws]};
+    return {
+      analysis: [],
+      vernacular: [ws],
+    };
   });
   const entryPersistence = new EntryPersistence(() => entry);
   //need to create a snapshot, otherwise changes to the subjects will trigger this derived and it will skip to the next subject
