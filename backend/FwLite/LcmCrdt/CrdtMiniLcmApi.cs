@@ -793,7 +793,7 @@ public class CrdtMiniLcmApi(
 
     public async Task<Sense> UpdateSense(Guid entryId, Sense before, Sense after, IMiniLcmApi? api = null)
     {
-        await SenseSync.Sync(entryId, before, after, api ?? this);
+        await SenseSync.Sync(entryId, before, after, api ?? this, SyncContext.Empty);
         var sense = await GetSense(entryId, after.Id) ?? throw NotFoundException.ForType<Sense>(after.Id);
         VerifySenseBelongsToEntry(entryId, sense);
         return sense;
@@ -882,7 +882,7 @@ public class CrdtMiniLcmApi(
         ExampleSentence after,
         IMiniLcmApi? api = null)
     {
-        await ExampleSentenceSync.Sync(entryId, senseId, before, after, api ?? this);
+        await ExampleSentenceSync.Sync(entryId, senseId, before, after, api ?? this, SyncContext.Empty);
         return await GetExampleSentence(entryId, senseId, after.Id) ?? throw NotFoundException.ForType<ExampleSentence>(after.Id);
     }
 
@@ -890,7 +890,15 @@ public class CrdtMiniLcmApi(
     {
         await using var repo = await repoFactory.CreateRepoAsync();
         var order = await OrderPicker.PickOrder(repo.ExampleSentences.Where(s => s.SenseId == senseId), between);
-        await AddChange(new Changes.SetOrderChange<ExampleSentence>(exampleId, order));
+        var currentSenseId = await repo.ExampleSentences.Where(e => e.Id == exampleId).Select(e => e.SenseId).FirstOrDefaultAsync();
+        if (currentSenseId != default && currentSenseId != senseId)
+        {
+            await AddChange(new MoveExampleSentenceToSenseChange(exampleId, senseId, order));
+        }
+        else
+        {
+            await AddChange(new Changes.SetOrderChange<ExampleSentence>(exampleId, order));
+        }
     }
 
     public async Task DeleteExampleSentence(Guid entryId, Guid senseId, Guid exampleSentenceId)

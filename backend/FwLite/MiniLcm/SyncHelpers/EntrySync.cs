@@ -21,9 +21,10 @@ public static class EntrySync
         Entry[] afterEntries,
         IMiniLcmApi api)
     {
-        var allBeforeSenses = beforeEntries.SelectMany(e => e.Senses).ToDictionary(s => s.Id);
-        var allAfterSenses = afterEntries.SelectMany(e => e.Senses).ToDictionary(s => s.Id);
-        return await DiffCollection.DiffAndGetAdded(beforeEntries, afterEntries, new EntriesDiffApi(api, allBeforeSenses, allAfterSenses));
+        var context = new SyncContext(beforeEntries, afterEntries);
+        var (changes, added) = await DiffCollection.DiffAndGetAdded(beforeEntries, afterEntries, new EntriesDiffApi(api, context), context.Entries);
+        changes += await context.DeferredDeletes.DeleteAll();
+        return (changes, added);
     }
 
     /// <summary>
@@ -36,30 +37,38 @@ public static class EntrySync
     {
         return await DiffCollection.Diff(beforeEntries, afterEntries,
             new ObjectWithIdCollectionReplaceDiffApi<Entry>(
-                (before, after) => SyncComplexFormsAndComponents(before, after, api)));
+                (before, after) => SyncComplexFormsAndComponents(before, after, api)),
+            MoveContext<Entry, Guid>.Empty);
     }
 
     public static async Task<int> SyncFull(Entry beforeEntry, Entry afterEntry, IMiniLcmApi api)
     {
-        var changes = await SyncWithoutComplexFormsAndComponents(beforeEntry, afterEntry, api);
-        changes += await SyncComplexFormsAndComponents(beforeEntry, afterEntry, api);
+        return await SyncFull([beforeEntry], [afterEntry], api);
+    }
+
+    public static async Task<int> SyncWithoutComplexFormsAndComponents(Entry beforeEntry, Entry afterEntry, IMiniLcmApi api)
+    {
+        var context = new SyncContext([beforeEntry], [afterEntry]);
+        var changes = await SyncWithoutComplexFormsAndComponents(beforeEntry, afterEntry, api, context);
+        changes += await context.DeferredDeletes.DeleteAll();
         return changes;
     }
 
-    public static async Task<int> SyncWithoutComplexFormsAndComponents(Entry beforeEntry, Entry afterEntry, IMiniLcmApi api, Dictionary<Guid, Sense>? allBeforeSenses = null, Dictionary<Guid, Sense>? allAfterSenses = null)
+    // callers passing a context own it: they must drain context.DeferredDeletes after the walk
+    private static async Task<int> SyncWithoutComplexFormsAndComponents(Entry beforeEntry, Entry afterEntry, IMiniLcmApi api, SyncContext context)
     {
         try
         {
             var updateObjectInput = EntryDiffToUpdate(beforeEntry, afterEntry);
             if (updateObjectInput is not null) await api.SubmitUpdateEntry(afterEntry.Id, updateObjectInput);
-            var changes = await SensesSync(afterEntry.Id, beforeEntry.Senses, afterEntry.Senses, api, allBeforeSenses, allAfterSenses);
+            var changes = await SensesSync(afterEntry.Id, beforeEntry.Senses, afterEntry.Senses, api, context);
             changes += await Sync(afterEntry.Id, beforeEntry.ComplexFormTypes, afterEntry.ComplexFormTypes, api);
             changes += await SyncPublications(afterEntry.Id, beforeEntry.PublishIn, afterEntry.PublishIn, api);
             return changes + (updateObjectInput is null ? 0 : 1);
         }
         catch (Exception e)
         {
-            throw new SyncObjectException($"Failed to sync entry {afterEntry}", e);
+            throw new SyncObjectException($"Failed to sync entry {afterEntry.Id}", e);
         }
     }
 
@@ -74,7 +83,7 @@ public static class EntrySync
         }
         catch (Exception e)
         {
-            throw new SyncObjectException($"Failed to sync complex forms and components of entry {afterEntry}", e);
+            throw new SyncObjectException($"Failed to sync complex forms and components of entry {afterEntry.Id}", e);
         }
     }
 
@@ -86,7 +95,8 @@ public static class EntrySync
         return await DiffCollection.Diff(
             beforePublications,
             afterPublications,
-            new PublicationsDiffApi(api, entryId));
+            new PublicationsDiffApi(api, entryId),
+            MoveContext<Publication, Guid>.Empty);
     }
 
     private static async Task<int> Sync(Guid entryId,
@@ -97,7 +107,8 @@ public static class EntrySync
         return await DiffCollection.Diff(
             beforeComplexFormTypes,
             afterComplexFormTypes,
-            new ComplexFormTypesDiffApi(api, entryId));
+            new ComplexFormTypesDiffApi(api, entryId),
+            MoveContext<ComplexFormType, Guid>.Empty);
     }
 
     private static async Task<int> SyncComplexFormComponents(IList<ComplexFormComponent> beforeComponents, IList<ComplexFormComponent> afterComponents, IMiniLcmApi api)
@@ -105,7 +116,8 @@ public static class EntrySync
         return await DiffCollection.DiffOrderable(
             beforeComponents,
             afterComponents,
-            new ComplexFormComponentsDiffApi(api)
+            new ComplexFormComponentsDiffApi(api),
+            MoveContext<ComplexFormComponent, (Guid, Guid, Guid?)>.Empty
         );
     }
 
@@ -114,7 +126,8 @@ public static class EntrySync
         return await DiffCollection.Diff(
             beforeComponents,
             afterComponents,
-            new ComplexFormsDiffApi(api)
+            new ComplexFormsDiffApi(api),
+            MoveContext<ComplexFormComponent, (Guid, Guid, Guid?)>.Empty
         );
     }
 
@@ -122,10 +135,9 @@ public static class EntrySync
         IList<Sense> beforeSenses,
         IList<Sense> afterSenses,
         IMiniLcmApi api,
-        Dictionary<Guid, Sense>? allBeforeSenses,
-        Dictionary<Guid, Sense>? allAfterSenses)
+        SyncContext context)
     {
-        return await DiffCollection.DiffOrderable(beforeSenses, afterSenses, new SensesDiffApi(api, entryId, allBeforeSenses, allAfterSenses));
+        return await DiffCollection.DiffOrderable(beforeSenses, afterSenses, new SensesDiffApi(api, entryId, context), context.Senses);
     }
 
     public static UpdateObjectInput<Entry>? EntryDiffToUpdate(Entry beforeEntry, Entry afterEntry)
@@ -143,18 +155,15 @@ public static class EntrySync
         return new UpdateObjectInput<Entry>(patchDocument);
     }
 
-    private class EntriesDiffApi(IMiniLcmApi api, Dictionary<Guid, Sense> allBeforeSenses, Dictionary<Guid, Sense> allAfterSenses) : ObjectWithIdCollectionDiffApi<Entry>
+    private class EntriesDiffApi(IMiniLcmApi api, SyncContext context) : ObjectWithIdCollectionDiffApi<Entry>
     {
         public override async Task<(int, Entry)> AddAndGet(Entry afterEntry)
         {
-            var hasMovedSense = afterEntry.Senses.Any(s => allBeforeSenses.ContainsKey(s.Id));
             Entry addedEntry;
-            if (hasMovedSense)
+            if (context.HasChildMovingIn(afterEntry))
             {
-                // Api.CreateEntry() is optimized and assumes all senses are new rather than moved.
-                // So, we use the "smarter" SensesSync for the senses, which can handle moved senses.
                 addedEntry = await api.CreateEntry(afterEntry with { Senses = [] }, CreateEntryOptions.WithoutComplexFormsAndComponents);
-                await SensesSync(addedEntry.Id, [], afterEntry.Senses, api, allBeforeSenses, allAfterSenses);
+                await SensesSync(addedEntry.Id, [], afterEntry.Senses, api, context);
                 addedEntry = addedEntry with { Senses = afterEntry.Senses };
             }
             else
@@ -172,7 +181,7 @@ public static class EntrySync
 
         public override Task<int> Replace(Entry before, Entry after)
         {
-            return SyncWithoutComplexFormsAndComponents(before, after, api, allBeforeSenses, allAfterSenses);
+            return SyncWithoutComplexFormsAndComponents(before, after, api, context);
         }
     }
 
@@ -286,7 +295,7 @@ public static class EntrySync
         }
     }
 
-    private class SensesDiffApi(IMiniLcmApi api, Guid entryId, Dictionary<Guid, Sense>? allBeforeSenses, Dictionary<Guid, Sense>? allAfterSenses) : IOrderableCollectionDiffApi<Sense, Guid>
+    private class SensesDiffApi(IMiniLcmApi api, Guid entryId, SyncContext context) : IOrderableCollectionDiffApi<Sense, Guid>
     {
         public Guid GetId(Sense sense)
         {
@@ -295,17 +304,12 @@ public static class EntrySync
 
         public async Task<int> Add(Sense sense, BetweenPosition<Sense> between)
         {
-            /**
-            If we make "move sense to different entry" a FieldWorks Lite feature, we could add "?? await api.GetSense(sense.Id)"
-            when checking for existing senses. But that'd currently just be wasteful and it would probably
-            be better to make moving senses explicit in FieldWorks Lite (i.e. require the client to call MoveSense).
-            */
-            var existing = allBeforeSenses?.GetValueOrDefault(sense.Id);
-            if (existing is not null && existing.EntryId != entryId)
+            if (context.HasChildMovingIn(sense))
             {
-                // This can happen when a sense is moved to another entry
-                await api.MoveSense(entryId, sense.Id, new BetweenPosition(between.Previous?.Id, between.Next?.Id));
-                return 1 + await SenseSync.Sync(entryId, existing, sense, api);
+                var senseWithoutExamples = sense.Copy();
+                senseWithoutExamples.ExampleSentences = [];
+                await api.SubmitCreateSense(entryId, senseWithoutExamples, new BetweenPosition(between.Previous?.Id, between.Next?.Id));
+                return 1 + await ExampleSentenceSync.Sync(entryId, sense.Id, [], sense.ExampleSentences, api, context);
             }
             await api.SubmitCreateSense(entryId, sense, new BetweenPosition(between.Previous?.Id, between.Next?.Id));
             return 1;
@@ -319,19 +323,13 @@ public static class EntrySync
 
         public async Task<int> Remove(Sense sense)
         {
-            if (allAfterSenses?.ContainsKey(sense.Id) ?? false)
-            {
-                // Sense wasn't deleted - it was moved to a different entry
-                // We handle that in Add above
-                return 0;
-            }
             await api.DeleteSense(entryId, sense.Id);
             return 1;
         }
 
         public Task<int> Replace(Sense before, Sense after)
         {
-            return SenseSync.Sync(entryId, before, after, api);
+            return SenseSync.Sync(entryId, before, after, api, context);
         }
     }
 }

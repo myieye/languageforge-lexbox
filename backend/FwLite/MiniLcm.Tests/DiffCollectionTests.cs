@@ -161,7 +161,7 @@ public class DiffCollectionTests
     )> Diff(TestOrderable[] oldValues, TestOrderable[] newValues)
     {
         var diffApi = new TestOrderableDiffApi(oldValues);
-        var changeCount = await DiffCollection.DiffOrderable(oldValues, newValues, diffApi);
+        var changeCount = await DiffCollection.DiffOrderable(oldValues, newValues, diffApi, MoveContext<TestOrderable, Guid>.Empty);
         // verify that the operations did in fact transform the old collection into the new collection
         diffApi.Current.Should().BeEquivalentTo(newValues, options => options.WithStrictOrdering());
         var expectedReplacements = oldValues.Join(newValues, o => o.Id, o => o.Id, (o, n) => (o, n)).ToList();
@@ -190,6 +190,71 @@ public class DiffCollectionTests
     }
 
 
+    [Fact]
+    public async Task DiffOrderable_AddOfBeforeExistingId_BecomesMoveAndReplace()
+    {
+        var stay = new TestOrderable(1, Guid.NewGuid());
+        var movedFrom = new TestOrderable(2, Guid.NewGuid());
+        var movedTo = new TestOrderable(3, movedFrom.Id); // same id arriving in this collection: a move, not a create
+        var deferredDeletes = new DeferredDeletes();
+        var moves = MoveContext<TestOrderable, Guid>.MovesSupported(
+            new Dictionary<Guid, TestOrderable> { [movedFrom.Id] = movedFrom },
+            new Dictionary<Guid, TestOrderable> { [stay.Id] = stay, [movedTo.Id] = movedTo },
+            deferredDeletes);
+        var diffApi = new TestOrderableDiffApi([stay]);
+
+        await DiffCollection.DiffOrderable([stay], [stay, movedTo], diffApi, moves);
+
+        diffApi.DiffOperations.Should().BeEquivalentTo([Move(movedTo, Between(stay, null))]);
+        diffApi.Replacements.Should().Contain((movedFrom, movedTo));
+        diffApi.Current.Should().BeEquivalentTo([stay, movedTo], options => options.WithStrictOrdering());
+    }
+
+    [Fact]
+    public async Task DiffOrderable_RemoveOfIdStillInAfterState_IsSkipped()
+    {
+        var stay = new TestOrderable(1, Guid.NewGuid());
+        var moving = new TestOrderable(2, Guid.NewGuid());
+        var deferredDeletes = new DeferredDeletes();
+        var moves = MoveContext<TestOrderable, Guid>.MovesSupported(
+            new Dictionary<Guid, TestOrderable> { [stay.Id] = stay, [moving.Id] = moving },
+            new Dictionary<Guid, TestOrderable> { [stay.Id] = stay, [moving.Id] = moving },
+            deferredDeletes);
+        var diffApi = new TestOrderableDiffApi([stay, moving]);
+
+        var changes = await DiffCollection.DiffOrderable([stay, moving], [stay], diffApi, moves);
+        changes += await deferredDeletes.DeleteAll();
+
+        // the id still exists in the after state: another parent's diff owns the move, nothing is deleted here
+        changes.Should().Be(0);
+        diffApi.DiffOperations.Should().BeEmpty();
+        diffApi.Current.Should().BeEquivalentTo([stay, moving]);
+    }
+
+    [Fact]
+    public async Task DiffOrderable_GenuineDeleteRunsOnlyWhenTheQueueIsDrained()
+    {
+        var stay = new TestOrderable(1, Guid.NewGuid());
+        var gone = new TestOrderable(2, Guid.NewGuid());
+        var deferredDeletes = new DeferredDeletes();
+        var moves = MoveContext<TestOrderable, Guid>.MovesSupported(
+            new Dictionary<Guid, TestOrderable> { [stay.Id] = stay, [gone.Id] = gone },
+            new Dictionary<Guid, TestOrderable> { [stay.Id] = stay },
+            deferredDeletes);
+        var diffApi = new TestOrderableDiffApi([stay, gone]);
+
+        var changes = await DiffCollection.DiffOrderable([stay, gone], [stay], diffApi, moves);
+
+        diffApi.DiffOperations.Should().BeEmpty();
+        diffApi.Current.Should().BeEquivalentTo([stay, gone]);
+
+        changes += await deferredDeletes.DeleteAll();
+
+        changes.Should().Be(1);
+        diffApi.DiffOperations.Should().BeEquivalentTo([Remove(gone)]);
+        diffApi.Current.Should().BeEquivalentTo([stay]);
+    }
+
     public record Entry(Guid Id, string Word);
 
     private readonly FakeDiffApi _fakeApi = new();
@@ -198,7 +263,7 @@ public class DiffCollectionTests
     public async Task Diff_CallsAddForNewRecords()
     {
         var entry = new Entry(Guid.NewGuid(), "test");
-        await DiffCollection.Diff([], [entry], _fakeApi);
+        await DiffCollection.Diff([], [entry], _fakeApi, MoveContext<Entry, Guid>.Empty);
         _fakeApi.VerifyCalls(new FakeDiffApi.MethodCall(entry, nameof(FakeDiffApi.AddAndGet)));
     }
 
@@ -206,7 +271,20 @@ public class DiffCollectionTests
     public async Task Diff_CallsRemoveForMissingRecords()
     {
         var entry = new Entry(Guid.NewGuid(), "test");
-        await DiffCollection.Diff([entry], [], _fakeApi);
+        await DiffCollection.Diff([entry], [], _fakeApi, MoveContext<Entry, Guid>.Empty);
+        _fakeApi.VerifyCalls(new FakeDiffApi.MethodCall(entry, nameof(FakeDiffApi.Remove)));
+    }
+
+    [Fact]
+    public async Task Diff_RemovesAreDeferredWhenGivenAQueue()
+    {
+        var entry = new Entry(Guid.NewGuid(), "test");
+        var deferredDeletes = new DeferredDeletes();
+
+        await DiffCollection.DiffAndGetAdded([entry], [], _fakeApi, MoveContext<Entry, Guid>.DeferredDeletesOnly(deferredDeletes));
+        _fakeApi.VerifyCalls();
+
+        await deferredDeletes.DeleteAll();
         _fakeApi.VerifyCalls(new FakeDiffApi.MethodCall(entry, nameof(FakeDiffApi.Remove)));
     }
 
@@ -215,7 +293,7 @@ public class DiffCollectionTests
     {
         var entry = new Entry(Guid.NewGuid(), "test");
         var updated = entry with { Word = "new" };
-        await DiffCollection.Diff([entry], [updated], _fakeApi);
+        await DiffCollection.Diff([entry], [updated], _fakeApi, MoveContext<Entry, Guid>.Empty);
         _fakeApi.VerifyCalls(new FakeDiffApi.MethodCall((entry, updated), nameof(FakeDiffApi.Replace)));
     }
 

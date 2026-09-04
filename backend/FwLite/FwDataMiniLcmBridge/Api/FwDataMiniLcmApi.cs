@@ -1477,6 +1477,7 @@ public class FwDataMiniLcmApi(
         lexEntry.SensesOS.Add(lexSense);
     }
 
+    // inserting/adding also re-parents an example currently owned by a different sense (LCM owning sequences move on insert)
     internal void InsertExampleSentence(ILexSense lexSense, ILexExampleSentence lexExample, BetweenPosition? between = null)
     {
         var previousExampleId = between?.Previous;
@@ -1583,7 +1584,7 @@ public class FwDataMiniLcmApi(
             "Revert Sense",
             async () =>
             {
-                await SenseSync.Sync(entryId, before, after, api ?? this);
+                await SenseSync.Sync(entryId, before, after, api ?? this, SyncContext.Empty);
             });
         return await GetSense(entryId, after.Id) ?? throw NotFoundException.ForType<Sense>(after.Id);
     }
@@ -1748,21 +1749,18 @@ public class FwDataMiniLcmApi(
             "Revert Example Sentence",
             async () =>
             {
-                await ExampleSentenceSync.Sync(entryId, senseId, before, after, api ?? this);
+                await ExampleSentenceSync.Sync(entryId, senseId, before, after, api ?? this, SyncContext.Empty);
             });
         return await GetExampleSentence(entryId, senseId, after.Id) ?? throw new NullReferenceException("unable to find example sentence with id " + after.Id);
     }
 
     public Task MoveExampleSentence(Guid entryId, Guid senseId, Guid exampleSentenceId, BetweenPosition between)
     {
-        if (!EntriesRepository.TryGetObject(entryId, out var lexEntry))
-            throw new InvalidOperationException("Entry not found");
         if (!SenseRepository.TryGetObject(senseId, out var lexSense))
             throw new InvalidOperationException("Sense not found");
         if (!ExampleSentenceRepository.TryGetObject(exampleSentenceId, out var lexExample))
             throw new InvalidOperationException("Example sentence not found");
-
-        ValidateOwnership(lexExample, entryId, senseId);
+        VerifySenseBelongsToEntry(entryId, lexSense);
 
         UndoableUnitOfWorkHelper.DoUsingNewOrCurrentUOW("Move Example sentence",
             "Move Example sentence back",
