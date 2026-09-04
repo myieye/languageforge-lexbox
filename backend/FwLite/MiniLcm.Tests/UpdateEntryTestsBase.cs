@@ -150,7 +150,9 @@ public abstract class UpdateEntryTestsBase : MiniLcmTestBase
     [InlineData("a,b,c,d", "b,c,d,a", "2,3,4,5")] // move to front
     [InlineData("a,b,c,d,e", "a,b,e,c,d", "1,2,2.5,3,4")] // move to middle
     [InlineData("a,b,c", "c,b,a", "3,4,5")] // reverse
-    [InlineData("a,b,c,d", "d,b,c,a", "1,2,3,4")] // swap
+    // Swapping the ends moves the first item below the old first: it bisects into 1.5 rather than
+    // taking order 1, which the item being swapped out still holds at that moment.
+    [InlineData("a,b,c,d", "d,b,c,a", "1.5,2,3,4")] // swap
     public async Task UpdateEntry_CanReorderSenses(string before, string after, string expectedOrderValues)
     {
         // arrange
@@ -204,7 +206,9 @@ public abstract class UpdateEntryTestsBase : MiniLcmTestBase
     [InlineData("a,b,c,d", "b,c,d,a", "2,3,4,5")] // move to front
     [InlineData("a,b,c,d,e", "a,b,e,c,d", "1,2,2.5,3,4")] // move to middle
     [InlineData("a,b,c", "c,b,a", "3,4,5")] // reverse
-    [InlineData("a,b,c,d", "d,b,c,a", "1,2,3,4")] // swap
+    // Swapping the ends moves the first item below the old first: it bisects into 1.5 rather than
+    // taking order 1, which the item being swapped out still holds at that moment.
+    [InlineData("a,b,c,d", "d,b,c,a", "1.5,2,3,4")] // swap
     public async Task UpdateEntry_CanReorderExampleSentence(string before, string after, string expectedOrderValues)
     {
         // arrange
@@ -269,7 +273,9 @@ public abstract class UpdateEntryTestsBase : MiniLcmTestBase
     [InlineData("a,b,c,d", "b,c,d,a", "2,3,4,5")] // move to front
     [InlineData("a,b,c,d,e", "a,b,e,c,d", "1,2,2.5,3,4")] // move to middle
     [InlineData("a,b,c", "c,b,a", "3,4,5")] // reverse
-    [InlineData("a,b,c,d", "d,b,c,a", "1,2,3,4")] // swap
+    // Swapping the ends moves the first item below the old first: it bisects into 1.5 rather than
+    // taking order 1, which the item being swapped out still holds at that moment.
+    [InlineData("a,b,c,d", "d,b,c,a", "1.5,2,3,4")] // swap
     public async Task UpdateEntry_CanReorderComponents(string before, string after, string expectedOrderValues)
     {
         // arrange
