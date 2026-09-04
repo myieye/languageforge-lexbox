@@ -4,9 +4,9 @@
   import ReviewList from './ReviewList.svelte';
   import {type TaskSubject} from './subject.svelte';
   import {t} from 'svelte-i18n-lingui';
+  import {useWritingSystemService} from '$project/data';
   import {pt} from '$lib/views/view-text';
   import {useViewService} from '$lib/views/view-service.svelte';
-  import {useWritingSystemService} from '$project/data';
 
   let {
     subjects,
@@ -46,8 +46,8 @@
     return raws.map(b => b * scale);
   });
   let review = $state(false);
-  const viewService = useViewService();
   const writingSystemService = useWritingSystemService();
+  const viewService = useViewService();
 </script>
 {#if !review}
   <div class="flex flex-col items-center justify-center">
