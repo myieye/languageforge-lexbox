@@ -26,6 +26,8 @@ export interface Task {
   description?: ViewText;
   subjectType: 'entry' | 'sense' | 'example-sentence';
   subjectFields: FieldId[];
+  /** Shown and saved alongside the subject, but never required to move on. */
+  optionalFields?: FieldId[];
   subjectWritingSystemId?: string;
   subjectWritingSystemType?: WritingSystemType;
   /** Already translated, see subject. */
@@ -198,9 +200,12 @@ export class TasksService {
         subject: gt`Missing Example sentence ${writingSystem.abbreviation}`,
         subjectType: 'example-sentence',
         subjectFields: ['sentence'],
+        // Translating is most natural while the sentence is still in mind, but plenty of
+        // people can't translate into every analysis language, so it can't be required.
+        optionalFields: ['translations'],
         subjectWritingSystemId: writingSystem.wsId,
         subjectWritingSystemType: writingSystem.type,
-        prompt: writingSystem.isAudio ? gt`Record an example sentence` : gt`Type an example sentence`,
+        prompt: writingSystem.isAudio ? gt`Record an example sentence, and type a translation if you can` : gt`Type an example sentence, and a translation if you can`,
         taskKind: 'provide-missing',
         gridifyFilter: `Senses.ExampleSentences=null|Senses.ExampleSentences.Sentence[${writingSystem.wsId}]=`,
         getSubjectValue: s => TasksService.getSubjectValue(taskExample, s),

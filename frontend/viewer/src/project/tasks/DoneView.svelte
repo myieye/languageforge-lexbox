@@ -6,6 +6,7 @@
   import {t} from 'svelte-i18n-lingui';
   import {pt} from '$lib/views/view-text';
   import {useViewService} from '$lib/views/view-service.svelte';
+  import {useWritingSystemService} from '$project/data';
 
   let {
     subjects,
@@ -46,6 +47,7 @@
   });
   let review = $state(false);
   const viewService = useViewService();
+  const writingSystemService = useWritingSystemService();
 </script>
 {#if !review}
   <div class="flex flex-col items-center justify-center">
@@ -55,7 +57,7 @@
       {#each subjects as subject, index (subject)}
         <span class="px-2 py-1 bg-primary text-primary-foreground rounded text-center min-w-max"
               style="flex: 0 0 {basis[index]}%">
-          {subject.subject}
+          {subject.subject || writingSystemService.headword(subject.entry)}
         </span>
       {/each}
     </div>
