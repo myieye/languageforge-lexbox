@@ -3,9 +3,8 @@ using Microsoft.EntityFrameworkCore;
 namespace LcmCrdt.Tests.Data;
 
 /// <summary>
-/// The Translations column was renamed from Translation without rewriting data, so rows which haven't been edited
-/// since still hold a bare RichMultiString object where new rows hold an array of translations.
-/// These tests put both shapes in one project and check the translation filters against them side by side.
+/// Puts every shape the Translations column can hold (see <see cref="Json.TranslationsPlainText"/>) in one project
+/// and checks the translation filters against them side by side.
 /// </summary>
 public class LegacyTranslationFilterTests : IAsyncLifetime
 {
@@ -14,6 +13,8 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
     private const string LegacyEmpty = "legacy empty";
     private const string LegacyEn = "legacy en";
     private const string LegacyEs = "legacy es";
+    private const string LegacyEmptyEn = "legacy empty en";
+    private const string LegacyPlain = "legacy plain";
 
     private readonly MiniLcmApiFixture _fixture = new();
 
@@ -27,6 +28,11 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
             """{"en":{"Spans":[{"Text":"legacy translation","Ws":"en"}]}}""");
         await SetRawTranslations(await CreateEntryWithExample(LegacyEs, []),
             """{"es":{"Spans":[{"Text":"legacy es translation","Ws":"es"}]}}""");
+        await SetRawTranslations(await CreateEntryWithExample(LegacyEmptyEn, []), """{"en":{"Spans":[]}}""");
+        //before rich text, both columns held a plain string per writing system
+        var plain = await CreateEntryWithExample(LegacyPlain, []);
+        await SetRawTranslations(plain, """{"en":"legacy plain translation"}""");
+        await SetRawColumn(plain, "Sentence", """{"en":"legacy plain sentence"}""");
     }
 
     public async Task DisposeAsync()
@@ -59,11 +65,16 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
         return exampleSentenceId;
     }
 
-    private async Task SetRawTranslations(Guid exampleSentenceId, string json)
+    private Task SetRawTranslations(Guid exampleSentenceId, string json)
+    {
+        return SetRawColumn(exampleSentenceId, "Translations", json);
+    }
+
+    private async Task SetRawColumn(Guid exampleSentenceId, string column, string json)
     {
         var rowsUpdated = await _fixture.DbContext.Database.ExecuteSqlRawAsync(
             //NOCASE because we don't want to depend on how EF cases the guid it stored
-            "UPDATE ExampleSentence SET Translations = {0} WHERE Id = {1} COLLATE NOCASE",
+            $"UPDATE ExampleSentence SET {column} = {{0}} WHERE Id = {{1}} COLLATE NOCASE",
             json,
             exampleSentenceId.ToString());
         rowsUpdated.Should().Be(1);
@@ -82,9 +93,9 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
     {
         var translationColumns = await _fixture.DbContext.Database
             .SqlQuery<string>($"SELECT Translations AS Value FROM ExampleSentence").ToArrayAsync();
-        translationColumns.Should().HaveCount(5);
+        translationColumns.Should().HaveCount(7);
         translationColumns.Where(c => c.StartsWith('[')).Should().HaveCount(2);
-        translationColumns.Where(c => c.StartsWith('{')).Should().HaveCount(3);
+        translationColumns.Where(c => c.StartsWith('{')).Should().HaveCount(5);
     }
 
     [Theory]
@@ -100,27 +111,36 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
     public async Task LegacyObjectWithTextCountsAsHavingTranslations()
     {
         var results = await Filter("Senses.ExampleSentences.Translations!=null");
-        results.Should().BeEquivalentTo([CurrentEn, LegacyEn, LegacyEs]);
+        results.Should().BeEquivalentTo([CurrentEn, LegacyEn, LegacyEs, LegacyEmptyEn, LegacyPlain]);
     }
 
     [Fact]
     public async Task CanFilterToMissingTranslationTextInEn()
     {
         var results = await Filter("Senses.ExampleSentences.Translations.Text[en]=");
-        results.Should().BeEquivalentTo([CurrentEmpty, LegacyEmpty, LegacyEs]);
+        results.Should().BeEquivalentTo([CurrentEmpty, LegacyEmpty, LegacyEs, LegacyEmptyEn]);
     }
 
     [Fact]
     public async Task CanFilterToMissingTranslationTextInEs()
     {
         var results = await Filter("Senses.ExampleSentences.Translations.Text[es]=");
-        results.Should().BeEquivalentTo([CurrentEmpty, CurrentEn, LegacyEmpty, LegacyEn]);
+        results.Should().BeEquivalentTo([CurrentEmpty, CurrentEn, LegacyEmpty, LegacyEn, LegacyEmptyEn, LegacyPlain]);
     }
 
     [Fact]
     public async Task CanFilterToTranslationTextInLegacyRows()
     {
         var results = await Filter("Senses.ExampleSentences.Translations.Text[en]=*legacy");
-        results.Should().BeEquivalentTo([LegacyEn]);
+        results.Should().BeEquivalentTo([LegacyEn, LegacyPlain]);
+    }
+
+    [Fact]
+    public async Task CanFilterSentenceTextInLegacyPlainRows()
+    {
+        var results = await Filter("Senses.ExampleSentences.Sentence[en]=*plain sentence");
+        results.Should().BeEquivalentTo([LegacyPlain]);
+        var missing = await Filter("Senses.ExampleSentences.Sentence[en]=");
+        missing.Should().BeEmpty();
     }
 }

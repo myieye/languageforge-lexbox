@@ -212,7 +212,8 @@ public static class Json
         throw new NotImplementedException("only supported server side");
     }
 
-    [Sql.Expression("(select group_concat(s.value->>'Text', '') from json_each({0}->>'Spans') as s)", PreferServerSide = true)]
+    //rows written before rich text hold the plain string itself, and ->>'Spans' on that raises 'malformed JSON'
+    [Sql.Expression("(case when json_valid({0}) then (select group_concat(s.value->>'Text', '') from json_each({0}->>'Spans') as s) else {0} end)", PreferServerSide = true)]
     public static string GetPlainText(RichString? richString)
     {
         return richString?.GetPlainText() ?? "";
@@ -224,23 +225,27 @@ public static class Json
         return guid?.ToString() ?? "";
     }
 
-    //json_each counts array elements as well as object keys, so an untouched legacy translations object ('{}') counts as empty
-    [Sql.Expression("(select count(*) from json_each({0}))", ServerSideOnly = true)]
+    //json_each counts object keys too, so an untouched legacy translations object ('{}') counts as empty
+    [Sql.Expression("(case when json_type({0}) = 'array' then json_array_length({0}) else (select count(*) from json_each({0})) end)", ServerSideOnly = true)]
     public static int ElementCount<T>(IEnumerable<T>? value)
     {
-        throw new NotImplementedException("server-side only");
+        throw new NotImplementedException("only supported server side");
     }
 
-    //the ELSE branch reads untouched legacy rows, where the column holds a bare RichMultiString instead of an array of translations
+    //The Translations column was renamed from Translation without rewriting its data, so rows not edited since
+    //still hold what that column held: a RichMultiString object, or before rich text a plain string per writing system.
+    //Only the array branch is the current shape.
     [Sql.Expression("""
                     (case when json_type({0}) = 'array'
                         then (select group_concat(s.value->>'Text', '') from json_each({0}) as t, json_each(t.value->>'Text'->>{1}->>'Spans') as s)
-                        else (select group_concat(s.value->>'Text', '') from json_each({0}->>{1}->>'Spans') as s)
+                        when json_valid({0}->>{1})
+                        then (select group_concat(s.value->>'Text', '') from json_each({0}->>{1}->>'Spans') as s)
+                        else {0}->>{1}
                     end)
                     """, ServerSideOnly = true)]
     public static string? TranslationsPlainText(IEnumerable<Translation>? translations, string ws)
     {
-        throw new NotImplementedException("server-side only");
+        throw new NotImplementedException("only supported server side");
     }
 
     //Json.Value's path walker can't handle a key captured from an outer json_each row; use At for that.
