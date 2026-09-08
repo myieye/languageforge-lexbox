@@ -54,6 +54,23 @@ public class MigrationTests : IAsyncLifetime
     }
 
     [Theory]
+    //these dbs predate the Translations column, so every example still holds a legacy translations object;
+    //in v2 one of the four has en text in it, in v1 the only one is empty
+    [InlineData(RegressionTestHelper.RegressionVersion.v1, 1)]
+    [InlineData(RegressionTestHelper.RegressionVersion.v2, 3)]
+    public async Task TranslationFilters_WorkAfterMigrationFromScriptedDb(RegressionTestHelper.RegressionVersion regressionVersion, int expectedCount)
+    {
+        await _helper.InitializeAsync(regressionVersion);
+        var api = _helper.Services.GetRequiredService<IMiniLcmApi>();
+
+        var noTranslations = await api.CountEntries(null, new(Filter: new() { GridifyFilter = "Senses.ExampleSentences.Translations=null" }));
+        noTranslations.Should().Be(expectedCount);
+
+        var noEnTranslationText = await api.CountEntries(null, new(Filter: new() { GridifyFilter = "Senses.ExampleSentences.Translations.Text[en]=" }));
+        noEnTranslationText.Should().Be(expectedCount);
+    }
+
+    [Theory]
     [InlineData(RegressionTestHelper.RegressionVersion.v1)]
     [InlineData(RegressionTestHelper.RegressionVersion.v2)]
     [Trait("Category", "Verified")]
