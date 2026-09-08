@@ -213,7 +213,7 @@ public static class Json
     }
 
     //rows written before rich text hold the plain string itself, and ->>'Spans' on that raises 'malformed JSON'
-    [Sql.Expression("(case when json_valid({0}) then (select group_concat(s.value->>'Text', '') from json_each({0}->>'Spans') as s) else {0} end)", PreferServerSide = true)]
+    [Sql.Expression("(case when json_valid({0}) and json_type({0}) = 'object' then (select group_concat(s.value->>'Text', '') from json_each({0}->>'Spans') as s) else {0} end)", PreferServerSide = true)]
     public static string GetPlainText(RichString? richString)
     {
         return richString?.GetPlainText() ?? "";
@@ -238,7 +238,7 @@ public static class Json
     [Sql.Expression("""
                     (case when json_type({0}) = 'array'
                         then (select group_concat(s.value->>'Text', '') from json_each({0}) as t, json_each(t.value->>'Text'->>{1}->>'Spans') as s)
-                        when json_valid({0}->>{1})
+                        when json_valid({0}->>{1}) and json_type({0}->>{1}) = 'object'
                         then (select group_concat(s.value->>'Text', '') from json_each({0}->>{1}->>'Spans') as s)
                         else {0}->>{1}
                     end)
