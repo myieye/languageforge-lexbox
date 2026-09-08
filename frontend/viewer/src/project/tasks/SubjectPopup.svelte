@@ -147,7 +147,7 @@
     </Drawer.Header>
     <div class="mx-2 md:mx-4 shadow-inner rounded-md p-4">
       {#if entry}
-        <DictionaryEntry {entry} headwordClass="text-2xl" highlightSenseId={subject?.sense?.id} hideExamples={task.subjectType !== 'example-sentence'}/>
+        <DictionaryEntry {entry} headwordClass="text-2xl" highlightSenseId={subject?.sense?.id} highlightExampleId={subject?.exampleSentence?.id} hideExamples={task.subjectType !== 'example-sentence'}/>
       {/if}
     </div>
     <Drawer.Footer class="gap-4">
