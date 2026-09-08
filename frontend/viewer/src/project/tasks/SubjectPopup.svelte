@@ -107,10 +107,29 @@
   }
 
   // Anything typed into an optional field is worth keeping, and Next is the only thing that
-  // saves it, so on tasks with one having typed anything is enough to continue. The editors'
-  // change handlers only fire on blur, so this tracks the form's input events instead.
-  let edited = $state(false);
-  const canContinue = $derived(!!subject && (isSubjectComplete() || (edited && !!task.optionalFields?.length)));
+  // saves it, so on tasks with one, having typed something that is still there is enough to
+  // continue. The editors' change handlers only fire on blur, so this reads the inputs themselves.
+  let typed = $state(false);
+  let hasVisibleText = $state(false);
+  const canContinue = $derived(!!subject && (isSubjectComplete() || (typed && hasVisibleText && !!task.optionalFields?.length)));
+
+  function updateHasVisibleText() {
+    const inputs = form?.querySelectorAll<HTMLElement>('input:not([type=submit]), .ProseMirror') ?? [];
+    hasVisibleText = [...inputs].some(el => el.checkVisibility() && (el instanceof HTMLInputElement ? el.value : el.textContent ?? '').trim() !== '');
+  }
+
+  function onInput() {
+    typed = true;
+    updateHasVisibleText();
+  }
+
+  // The rich text editors apply deletions themselves, without an input event, so watch the DOM too.
+  $effect(() => {
+    if (!form) return;
+    const observer = new MutationObserver(updateHasVisibleText);
+    observer.observe(form, {subtree: true, childList: true, characterData: true});
+    return () => observer.disconnect();
+  });
 
   function subjectEntity() {
     const entity = task.subjectType === 'example-sentence' ? subject?.exampleSentence :
@@ -133,7 +152,8 @@
   $effect(() => {
     if (!form || !subjectKey || focusedSubject === subjectKey) return;
     focusedSubject = subjectKey;
-    edited = false;
+    typed = false;
+    hasVisibleText = false;
     const inputs = form.querySelectorAll<HTMLElement>('input, .ProseMirror');
     for (const input of inputs) {
       if (input.checkVisibility()) {
@@ -163,7 +183,7 @@
       </p>
       {#if subject}
         {#key subjectKey}
-          <form bind:this={form} oninput={() => edited = true} onsubmit={(e) => {e.preventDefault(); void onNext()}}>
+          <form bind:this={form} oninput={onInput} onsubmit={(e) => {e.preventDefault(); void onNext()}}>
             <!--        lets us submit by pressing enter on any field-->
             <input type="submit" style="display: none;"/>
             <Editor.Root bind:this={editor}>
