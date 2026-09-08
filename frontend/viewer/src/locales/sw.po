@@ -1668,6 +1668,10 @@ msgid "Missing Semantic domains"
 msgstr ""
 
 #: src/project/tasks/tasks-service.ts
+msgid "Missing Translation {0}"
+msgstr ""
+
+#: src/project/tasks/tasks-service.ts
 msgid "Missing Word {0}"
 msgstr ""
 
@@ -2185,11 +2189,15 @@ msgid "Record a Lexeme form or Citation form"
 msgstr ""
 
 #: src/project/tasks/tasks-service.ts
+msgid "Record a translation of the example sentence"
+msgstr ""
+
+#: src/project/tasks/tasks-service.ts
 msgid "Record a Word"
 msgstr ""
 
 #: src/project/tasks/tasks-service.ts
-msgid "Record an example sentence"
+msgid "Record an example sentence, and type a translation if you can"
 msgstr ""
 
 #: src/project/tasks/tasks-service.ts
@@ -2824,6 +2832,10 @@ msgstr "Geuza iliyobandikwa"
 msgid "Total entries"
 msgstr ""
 
+#: src/project/tasks/tasks-service.ts
+msgid "Translate the example sentence"
+msgstr ""
+
 #. Field label
 #: src/lib/entry-editor/object-editors/ExampleEditorPrimitive.svelte
 #: src/lib/views/entity-config.ts
@@ -2882,10 +2894,9 @@ msgstr ""
 msgid "Type a Word"
 msgstr ""
 
-#. Task instruction
 #: src/project/tasks/tasks-service.ts
-msgid "Type an example sentence"
-msgstr "Andika sentensi ya mfano"
+msgid "Type an example sentence, and a translation if you can"
+msgstr ""
 
 #. Label for audio file type
 #: src/lib/components/audio/audio-editor.svelte
