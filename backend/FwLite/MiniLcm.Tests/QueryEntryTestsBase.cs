@@ -97,7 +97,7 @@ public abstract class QueryEntryTestsBase : MiniLcmTestBase
                         new ExampleSentence()
                         {
                             Sentence = { { "en", new RichString("I like eating Kiwis, they taste good") } },
-                            // two translations, only one of them with en text: pins that the translation text filter is per example sentence
+                            //two translations, only one of them with en text: pins that the translation text filter is per example sentence
                             Translations =
                             [
                                 new Translation() { Text = { { "en", new RichString("Kiwi translation") } } },
@@ -481,6 +481,10 @@ public abstract class QueryEntryTestsBase : MiniLcmTestBase
         var results = await Api
             .GetEntries(new(Filter: new() { GridifyFilter = "Senses.ExampleSentences.Translations.Text[en]=*translation" })).ToArrayAsync();
         results.Select(e => e.LexemeForm["en"]).Should().BeEquivalentTo(Kiwi);
+        //Kiwi's es translation must not be found through en
+        var otherWs = await Api
+            .GetEntries(new(Filter: new() { GridifyFilter = "Senses.ExampleSentences.Translations.Text[en]=*es translation" })).ToArrayAsync();
+        otherWs.Should().BeEmpty();
     }
 
     [Theory]
