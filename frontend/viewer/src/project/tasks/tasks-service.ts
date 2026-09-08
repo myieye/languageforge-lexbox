@@ -188,7 +188,10 @@ export class TasksService {
 
   public exampleSentenceTasks() {
     subscribeLanguageChange();
-    return TasksService.makeExampleSentenceTasks(this.writingSystemService.vernacular);
+    return [
+      ...TasksService.makeExampleSentenceTasks(this.writingSystemService.vernacular),
+      ...TasksService.makeTranslationTasks(this.writingSystemService.analysis),
+    ];
   }
 
   public static *makeExampleSentenceTasks(vernacular: IWritingSystem[]) {
@@ -213,6 +216,30 @@ export class TasksService {
       };
       yield taskExample;
     }
+  }
+
+  public static *makeTranslationTasks(analysis: IWritingSystem[]) {
+    for (const writingSystem of analysis) {
+      const taskTranslation: Task = {
+        id: `example-translation-${writingSystem.wsId}`,
+        contextFields: ['sentence'],
+        subject: gt`Missing Translation ${writingSystem.abbreviation}`,
+        subjectType: 'example-sentence',
+        subjectFields: ['translations'],
+        subjectWritingSystemId: writingSystem.wsId,
+        subjectWritingSystemType: writingSystem.type,
+        prompt: writingSystem.isAudio ? gt`Record a translation of the example sentence` : gt`Translate the example sentence`,
+        taskKind: 'provide-missing',
+        gridifyFilter: `Senses.ExampleSentences.Translations.Text[${writingSystem.wsId}]=`,
+        getSubjectValue: s => TasksService.getTranslationValue(s as IExampleSentence, writingSystem.wsId),
+        isComplete: s => !!TasksService.getTranslationValue(s as IExampleSentence, writingSystem.wsId)
+      };
+      yield taskTranslation;
+    }
+  }
+
+  private static getTranslationValue(example: IExampleSentence, wsId: string): string | undefined {
+    return firstTruthy(example.translations, t => asString(t.text[wsId]));
   }
 
   private static getHeadwordValue(entry: IEntry, wsId: string): string | undefined {
@@ -291,7 +318,8 @@ export class TasksService {
     } else if (task.subjectType === 'example-sentence') {
       for (const sense of entry.senses) {
         let examples = sense.exampleSentences;
-        if (examples.length === 0) examples = [defaultExampleSentence(sense.id)];
+        // Only a task about the sentence itself can start a new example; there's nothing to translate otherwise.
+        if (examples.length === 0 && task.subjectFields.includes('sentence')) examples = [defaultExampleSentence(sense.id)];
         for (const example of examples) {
           if (task.getSubjectValue(example)) continue;
           subjects.push(new TaskSubject(entry, sense, example, (s) => task.getSubjectValue(s.exampleSentence!)));
