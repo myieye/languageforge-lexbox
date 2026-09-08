@@ -15,6 +15,7 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
     private const string LegacyEs = "legacy es";
     private const string LegacyEmptyEn = "legacy empty en";
     private const string LegacyPlain = "legacy plain";
+    private const string LegacyNumeric = "legacy numeric";
 
     private readonly MiniLcmApiFixture _fixture = new();
 
@@ -33,6 +34,8 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
         var plain = await CreateEntryWithExample(LegacyPlain, []);
         await SetRawTranslations(plain, """{"en":"legacy plain translation"}""");
         await SetRawColumn(plain, "Sentence", """{"en":"legacy plain sentence"}""");
+        //plain text that happens to parse as json is still text
+        await SetRawTranslations(await CreateEntryWithExample(LegacyNumeric, []), """{"en":"42"}""");
     }
 
     public async Task DisposeAsync()
@@ -93,9 +96,9 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
     {
         var translationColumns = await _fixture.DbContext.Database
             .SqlQuery<string>($"SELECT Translations AS Value FROM ExampleSentence").ToArrayAsync();
-        translationColumns.Should().HaveCount(7);
+        translationColumns.Should().HaveCount(8);
         translationColumns.Where(c => c.StartsWith('[')).Should().HaveCount(2);
-        translationColumns.Where(c => c.StartsWith('{')).Should().HaveCount(5);
+        translationColumns.Where(c => c.StartsWith('{')).Should().HaveCount(6);
     }
 
     [Theory]
@@ -111,7 +114,7 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
     public async Task LegacyObjectWithTextCountsAsHavingTranslations()
     {
         var results = await Filter("Senses.ExampleSentences.Translations!=null");
-        results.Should().BeEquivalentTo([CurrentEn, LegacyEn, LegacyEs, LegacyEmptyEn, LegacyPlain]);
+        results.Should().BeEquivalentTo([CurrentEn, LegacyEn, LegacyEs, LegacyEmptyEn, LegacyPlain, LegacyNumeric]);
     }
 
     [Fact]
@@ -125,7 +128,7 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
     public async Task CanFilterToMissingTranslationTextInEs()
     {
         var results = await Filter("Senses.ExampleSentences.Translations.Text[es]=");
-        results.Should().BeEquivalentTo([CurrentEmpty, CurrentEn, LegacyEmpty, LegacyEn, LegacyEmptyEn, LegacyPlain]);
+        results.Should().BeEquivalentTo([CurrentEmpty, CurrentEn, LegacyEmpty, LegacyEn, LegacyEmptyEn, LegacyPlain, LegacyNumeric]);
     }
 
     [Fact]
@@ -133,6 +136,8 @@ public class LegacyTranslationFilterTests : IAsyncLifetime
     {
         var results = await Filter("Senses.ExampleSentences.Translations.Text[en]=*legacy");
         results.Should().BeEquivalentTo([LegacyEn, LegacyPlain]);
+        var numeric = await Filter("Senses.ExampleSentences.Translations.Text[en]=42");
+        numeric.Should().BeEquivalentTo([LegacyNumeric]);
     }
 
     [Fact]
