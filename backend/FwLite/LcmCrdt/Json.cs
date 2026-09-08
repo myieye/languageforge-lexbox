@@ -224,6 +224,25 @@ public static class Json
         return guid?.ToString() ?? "";
     }
 
+    //json_each counts array elements as well as object keys, so an untouched legacy translations object ('{}') counts as empty
+    [Sql.Expression("(select count(*) from json_each({0}))", ServerSideOnly = true)]
+    public static int ElementCount<T>(IEnumerable<T>? value)
+    {
+        throw new NotImplementedException("server-side only");
+    }
+
+    //the ELSE branch reads untouched legacy rows, where the column holds a bare RichMultiString instead of an array of translations
+    [Sql.Expression("""
+                    (case when json_type({0}) = 'array'
+                        then (select group_concat(s.value->>'Text', '') from json_each({0}) as t, json_each(t.value->>'Text'->>{1}->>'Spans') as s)
+                        else (select group_concat(s.value->>'Text', '') from json_each({0}->>{1}->>'Spans') as s)
+                    end)
+                    """, ServerSideOnly = true)]
+    public static string? TranslationsPlainText(IEnumerable<Translation>? translations, string ws)
+    {
+        throw new NotImplementedException("server-side only");
+    }
+
     //Json.Value's path walker can't handle a key captured from an outer json_each row; use At for that.
     [Sql.Expression("{0}->>{1}", ServerSideOnly = true)]
     public static string? At(MultiString value, string key)
