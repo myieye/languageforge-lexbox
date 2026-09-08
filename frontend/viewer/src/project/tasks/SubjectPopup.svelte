@@ -59,8 +59,14 @@
   let subjectIndex = $state(0);
   let subject = $derived(subjects.at(subjectIndex));
   // Editing the entry rebuilds the snapshot above, so keying the form on the subject object
-  // would tear the editor down on every keystroke. The ids identify the same subject.
-  const subjectKey = $derived(subject && [subject.entry.id, subject.sense?.id, subject.exampleSentence?.id].join('|'));
+  // would tear the editor down on every keystroke. The ids identify the same subject; an example
+  // the task made up gets a fresh id each time, so it's keyed as the sense's new example instead.
+  const subjectKey = $derived.by(() => {
+    if (!subject) return undefined;
+    const example = subject.exampleSentence;
+    const exampleKey = example && (subject.sense?.exampleSentences.some(e => e.id === example.id) ? example.id : 'new');
+    return [subject.entry.id, subject.sense?.id, exampleKey].join('|');
+  });
   $effect(() => {
     if (entry && subjects.length === 0) {
       onNextEntry();
@@ -100,11 +106,11 @@
     }
   }
 
-  // Anything the user typed is worth keeping, and Next is the only thing that saves it, so
-  // an optional field alone has to be enough to continue. The editors' change handlers only
-  // fire on blur, so this tracks the form's input events instead.
+  // Anything typed into an optional field is worth keeping, and Next is the only thing that
+  // saves it, so on tasks with one having typed anything is enough to continue. The editors'
+  // change handlers only fire on blur, so this tracks the form's input events instead.
   let edited = $state(false);
-  const canContinue = $derived(!!subject && (edited || isSubjectComplete()));
+  const canContinue = $derived(!!subject && (isSubjectComplete() || (edited && !!task.optionalFields?.length)));
 
   function subjectEntity() {
     const entity = task.subjectType === 'example-sentence' ? subject?.exampleSentence :
