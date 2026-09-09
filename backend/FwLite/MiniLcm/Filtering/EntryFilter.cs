@@ -22,6 +22,7 @@ public class EntryFilter
         mapper.AddMap($"{nameof(Entry.Senses)}.{nameof(Sense.ExampleSentences)}", provider.EntrySensesExampleSentences, NormalizeEmptyToNull<ExampleSentence>);
         mapper.AddMap($"{nameof(Entry.Senses)}.{nameof(Sense.ExampleSentences)}.{nameof(ExampleSentence.Sentence)}", provider.EntrySensesExampleSentencesSentence!);
         mapper.AddMap($"{nameof(Entry.Senses)}.{nameof(Sense.ExampleSentences)}.{nameof(ExampleSentence.Translations)}", provider.EntrySensesExampleSentencesTranslations, provider.EntrySensesExampleSentencesTranslationsConverter);
+        mapper.AddMap($"{nameof(Entry.Senses)}.{nameof(Sense.ExampleSentences)}.{nameof(ExampleSentence.Translations)}.{nameof(Translation.Text)}", provider.EntrySensesExampleSentencesTranslationsText!);
 
         mapper.AddMap(nameof(Entry.Note), provider.EntryNote!);
         mapper.AddMap(nameof(Entry.LexemeForm), provider.EntryLexemeForm!);
@@ -44,6 +45,14 @@ public class EntryFilter
         // Note: we can't normalize from the empty string, because gridify has special IsNullOrDefault handling for that case
         // i.e. it always ignores the returned value and we can't do anything about that.
         // Throw because IsNullOrDefault won't work as expected
+        if (value is "") throw new Exception("To filter for empty collections use [] or null.");
+        throw new Exception($"Invalid value {value} for {typeof(T).Name}");
+    }
+
+    //used by the database for json columns whose emptiness is checked by counting elements rather than comparing the column
+    public static object NormalizeEmptyToZero<T>(string value)
+    {
+        if (value is "null" or "[]") return 0;
         if (value is "") throw new Exception("To filter for empty collections use [] or null.");
         throw new Exception($"Invalid value {value} for {typeof(T).Name}");
     }
