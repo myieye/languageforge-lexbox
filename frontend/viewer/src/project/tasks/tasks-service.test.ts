@@ -60,6 +60,7 @@ const analysisWs = ws(WritingSystemType.Analysis);
 
 //find tasks by id rather than positional index so the fixtures survive reordering of the generators
 const exampleTask = [...TasksService.makeExampleSentenceTasks([vernacularWs])].find(t => t.id === 'example-sentence-en')!;
+const translationTask = [...TasksService.makeTranslationTasks([analysisWs])].find(t => t.id === 'example-translation-en')!;
 const senseTask = [...TasksService.makeSenseTasks([analysisWs])].find(t => t.id === 'sense-no-gloss-en')!;
 const semanticDomainTask = [...TasksService.makeSenseTasks([analysisWs])].find(t => t.id === 'missing-semantic-domain')!;
 const headwordTask = [...TasksService.makeEntryTasks([vernacularWs])].find(t => t.id === 'entry-no-headword-en')!;
@@ -138,6 +139,46 @@ describe('tasks service', () => {
       });
 
     });
+    describe('translation', () => {
+      function translated(text: string) {
+        return {id: crypto.randomUUID(), text: {en: {spans: [{text, ws: 'en'}]}}};
+      }
+
+      it('should return an example without a translation', () => {
+        let example: IExampleSentence;
+        const entry = newEntry({
+          senses: [newSense({
+            exampleSentences: [
+              newExample({translations: [translated('hello')]}),
+              example = newExample({}),
+            ]
+          })]
+        });
+        const subjects = TasksService.subjects(translationTask, entry);
+        expect(subjects.map(s => s.exampleSentence)).toStrictEqual([example]);
+      });
+
+      it('is satisfied by any translation with text in the writing system', () => {
+        const example = newExample({translations: [translated(''), translated('hello')]});
+        expect(translationTask.isComplete(example)).toBe(true);
+        expect(translationTask.getSubjectValue(example)).toBe('hello');
+      });
+
+      it('is not satisfied by a translation in another writing system', () => {
+        const example = newExample({translations: [{id: crypto.randomUUID(), text: {fr: {spans: [{text: 'bonjour', ws: 'fr'}]}}}]});
+        expect(translationTask.isComplete(example)).toBe(false);
+      });
+
+      it('should not create an example when none exist', () => {
+        const entry = newEntry({senses: [newSense({exampleSentences: []})]});
+        expect(TasksService.subjects(translationTask, entry)).toStrictEqual([]);
+      });
+
+      it('filters on the translation text of the writing system', () => {
+        expect(translationTask.gridifyFilter).toBe('Senses.ExampleSentences.Translations.Text[en]=');
+      });
+    });
+
     describe('sense', () => {
 
       it('should return a sense', () => {
@@ -297,9 +338,14 @@ describe('tasks service', () => {
         ]);
       });
 
+      it('translation task says "Record" for an audio analysis writing system', () => {
+        const [task] = [...TasksService.makeTranslationTasks([{...analysisWs, isAudio: true}])];
+        expect(task.prompt).toStrictEqual('Record a translation of the example sentence');
+      });
+
       it('example sentence task says "Record" for an audio writing system', () => {
         const [task] = [...TasksService.makeExampleSentenceTasks([audioWs])];
-        expect(task.prompt).toStrictEqual('Record an example sentence');
+        expect(task.prompt).toStrictEqual('Record an example sentence, and type a translation if you can');
       });
     });
 
