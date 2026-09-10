@@ -6,7 +6,7 @@
   import {Skeleton} from '$lib/components/ui/skeleton';
   import {useWritingSystemService} from '$project/data';
   import {useFeatures} from '$lib/services/feature-service';
-  import {type IWritingSystem, WritingSystemType} from '$lib/dotnet-types';
+  import {type IWritingSystem} from '$lib/dotnet-types';
   import {plural, t} from 'svelte-i18n-lingui';
   import {navigate, useRouter} from 'svelte-routing';
   import {taskLabel, useTasksService, type Task} from './tasks-service';
@@ -14,6 +14,7 @@
   import {pt, tvt} from '$lib/views/view-text';
   import {useViewService} from '$lib/views/view-service.svelte';
   import {useTasksStats} from './tasks-stats.svelte';
+  import {writingSystemOf, wsColorClass} from './task-view-helpers';
 
   let {onSelect}: {onSelect: (taskId: string) => void} = $props();
 
@@ -26,19 +27,11 @@
   type Target = {task: Task, ws?: IWritingSystem};
   type Field = {key: string, label: string, description?: string, entity: EntityType, targets: Target[]};
 
-  function writingSystemOf(task: Task): IWritingSystem | undefined {
-    if (!task.subjectWritingSystemId) return undefined;
-    const writingSystems = task.subjectWritingSystemType === WritingSystemType.Vernacular
-      ? writingSystemService.vernacular
-      : writingSystemService.analysis;
-    return writingSystems.find(ws => ws.wsId === task.subjectWritingSystemId);
-  }
-
   // Grouped by field so the chip count grows with the writing systems, not the row count.
   const fields = $derived.by(() => {
     const groups: Field[] = [];
     for (const task of tasksService.listTasks()) {
-      const ws = writingSystemOf(task);
+      const ws = writingSystemOf(writingSystemService, task);
       // The editors hide audio writing systems when the feature is off, so there'd be nothing to fill in.
       if (ws?.isAudio && !features.audio) continue;
       const entity = task.subjectType === 'example-sentence' ? 'example' : task.subjectType;
@@ -71,10 +64,6 @@
       $plural(remaining, {one: '# entry to go', other: '# entries to go'}),
       $plural(remaining, {one: '# word to go', other: '# words to go'}),
       viewService.currentView);
-  }
-
-  function wsColor(ws: IWritingSystem): string {
-    return writingSystemService.wsColor(ws.wsId, ws.type === WritingSystemType.Vernacular ? 'vernacular' : 'analysis');
   }
 </script>
 
@@ -117,7 +106,7 @@
         {@const title = name && (progress ? `${name}: ${remainingText(progress.remaining)}` : name)}
         <button
           type="button"
-          class="bg-secondary hover:bg-secondary/80 focus-visible:ring-ring/50 inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium shadow-sm transition-colors outline-hidden focus-visible:ring-[3px] {progress?.remaining === 0 ? 'opacity-60' : ''} {target.ws ? wsColor(target.ws) : ''}"
+          class="bg-secondary hover:bg-secondary/80 focus-visible:ring-ring/50 inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium shadow-sm transition-colors outline-hidden focus-visible:ring-[3px] {progress?.remaining === 0 ? 'opacity-60' : ''} {target.ws ? wsColorClass(writingSystemService, target.ws) : ''}"
           {title}
           onclick={() => onSelect(target.task.id)}
         >

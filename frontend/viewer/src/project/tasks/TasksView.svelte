@@ -1,13 +1,13 @@
 <script lang="ts">
-  import {taskLabel, useTasksService, type Task} from './tasks-service';
+  import {taskLabel, useTasksService} from './tasks-service';
   import {pt, tvt} from '$lib/views/view-text';
   import {useViewService} from '$lib/views/view-service.svelte';
   import {plural, t} from 'svelte-i18n-lingui';
   import {watch} from 'runed';
   import {QueryParamState} from '$lib/utils/url.svelte';
   import {useWritingSystemService} from '$project/data';
-  import {type IWritingSystem, WritingSystemType} from '$lib/dotnet-types';
   import {useTasksStats} from './tasks-stats.svelte';
+  import {writingSystemOf, wsColorClass} from './task-view-helpers';
   import TaskView from './TaskView.svelte';
   import TaskList from './TaskList.svelte';
   import {Button} from '$lib/components/ui/button';
@@ -33,13 +33,7 @@
     openTask.current = '';
   }
 
-  function writingSystemOf(task: Task): IWritingSystem | undefined {
-    if (!task.subjectWritingSystemId) return undefined;
-    const writingSystems = task.subjectWritingSystemType === WritingSystemType.Vernacular
-      ? writingSystemService.vernacular : writingSystemService.analysis;
-    return writingSystems.find(ws => ws.wsId === task.subjectWritingSystemId);
-  }
-  const selectedWs = $derived(selectedTask && writingSystemOf(selectedTask));
+  const selectedWs = $derived(selectedTask && writingSystemOf(writingSystemService, selectedTask));
 
   // Same value the list's "N to go" chip shows; ticks down as entries get filled.
   const stats = $derived(statsResource.current);
@@ -69,7 +63,7 @@
           <!-- Dash and full name only when the header is wide enough; otherwise the abbreviation is the label. -->
           <span class="text-muted-foreground hidden @md:inline">—</span>
           <!-- items-baseline so the name and abbreviation share a baseline; the audio icon is centered out of it. -->
-          <span class="flex items-baseline gap-1.5 {writingSystemService.wsColor(selectedWs.wsId, selectedWs.type === WritingSystemType.Vernacular ? 'vernacular' : 'analysis')}">
+          <span class="flex items-baseline gap-1.5 {wsColorClass(writingSystemService, selectedWs)}">
             <span class="@md:hidden">{selectedWs.abbreviation || selectedWs.name}</span>
             <span class="hidden @md:inline">{selectedWs.name}</span>
             {#if selectedWs.abbreviation}<span class="text-muted-foreground hidden text-sm @md:inline">{selectedWs.abbreviation}</span>{/if}
