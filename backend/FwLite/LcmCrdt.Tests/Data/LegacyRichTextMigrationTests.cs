@@ -16,6 +16,7 @@ public class LegacyRichTextMigrationTests : IAsyncLifetime
     private static readonly Guid BlankTranslation = new("A1000000-0000-0000-0000-000000000003");
     private static readonly Guid SpanlessTranslation = new("A1000000-0000-0000-0000-000000000004");
     private static readonly Guid NoTranslation = new("A1000000-0000-0000-0000-000000000005");
+    private static readonly Guid NonBreakingSpaceTranslation = new("A1000000-0000-0000-0000-000000000006");
 
     //the sense these hang off is the apple sense in the v1 dump. Column names and types are the v1 ones too:
     //Translation before it was renamed to Translations, and Reference still TEXT.
@@ -25,7 +26,8 @@ public class LegacyRichTextMigrationTests : IAsyncLifetime
             ('A1000000-0000-0000-0000-000000000002', 3, '{}', '{"en":"42"}', null, 'D510AA82-5557-4DD4-8B1F-1EC89FACB979', null, null),
             ('A1000000-0000-0000-0000-000000000003', 4, '{}', '{"en":"   "}', '   ', 'D510AA82-5557-4DD4-8B1F-1EC89FACB979', null, null),
             ('A1000000-0000-0000-0000-000000000004', 5, '{}', '{"en":{"Spans":[]}}', null, 'D510AA82-5557-4DD4-8B1F-1EC89FACB979', null, null),
-            ('A1000000-0000-0000-0000-000000000005', 6, '{}', '{}', null, 'D510AA82-5557-4DD4-8B1F-1EC89FACB979', null, null);
+            ('A1000000-0000-0000-0000-000000000005', 6, '{}', '{}', null, 'D510AA82-5557-4DD4-8B1F-1EC89FACB979', null, null),
+            ('A1000000-0000-0000-0000-000000000006', 7, '{}', '{"en":"' || char(160) || '"}', '{"a":1}', 'D510AA82-5557-4DD4-8B1F-1EC89FACB979', null, null);
         """;
 
     private readonly RegressionTestHelper _helper = new("LegacyRichTextMigrationTest");
@@ -92,5 +94,10 @@ public class LegacyRichTextMigrationTests : IAsyncLifetime
         examples[BlankTranslation].Reference.Should().BeNull();
         examples[SpanlessTranslation].Translations.Should().BeEmpty();
         examples[NoTranslation].Translations.Should().BeEmpty();
+
+        var nbsp = examples[NonBreakingSpaceTranslation];
+        nbsp.Translations.Should().BeEmpty("a non-breaking space is whitespace to IsNullOrWhiteSpace");
+        //a reference that is json but not a rich string is legacy text, so keep the text rather than dropping it
+        nbsp.Reference!.GetPlainText().Should().Be("""{"a":1}""");
     }
 }

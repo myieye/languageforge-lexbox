@@ -16,9 +16,9 @@ namespace LcmCrdt.Migrations
         //assigned to translations that predate translation ids; FwLiteProjectSync's CrdtRepairs replaces it later
         private const string MissingTranslationId = "3dce1982-8e93-44f1-b92c-e9c7bdf72801";
 
-        //sqlite's trim() takes a character set, it has no \s equivalent. C# uses IsNullOrWhiteSpace, which covers more,
-        //but these are the characters that turn up in practice.
-        private const string Whitespace = "' ' || char(9) || char(10) || char(13)";
+        //sqlite's trim() takes a character set, it has no \s equivalent, so spell out what IsNullOrWhiteSpace matches
+        private const string Whitespace = "char(9,10,11,12,13,32,133,160,5760,8192,8193,8194,8195,8196,8197,8198," +
+                                          "8199,8200,8201,8202,8232,8233,8239,8287,12288)";
 
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -41,7 +41,7 @@ namespace LcmCrdt.Migrations
             migrationBuilder.Sql($"""
                 UPDATE ExampleSentence
                 SET Reference = CASE
-                        WHEN json_valid(Reference) AND json_type(Reference) = 'object' THEN NULL
+                        WHEN json_valid(Reference) AND json_type(Reference, '$.Spans') = 'array' THEN NULL
                         WHEN trim(Reference, {Whitespace}) = '' THEN NULL
                         ELSE json_object('Spans', json_array(json_object('Text', Reference, 'Ws', 'default')))
                     END
