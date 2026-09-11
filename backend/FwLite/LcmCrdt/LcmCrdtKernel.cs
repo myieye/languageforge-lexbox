@@ -254,7 +254,7 @@ public static class LcmCrdtKernel
                 builder.Property(s => s.Translations)
                     .HasColumnType("jsonb")
                     .HasConversion(list => JsonSerializer.Serialize(list, (JsonSerializerOptions?)null),
-                        json => DeserializeTranslations(json));
+                        json => JsonSerializer.Deserialize<IList<Translation>>(json, (JsonSerializerOptions?)null) ?? new List<Translation>());
             })
             .Add<WritingSystem>(builder =>
             {
@@ -442,13 +442,6 @@ public static class LcmCrdtKernel
         var harmonyConfig = new HarmonyConfig();
         ConfigureCrdt(harmonyConfig);
         return harmonyConfig.ObjectTypes;
-    }
-
-    private static IList<Translation> DeserializeTranslations(string json)
-    {
-        //in the db Translations may be a list, or they could be a json object, so we need to deserialize it differently
-        var deserializationTarget = JsonSerializer.Deserialize<DbTranslationDeserializationTarget>(json);
-        return deserializationTarget?.GetTranslations() ?? [];
     }
 
     public static async Task<IMiniLcmApi> OpenCrdtProject(this IServiceProvider services, CrdtProject project)
