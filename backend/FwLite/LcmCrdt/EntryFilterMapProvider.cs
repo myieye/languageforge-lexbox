@@ -19,8 +19,7 @@ public class EntryFilterMapProvider : EntryFilterMapProvider<Entry>
     public override Expression<Func<Entry, object?>> EntrySensesExampleSentences => e => e.Senses.Select(s => s.ExampleSentences);
     public override Expression<Func<Entry, string, object>> EntrySensesExampleSentencesSentence =>
         (e, ws) => e.Senses.SelectMany(s => s.ExampleSentences).Select(example => Json.Value(example.Sentence, ms => ms[ws])!.GetPlainText());
-    //Sql.Property keeps the raw column as the argument (Json.Query would rewrite example.Translations);
-    //counting elements rather than comparing to '[]' is what makes a legacy translations object read as empty.
+    //counted rather than compared to '[]' so a legacy translations object (see Json.TranslationsPlainText) reads as empty too
     public override Expression<Func<Entry, object?>> EntrySensesExampleSentencesTranslations =>
         e => e.Senses.SelectMany(s => s.ExampleSentences).Select(example => Json.ElementCount(Sql.Property<IList<Translation>>(example, nameof(ExampleSentence.Translations))));
     public override Func<string, object>? EntrySensesExampleSentencesTranslationsConverter =>

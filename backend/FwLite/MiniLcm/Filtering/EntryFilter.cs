@@ -48,7 +48,7 @@ public class EntryFilter
         throw new Exception($"Invalid value {value} for {typeof(T).Name}");
     }
 
-    //used by the database for json columns whose emptiness is checked by counting elements rather than comparing the column
+    //used by the database for json columns whose emptiness is checked by counting elements
     public static object NormalizeEmptyToZero<T>(string value)
     {
         if (value is "null" or "[]") return 0;

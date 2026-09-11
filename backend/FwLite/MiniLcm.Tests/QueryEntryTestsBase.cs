@@ -97,7 +97,7 @@ public abstract class QueryEntryTestsBase : MiniLcmTestBase
                         new ExampleSentence()
                         {
                             Sentence = { { "en", new RichString("I like eating Kiwis, they taste good") } },
-                            //two translations, only one of them with en text: pins that the translation text filter is per example sentence
+                            //the es-only translation pins that the translation text filter is per example sentence, not per translation
                             Translations =
                             [
                                 new Translation() { Text = { { "en", new RichString("Kiwi translation") } } },
@@ -453,8 +453,7 @@ public abstract class QueryEntryTestsBase : MiniLcmTestBase
     {
         var results = await Api
             .GetEntries(new(Filter: new() { GridifyFilter = "Senses.ExampleSentences.Translations.Text[en]=" })).ToArrayAsync();
-        //Banana's examples have no translations at all
-        //Kiwi is excluded because its example has en translation text, even though one of its translations has none
+        //Kiwi's example has en translation text, so its es-only translation doesn't make it match
         results.Select(e => e.LexemeForm["en"]).Should().BeEquivalentTo(Banana);
     }
 

@@ -225,16 +225,15 @@ public static class Json
         return guid?.ToString() ?? "";
     }
 
-    //json_each counts object keys too, so an untouched legacy translations object ('{}') counts as empty
-    [Sql.Expression("(case when json_type({0}) = 'array' then json_array_length({0}) else (select count(*) from json_each({0})) end)", ServerSideOnly = true)]
+    //json_each iterates object keys as well as array elements
+    [Sql.Expression("(select count(*) from json_each({0}))", ServerSideOnly = true)]
     public static int ElementCount<T>(IEnumerable<T>? value)
     {
         throw new NotImplementedException("only supported server side");
     }
 
-    //The Translations column was renamed from Translation without rewriting its data, so rows not edited since
-    //still hold what that column held: a RichMultiString object, or before rich text a plain string per writing system.
-    //Only the array branch is the current shape.
+    //Translations was renamed from Translation without rewriting data, so untouched rows still hold the old
+    //RichMultiString object, or from before rich text a plain string per writing system; only the array is the current shape
     [Sql.Expression("""
                     (case when json_type({0}) = 'array'
                         then (select group_concat(s.value->>'Text', '') from json_each({0}) as t, json_each(t.value->>'Text'->>{1}->>'Spans') as s)

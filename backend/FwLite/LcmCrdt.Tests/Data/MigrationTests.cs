@@ -53,8 +53,7 @@ public class MigrationTests : IAsyncLifetime
         hasEntries.Should().BeTrue();
     }
 
-    //these dbs predate the Translations column, so every example still holds a legacy translations object;
-    //v1 has one entry, with an empty one; v2 has four entries, one of which has en text
+    //both dumps predate the Translations column: v1's one example holds '{}', one of v2's four has en text
     [Theory]
     [InlineData(RegressionTestHelper.RegressionVersion.v1, 1)]
     [InlineData(RegressionTestHelper.RegressionVersion.v2, 3)]
