@@ -69,6 +69,17 @@ public class MigrationTests : IAsyncLifetime
         noEnTranslationText.Should().Be(expectedCount);
     }
 
+    //v1 predates rich text, so its definition is a plain string
+    [Fact]
+    public async Task DefinitionFilter_WorksOnPlainStringDefinition()
+    {
+        await _helper.InitializeAsync(RegressionTestHelper.RegressionVersion.v1);
+        var api = _helper.Services.GetRequiredService<IMiniLcmApi>();
+
+        var count = await api.CountEntries(null, new(Filter: new() { GridifyFilter = "Senses.Definition[en]=*fruit" }));
+        count.Should().Be(1);
+    }
+
     [Theory]
     [InlineData(RegressionTestHelper.RegressionVersion.v1)]
     [InlineData(RegressionTestHelper.RegressionVersion.v2)]
