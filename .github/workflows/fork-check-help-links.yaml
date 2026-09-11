@@ -1,0 +1,54 @@
+name: Fork Check Help Links
+
+# Fork-only (doesn't exist upstream): proves out check-help-links.yaml before it lands upstream.
+# Checks out PR #2643's branch (which has the `test:manual` help-link check), reintroduces the
+# broken link, and runs the sleep-then-retry logic. Confirms two things: the test detects a broken
+# link in CI, and a long on-failure sleep survives without hitting the 6h job cap. See FORK.md.
+on:
+  workflow_dispatch:
+    inputs:
+      delay:
+        description: 'Sleep between the two attempts (e.g. 30s, 1h)'
+        default: '1h'
+        required: false
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  check-help-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          repository: sillsdev/languageforge-lexbox
+          ref: fix-complex-forms-help-link
+      - name: reintroduce the broken help link
+        run: sed -i 's#Complex_Forms_entry.htm#Complex_Forms.htm#' frontend/viewer/src/lib/views/entity-config.ts
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          package_json_file: 'frontend/package.json'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: './frontend/package.json'
+          cache: 'pnpm'
+          cache-dependency-path: './frontend/pnpm-lock.yaml'
+      - name: install
+        working-directory: frontend
+        run: pnpm install
+      - name: check help links
+        working-directory: frontend/viewer
+        # Always retry once (unlike prod, which only retries on schedule) so the sleep path is
+        # exercised on a manual dispatch. Job goes red only if the link is still broken after the wait.
+        run: |
+          if pnpm run test:manual; then
+            echo "unexpected: first attempt passed — the broken link was not reintroduced"
+            exit 0
+          fi
+          echo "::warning::first attempt failed as expected; sleeping ${{ inputs.delay }} then retrying"
+          sleep ${{ inputs.delay }}
+          pnpm run test:manual
