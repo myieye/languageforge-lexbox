@@ -10,6 +10,7 @@ export enum SyncJobStatusEnum {
 	SyncJobNotFound = "SyncJobNotFound",
 	SyncJobTimedOut = "SyncJobTimedOut",
 	TimedOutAwaitingSyncStatus = "TimedOutAwaitingSyncStatus",
+	LostConnectionAwaitingStatus = "LostConnectionAwaitingStatus",
 	UnableToAuthenticate = "UnableToAuthenticate",
 	UnableToSync = "UnableToSync",
 	ProjectIncompatible = "ProjectIncompatible",

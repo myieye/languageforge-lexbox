@@ -132,11 +132,6 @@ msgstr ""
 msgid "a word"
 msgstr "satu perkataan"
 
-#. Dialog title
-#: src/lib/about/AboutDialog.svelte
-msgid "About"
-msgstr "Mengenai"
-
 #. Sidebar menu item
 #: src/project/ProjectSidebar.svelte
 msgid "Account"
@@ -455,7 +450,6 @@ msgid "clear"
 msgstr "padam"
 
 #. Button to close popup
-#: src/lib/about/AboutDialog.svelte
 #: src/lib/components/field-editors/multi-select.svelte
 #: src/lib/components/ui/button/x-button.svelte
 #: src/lib/entry-editor/CommentDialog.svelte
@@ -1455,6 +1449,10 @@ msgstr "Log masuk untuk melihat projek"
 #: src/lib/auth/LoginButton.svelte
 msgid "Logout"
 msgstr "Log keluar"
+
+#: src/project/SyncDialog.svelte
+msgid "Lost connection while the sync was running."
+msgstr ""
 
 #. Footer text in the project sidebar. The emoji flags are the countries of origin of the development team — do not translate.
 #: src/project/ProjectSidebar.svelte
@@ -2514,6 +2512,10 @@ msgstr "Bilangan komit FieldWorks Classic tidak semestinya sepadan dengan bilang
 #: src/project/sync/FwLiteToFwMergeDetails.svelte
 msgid "The number of FieldWorks Lite commits will not necessarily match the number of changes shown in the sync result message."
 msgstr "Bilangan komit FieldWorks Lite tidak semestinya sepadan dengan bilangan perubahan yang ditunjukkan dalam mesej hasil segerak."
+
+#: src/project/SyncDialog.svelte
+msgid "The sync may have finished. Try syncing again to check."
+msgstr ""
 
 #. Error message
 #: src/project/tasks/TaskView.svelte

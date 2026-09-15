@@ -153,7 +153,21 @@ public class LexboxProjectService : IDisposable
                 ? new SyncJobResult(SyncJobStatusEnum.UnableToSync, "Unable to reach the lexbox server, check your internet connection and try again")
                 : new SyncJobResult(SyncJobStatusEnum.UnableToAuthenticate, "Unable to retrieve sync status when logged out, try again after logging in to lexbox server");
         }
-        var giveUpAt = DateTime.UtcNow + TimeSpan.FromSeconds(timeoutSeconds);
+        return await PollLexboxSyncFinished(httpClient, projectId, TimeSpan.FromSeconds(timeoutSeconds), logger);
+    }
+
+    // The sync job runs on the server regardless of whether this poll survives, so a poll failure must never
+    // be reported as a sync failure. Transient connection drops (Android backgrounding the app, network
+    // switch) are retried a few times; anything else, or exhausted retries, becomes LostConnectionAwaitingStatus.
+    internal static async Task<SyncJobResult> PollLexboxSyncFinished(HttpClient httpClient,
+        Guid projectId,
+        TimeSpan timeout,
+        ILogger logger,
+        TimeSpan? retryDelay = null,
+        int maxConnectionRetries = 3)
+    {
+        var giveUpAt = DateTime.UtcNow + timeout;
+        var connectionRetries = 0;
         while (giveUpAt > DateTime.UtcNow)
         {
             try
@@ -175,6 +189,21 @@ public class LexboxProjectService : IDisposable
                 }
             }
             catch (OperationCanceledException) { continue; }
+            catch (HttpRequestException e)
+            {
+                var transient = e.HttpRequestError is HttpRequestError.ConnectionError
+                    or HttpRequestError.NameResolutionError
+                    or HttpRequestError.ResponseEnded;
+                if (transient && connectionRetries++ < maxConnectionRetries)
+                {
+                    logger.LogWarning(e, "Connection dropped waiting for lexbox sync to finish, retry {Retry}", connectionRetries);
+                    await Task.Delay(retryDelay ?? TimeSpan.FromSeconds(3));
+                    continue;
+                }
+                logger.LogError(e, "Lost connection waiting for lexbox sync to finish");
+                return new SyncJobResult(SyncJobStatusEnum.LostConnectionAwaitingStatus,
+                    "Lost connection while waiting for the sync to finish. The sync is still running on the server. " + e.Message);
+            }
             catch (Exception e)
             {
                 logger.LogError(e, "Error waiting for lexbox sync to finish");
