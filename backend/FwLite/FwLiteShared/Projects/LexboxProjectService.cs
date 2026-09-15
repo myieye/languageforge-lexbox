@@ -1,4 +1,6 @@
+using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using FwLiteShared.Auth;
 using FwLiteShared.Events;
 using LcmCrdt;
@@ -128,31 +130,63 @@ public class LexboxProjectService : IDisposable
         }
     }
 
-    public async Task<HttpResponseMessage?> TriggerLexboxSync(LexboxServer server, Guid projectId)
+    /// <returns>null when the sync job was started, otherwise why it wasn't</returns>
+    public async Task<SyncJobResult?> TriggerLexboxSync(LexboxServer server, Guid projectId)
     {
-        var httpClient = await clientFactory.GetClient(server).CreateHttpClient();
-        if (httpClient is null) return null;
+        var client = clientFactory.GetClient(server);
+        var httpClient = await client.CreateHttpClient();
+        if (httpClient is null) return await UnreachableResult(client);
+        HttpResponseMessage response;
         try
         {
-            return await httpClient.PostAsync($"api/fw-lite/sync/trigger/{projectId}", null);
+            response = await httpClient.PostAsync($"api/fw-lite/sync/trigger/{projectId}", null);
         }
         catch (Exception e)
         {
             logger.LogError(e, "Error triggering lexbox sync");
-            return null;
+            return new SyncJobResult(SyncJobStatusEnum.UnableToSync, "Unable to reach the lexbox server, check your internet connection and try again");
         }
+        if (response.IsSuccessStatusCode) return null;
+        var status = response.StatusCode switch
+        {
+            HttpStatusCode.Locked => SyncJobStatusEnum.SyncBlocked,
+            HttpStatusCode.NotFound => SyncJobStatusEnum.ProjectNotFound,
+            HttpStatusCode.Forbidden => SyncJobStatusEnum.UnableToAuthenticate,
+            _ => SyncJobStatusEnum.UnableToSync
+        };
+        return new SyncJobResult(status, await ExtractErrorMessage(response));
+    }
+
+    private static async Task<string> ExtractErrorMessage(HttpResponseMessage response)
+    {
+        try
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            var problemDetails = JsonDocument.Parse(content);
+            if (problemDetails.RootElement.TryGetProperty("detail", out var detail))
+                return detail.GetString() ?? content;
+            if (problemDetails.RootElement.TryGetProperty("title", out var title))
+                return title.GetString() ?? content;
+            return content;
+        }
+        catch
+        {
+            return $"Sync trigger failed with status {(int)response.StatusCode} {response.ReasonPhrase}";
+        }
+    }
+
+    private static async Task<SyncJobResult> UnreachableResult(OAuthClient client)
+    {
+        return await client.IsSignedIn()
+            ? new SyncJobResult(SyncJobStatusEnum.UnableToSync, "Unable to reach the lexbox server, check your internet connection and try again")
+            : new SyncJobResult(SyncJobStatusEnum.UnableToAuthenticate, "Unable to retrieve sync status when logged out, try again after logging in to lexbox server");
     }
 
     public async Task<SyncJobResult> AwaitLexboxSyncFinished(LexboxServer server, Guid projectId, int timeoutSeconds = 15 * 60)
     {
         var client = clientFactory.GetClient(server);
         var httpClient = await client.CreateHttpClient();
-        if (httpClient is null)
-        {
-            return await client.IsSignedIn()
-                ? new SyncJobResult(SyncJobStatusEnum.UnableToSync, "Unable to reach the lexbox server, check your internet connection and try again")
-                : new SyncJobResult(SyncJobStatusEnum.UnableToAuthenticate, "Unable to retrieve sync status when logged out, try again after logging in to lexbox server");
-        }
+        if (httpClient is null) return await UnreachableResult(client);
         return await PollLexboxSyncFinished(httpClient, projectId, TimeSpan.FromSeconds(timeoutSeconds), logger);
     }
 
