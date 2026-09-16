@@ -14,7 +14,7 @@ public class RegressionTestHelper(string projectName) : IAsyncLifetime
     private readonly CrdtProject _crdtProject = new(projectName, $"{projectName}-{Guid.NewGuid():N}.sqlite");
     public IServiceProvider Services => _asyncScope.ServiceProvider;
 
-    private async Task InitDbFromScripts(RegressionVersion version)
+    private async Task InitDbFromScripts(RegressionVersion version, string? extraSql)
     {
         var initialSqlFile = GetFilePath($"Scripts/{version}.sql");
         var projectsService = _asyncScope.ServiceProvider.GetRequiredService<CurrentProjectService>();
@@ -30,6 +30,12 @@ public class RegressionTestHelper(string projectName) : IAsyncLifetime
         dbCommand.CommandText = $"{sql}\n{resetSchema}";
         await dbCommand.ExecuteNonQueryAsync();
 
+        if (extraSql is not null)
+        {
+            dbCommand.CommandText = extraSql;
+            await dbCommand.ExecuteNonQueryAsync();
+        }
+
         //need to close the connection, otherwise the collations won't get created, they would normally be created on open or save, so we're closing so they get created when EF opens the connection.
         await dbConnection.CloseAsync();
 
@@ -42,14 +48,15 @@ public class RegressionTestHelper(string projectName) : IAsyncLifetime
         return InitializeAsync(RegressionVersion.v2);
     }
 
-    public async Task InitializeAsync(RegressionVersion version)
+    /// <param name="extraSql">runs against the restored dump before migrations, to set up shapes the dump doesn't have</param>
+    public async Task InitializeAsync(RegressionVersion version, string? extraSql = null)
     {
         var builder = Host.CreateEmptyApplicationBuilder(null);
         builder.Services.AddTestLcmCrdtClient();
         _host = builder.Build();
         var services = _host.Services;
         _asyncScope = services.CreateAsyncScope();
-        await InitDbFromScripts(version);
+        await InitDbFromScripts(version, extraSql);
     }
 
     public async Task DisposeAsync()
