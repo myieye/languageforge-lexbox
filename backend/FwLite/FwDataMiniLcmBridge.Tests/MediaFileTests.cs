@@ -5,6 +5,7 @@ using FwDataMiniLcmBridge.Tests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using MiniLcm.Media;
 using MiniLcm.Models;
+using SIL.LCModel;
 using SIL.LCModel.Infrastructure;
 
 namespace FwDataMiniLcmBridge.Tests;
@@ -93,26 +94,46 @@ public class MediaFileTests : IAsyncLifetime
         GetFwAudioValue(entryId).Should().Be(fileName);
     }
 
-    [Fact]
-    public async Task MediaUriFromPath_ReturnsNotFoundForFilesOutsideLinkedFiles()
+    private async Task<Guid> AddPictureDirectly(string path)
     {
-        var outsidePath = Path.Combine(_api.Cache.ProjectId.ProjectFolder, "outside-linked-files.txt");
-        await File.WriteAllTextAsync(outsidePath, "test");
-
-        _mediaAdapter.MediaUriFromPath(outsidePath, _api.Cache).Should().Be(MediaUri.NotFound);
+        var entry = await _api.CreateEntry(new Entry { LexemeForm = { ["en"] = "test" }, Senses = [new Sense()] });
+        var lexSense = _api.EntriesRepository.GetObject(entry.Id).SensesOS[0];
+        UndoableUnitOfWorkHelper.DoUsingNewOrCurrentUOW("Add picture",
+            "Remove picture",
+            _api.Cache.ServiceLocator.ActionHandler,
+            () =>
+            {
+                var picture = _api.Cache.ServiceLocator.GetInstance<ICmPictureFactory>().Create();
+                lexSense.PicturesOS.Add(picture);
+                picture.UpdatePicture(path, null, CmFolderTags.LocalPictures, 0);
+            });
+        return entry.Id;
     }
 
     [Fact]
-    public async Task MediaUriFromPath_IgnoresPathCasingOnWindows()
+    public async Task CanOpenAPictureOutsideLinkedFiles()
     {
-        if (!OperatingSystem.IsWindows()) return;
-        var fileName = "MediaUriFromPath_IgnoresPathCasingOnWindows.txt";
-        var fileId = await StoreFileContentsAsync(fileName, "test");
-        var path = Path.Combine(_api.Cache.LangProject.LinkedFilesRootDir.ToUpperInvariant(),
-            FwDataMiniLcmApi.AudioVisualFolder,
-            fileName);
+        var outsidePath = Path.Combine(_api.Cache.ProjectId.ProjectFolder, "outside-linked-files.jpg");
+        await File.WriteAllTextAsync(outsidePath, "test");
+        var entryId = await AddPictureDirectly(outsidePath);
 
-        _mediaAdapter.MediaUriFromPath(path, _api.Cache).FileId.Should().Be(fileId);
+        var entry = await _api.GetEntry(entryId);
+
+        var file = await _api.GetFileStream(entry!.Senses[0].Pictures[0].MediaUri);
+        await using var stream = file.Stream;
+        stream.Should().NotBeNull();
+        using var streamReader = new StreamReader(stream);
+        (await streamReader.ReadToEndAsync()).Should().Be("test");
+    }
+
+    [Fact]
+    public async Task GetEntry_MissingPictureOutsideLinkedFilesWorks()
+    {
+        var entryId = await AddPictureDirectly(Path.Combine(Path.GetTempPath(), "lexbox-out-of-tree-media", "missing.jpg"));
+
+        var entry = await _api.GetEntry(entryId);
+
+        entry!.Senses[0].Pictures[0].MediaUri.Should().Be(MediaUri.NotFound);
     }
 
     [Fact]
