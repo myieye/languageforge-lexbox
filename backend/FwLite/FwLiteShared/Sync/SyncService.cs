@@ -151,7 +151,6 @@ public class SyncService(
         return status;
     }
 
-    /// <returns>null when the sync job was started, otherwise why it wasn't</returns>
     public async Task<SyncJobResult?> TriggerSync()
     {
         var project = await currentProjectService.GetProjectData();

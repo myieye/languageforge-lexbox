@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -130,31 +131,32 @@ public class LexboxProjectService : IDisposable
         }
     }
 
+    private const string UnreachableMessage = "Unable to reach the lexbox server, check your internet connection and try again";
+
     /// <returns>null when the sync job was started, otherwise why it wasn't</returns>
     public async Task<SyncJobResult?> TriggerLexboxSync(LexboxServer server, Guid projectId)
     {
         var client = clientFactory.GetClient(server);
         var httpClient = await client.CreateHttpClient();
         if (httpClient is null) return await UnreachableResult(client);
-        HttpResponseMessage response;
         try
         {
-            response = await httpClient.PostAsync($"api/fw-lite/sync/trigger/{projectId}", null);
+            using var response = await httpClient.PostAsync($"api/fw-lite/sync/trigger/{projectId}", null);
+            if (response.IsSuccessStatusCode) return null;
+            var status = response.StatusCode switch
+            {
+                HttpStatusCode.Locked => SyncJobStatusEnum.SyncBlocked,
+                HttpStatusCode.NotFound => SyncJobStatusEnum.ProjectNotFound,
+                HttpStatusCode.Forbidden => SyncJobStatusEnum.UnableToAuthenticate,
+                _ => SyncJobStatusEnum.UnableToSync
+            };
+            return new SyncJobResult(status, await ExtractErrorMessage(response));
         }
         catch (Exception e)
         {
             logger.LogError(e, "Error triggering lexbox sync");
-            return new SyncJobResult(SyncJobStatusEnum.UnableToSync, "Unable to reach the lexbox server, check your internet connection and try again");
+            return new SyncJobResult(SyncJobStatusEnum.UnableToSync, UnreachableMessage);
         }
-        if (response.IsSuccessStatusCode) return null;
-        var status = response.StatusCode switch
-        {
-            HttpStatusCode.Locked => SyncJobStatusEnum.SyncBlocked,
-            HttpStatusCode.NotFound => SyncJobStatusEnum.ProjectNotFound,
-            HttpStatusCode.Forbidden => SyncJobStatusEnum.UnableToAuthenticate,
-            _ => SyncJobStatusEnum.UnableToSync
-        };
-        return new SyncJobResult(status, await ExtractErrorMessage(response));
     }
 
     private static async Task<string> ExtractErrorMessage(HttpResponseMessage response)
@@ -162,7 +164,7 @@ public class LexboxProjectService : IDisposable
         try
         {
             var content = await response.Content.ReadAsStringAsync();
-            var problemDetails = JsonDocument.Parse(content);
+            using var problemDetails = JsonDocument.Parse(content);
             if (problemDetails.RootElement.TryGetProperty("detail", out var detail))
                 return detail.GetString() ?? content;
             if (problemDetails.RootElement.TryGetProperty("title", out var title))
@@ -178,8 +180,8 @@ public class LexboxProjectService : IDisposable
     private static async Task<SyncJobResult> UnreachableResult(OAuthClient client)
     {
         return await client.IsSignedIn()
-            ? new SyncJobResult(SyncJobStatusEnum.UnableToSync, "Unable to reach the lexbox server, check your internet connection and try again")
-            : new SyncJobResult(SyncJobStatusEnum.UnableToAuthenticate, "Unable to retrieve sync status when logged out, try again after logging in to lexbox server");
+            ? new SyncJobResult(SyncJobStatusEnum.UnableToSync, UnreachableMessage)
+            : new SyncJobResult(SyncJobStatusEnum.UnableToAuthenticate, "Not logged in to the lexbox server, log in and try again");
     }
 
     public async Task<SyncJobResult> AwaitLexboxSyncFinished(LexboxServer server, Guid projectId, int timeoutSeconds = 15 * 60)
@@ -190,9 +192,8 @@ public class LexboxProjectService : IDisposable
         return await PollLexboxSyncFinished(httpClient, projectId, TimeSpan.FromSeconds(timeoutSeconds), logger);
     }
 
-    // The sync job runs on the server regardless of whether this poll survives, so a poll failure must never
-    // be reported as a sync failure. Transient connection drops (Android backgrounding the app, network
-    // switch) are retried a few times; anything else, or exhausted retries, becomes LostConnectionAwaitingStatus.
+    // The sync job runs on the server whether or not this poll survives, so a failed poll must never be reported
+    // as a failed sync.
     internal static async Task<SyncJobResult> PollLexboxSyncFinished(HttpClient httpClient,
         Guid projectId,
         TimeSpan timeout,
@@ -200,16 +201,23 @@ public class LexboxProjectService : IDisposable
         TimeSpan? retryDelay = null,
         int maxConnectionRetries = 3)
     {
-        var giveUpAt = DateTime.UtcNow + timeout;
+        var elapsed = Stopwatch.StartNew();
         var connectionRetries = 0;
-        while (giveUpAt > DateTime.UtcNow)
+        while (elapsed.Elapsed < timeout)
         {
             try
             {
                 // Avoid 30-second timeout by retrying every 25 seconds until max time reached
-                var result = await httpClient.GetAsync(
+                using var requestTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+                using var result = await httpClient.GetAsync(
                         $"api/fw-lite/sync/await-sync-finished/{projectId}",
-                        new CancellationTokenSource(TimeSpan.FromSeconds(25)).Token);
+                        requestTimeout.Token);
+                // A proxy in front of lexbox failing says nothing about the job, so retry it like a dropped connection
+                if (result.StatusCode is HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout)
+                    result.EnsureSuccessStatusCode();
+                // The token is set once per client and can expire during a long sync; syncing again gets a fresh one
+                if (result.StatusCode == HttpStatusCode.Unauthorized)
+                    return new SyncJobResult(SyncJobStatusEnum.LostConnectionAwaitingStatus, "Login expired while waiting for the sync to finish");
                 if (result.IsSuccessStatusCode)
                 {
                     var content = await result.Content.ReadFromJsonAsync<SyncJobResult?>();
@@ -222,13 +230,15 @@ public class LexboxProjectService : IDisposable
                     return new SyncJobResult(SyncJobStatusEnum.UnknownError, errorMessage);
                 }
             }
-            catch (OperationCanceledException) { continue; }
+            // Normally our 25s timeout while the server holds the request open, which proves the connection works
+            catch (OperationCanceledException)
+            {
+                connectionRetries = 0;
+            }
+            // Not filtered by HttpRequestError: a socket dying mid-request (the Android case) is reported as Unknown
             catch (HttpRequestException e)
             {
-                var transient = e.HttpRequestError is HttpRequestError.ConnectionError
-                    or HttpRequestError.NameResolutionError
-                    or HttpRequestError.ResponseEnded;
-                if (transient && connectionRetries++ < maxConnectionRetries)
+                if (connectionRetries++ < maxConnectionRetries)
                 {
                     logger.LogWarning(e, "Connection dropped waiting for lexbox sync to finish, retry {Retry}", connectionRetries);
                     await Task.Delay(retryDelay ?? TimeSpan.FromSeconds(3));
@@ -236,7 +246,7 @@ public class LexboxProjectService : IDisposable
                 }
                 logger.LogError(e, "Lost connection waiting for lexbox sync to finish");
                 return new SyncJobResult(SyncJobStatusEnum.LostConnectionAwaitingStatus,
-                    "Lost connection while waiting for the sync to finish. The sync is still running on the server. " + e.Message);
+                    $"Lost connection while waiting for the sync to finish: {e.Message}");
             }
             catch (Exception e)
             {

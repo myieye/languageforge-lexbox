@@ -30,8 +30,9 @@ type ToastOptions = {
   description?: string;
 }
 
-export interface LoadingNotification {
+interface LoadingNotification {
   success(message: string): void;
+  warning(message: string, description?: string): void;
   dismiss(): void;
 }
 
@@ -75,6 +76,7 @@ export class AppNotification {
     const id = toast.loading(message, {duration: INFINITY});
     return {
       success: (message) => { toast.success(message, {id, duration: INFINITY}); },
+      warning: (message, description) => { toast.warning(message, {id, description, duration: INFINITY}); },
       dismiss: () => toast.dismiss(id),
     };
   }

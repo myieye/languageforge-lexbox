@@ -87,13 +87,8 @@
     try {
       const result = await service.triggerFwHeadlessSync();
       if (result.status === SyncJobStatusEnum.LostConnectionAwaitingStatus) {
-        loading.dismiss();
-        AppNotification.display($t`Lost connection while the sync was running.`, {
-          type: 'warning',
-          timeout: 'long',
-          description: $t`The sync may have finished. Try syncing again to check.`,
-        });
-        void service.getStatus().then(s => remoteStatus = s);
+        loading.warning($t`Lost connection while the sync was running.`, $t`The sync may have finished. Try syncing again to check.`);
+        void refreshStatus();
         return;
       }
       const fwdataChangesText = $plural(result.syncResult?.fwdataChanges ?? 0, {one: '# change', other: '# changes'});

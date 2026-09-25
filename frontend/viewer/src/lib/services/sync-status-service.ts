@@ -43,11 +43,10 @@ export class SyncStatusService {
   async triggerFwHeadlessSync(): Promise<FwHeadlessSyncOutcome> {
     const result = await this.syncStatusApi.triggerFwHeadlessSync();
     if (result.status === SyncJobStatusEnum.Success && !result.error) return {status: SyncJobStatusEnum.Success, syncResult: result.syncResult};
-    // The job is still running server-side; only the client's poll for the result died.
+    // Not a failure: the server may still be running the job
     if (result.status === SyncJobStatusEnum.LostConnectionAwaitingStatus) return {status: result.status};
     const syncError = result.error as string ?? `Sync failed with status ${result.status} but no error message`;
-    throw new Error(gt`Failed to synchronize` + `
-${syncError}`);
+    throw new Error(gt`Failed to synchronize` + `\n${syncError}`);
     // TODO: Tweak SyncJobResult to have an error *message* and error *details*, and put the details in the `cause` property of the JS Error that we throw
     // throw new Error(result.errorMessage, {cause: result.errorDetails});
   }
