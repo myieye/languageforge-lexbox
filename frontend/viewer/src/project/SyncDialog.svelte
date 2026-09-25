@@ -12,6 +12,7 @@
   import {delay} from '$lib/utils/time';
   import {useFeatures} from '$lib/services/feature-service';
   import {SyncStatus} from '$lib/dotnet-types/generated-types/LexCore/Sync/SyncStatus';
+  import {SyncJobStatusEnum} from '$lib/dotnet-types/generated-types/LexCore/Sync/SyncJobStatusEnum';
   import type {IPendingCommits} from '$lib/dotnet-types/generated-types/FwLiteShared/Sync/IPendingCommits';
   import {useProjectContext} from '$project/project-context.svelte';
   import SyncStatusPrimitive from './sync/SyncStatusPrimitive.svelte';
@@ -82,19 +83,17 @@
   async function syncLexboxToFlex() {
     let safeToCloseDialog = false;
 
-    const syncPromise = service.triggerFwHeadlessSync();
-    AppNotification.promise(syncPromise, {
-      loading: $t`Synchronizing FieldWorks Lite and FieldWorks Classic...`,
-      success: (result) => {
-        const fwdataChangesText = $plural(result.syncResult?.fwdataChanges ?? 0, {one: '# change', other: '# changes'});
-        const crdtChangesText = $plural(result.syncResult?.crdtChanges ?? 0, {one: '# change', other: '# changes'});
-        return $t`Sync complete. ${fwdataChangesText} were applied to FieldWorks Classic. ${crdtChangesText} were applied to FieldWorks Lite.`;
-      },
-      // TODO: Custom component that can expand or collapse the stacktrace
-    });
-
+    const loading = AppNotification.loading($t`Synchronizing FieldWorks Lite and FieldWorks Classic...`);
     try {
-      await syncPromise;
+      const result = await service.triggerFwHeadlessSync();
+      if (result.status === SyncJobStatusEnum.LostConnectionAwaitingStatus) {
+        loading.warning($t`Lost connection while the sync was running.`, $t`The sync may have finished. Try syncing again to check.`);
+        void refreshStatus();
+        return;
+      }
+      const fwdataChangesText = $plural(result.syncResult?.fwdataChanges ?? 0, {one: '# change', other: '# changes'});
+      const crdtChangesText = $plural(result.syncResult?.crdtChanges ?? 0, {one: '# change', other: '# changes'});
+      loading.success($t`Sync complete. ${fwdataChangesText} were applied to FieldWorks Classic. ${crdtChangesText} were applied to FieldWorks Lite.`);
       safeToCloseDialog = true;
       if (remoteStatus) {
         // Optimistically update status, then query it
@@ -102,6 +101,8 @@
         remoteStatus.pendingMercurialChanges = 0;
       }
     } catch (error) {
+      // TODO: Custom component that can expand or collapse the stacktrace
+      loading.dismiss();
       safeToCloseDialog = false;
       void service.getStatus().then(s => remoteStatus = s);
       throw error;

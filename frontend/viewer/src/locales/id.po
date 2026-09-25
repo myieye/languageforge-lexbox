@@ -1573,6 +1573,10 @@ msgstr "Login untuk melihat proyek"
 msgid "Logout"
 msgstr "Keluar"
 
+#: src/project/SyncDialog.svelte
+msgid "Lost connection while the sync was running."
+msgstr ""
+
 #. Footer text in the project sidebar. The emoji flags are the countries of origin of the development team — do not translate.
 #: src/project/ProjectSidebar.svelte
 msgid "Made with ❤️ from 🇦🇹 🇹🇭 🇺🇸"
@@ -2734,6 +2738,10 @@ msgstr "Jumlah komit FieldWorks Classic tidak akan selalu sama dengan jumlah per
 #: src/project/sync/FwLiteToFwMergeDetails.svelte
 msgid "The number of FieldWorks Lite commits will not necessarily match the number of changes shown in the sync result message."
 msgstr "Jumlah komit FieldWorks Lite tidak akan selalu sama dengan jumlah perubahan yang ditampilkan dalam pesan hasil sinkronisasi."
+
+#: src/project/SyncDialog.svelte
+msgid "The sync may have finished. Try syncing again to check."
+msgstr ""
 
 #. Error message
 #: src/project/tasks/TaskView.svelte

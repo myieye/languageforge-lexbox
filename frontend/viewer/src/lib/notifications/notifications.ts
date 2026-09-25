@@ -31,6 +31,12 @@ type ToastOptions = {
   description?: string;
 }
 
+interface LoadingNotification {
+  success(message: string): void;
+  warning(message: string, description?: string): void;
+  dismiss(): void;
+}
+
 type PromiseToastOptions<T> = Omit<ToastOptions, 'type'> &
   Pick<NonNullable<Parameters<typeof toast.promise<T>>[1]>, 'loading' | 'success' | 'error' | 'action'>;
 
@@ -68,6 +74,15 @@ export class AppNotification {
         },
       },
     });
+  }
+
+  public static loading(message: string): LoadingNotification {
+    const id = toast.loading(message, {duration: INFINITY});
+    return {
+      success: (message) => { toast.success(message, {id, duration: INFINITY}); },
+      warning: (message, description) => { toast.warning(message, {id, description, duration: INFINITY}); },
+      dismiss: () => toast.dismiss(id),
+    };
   }
 
   public static promise<T>(promise: Promise<T>, options: PromiseToastOptions<T>) {
