@@ -152,6 +152,14 @@ public class LexboxProjectService : IDisposable
             };
             return new SyncJobResult(status, await ExtractErrorMessage(response));
         }
+        // Past connecting, the request may already have queued the job
+        catch (HttpRequestException e) when (e.HttpRequestError is not (HttpRequestError.ConnectionError
+                                                 or HttpRequestError.NameResolutionError
+                                                 or HttpRequestError.SecureConnectionError))
+        {
+            logger.LogError(e, "Lost connection triggering lexbox sync");
+            return new SyncJobResult(SyncJobStatusEnum.LostConnectionAwaitingStatus, $"Lost connection while starting the sync: {e.Message}");
+        }
         catch (Exception e)
         {
             logger.LogError(e, "Error triggering lexbox sync");
@@ -188,7 +196,9 @@ public class LexboxProjectService : IDisposable
     {
         var client = clientFactory.GetClient(server);
         var httpClient = await client.CreateHttpClient();
-        if (httpClient is null) return await UnreachableResult(client);
+        // Only called after a successful trigger, so the job is running whether or not we can watch it
+        if (httpClient is null)
+            return new SyncJobResult(SyncJobStatusEnum.LostConnectionAwaitingStatus, "Unable to create a client to wait for the sync");
         return await PollLexboxSyncFinished(httpClient, projectId, TimeSpan.FromSeconds(timeoutSeconds), logger);
     }
 
