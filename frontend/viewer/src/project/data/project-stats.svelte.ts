@@ -18,7 +18,9 @@ export function useProjectStats() {
   }, {
     onAdd: (resource) => {
       const debouncedRefetch = useDebounce(() => void resource.refetch(), 500);
-      projectEventBus.onEntriesChanged(() => void debouncedRefetch());
+      // Subscribe via $effect so the subscription is owned by the project's $effect.root
+      // (onAdd runs inside it), not by the first component to mount. See dashboard-stats.
+      $effect(() => projectEventBus.onEntriesChanged(() => void debouncedRefetch(), {autoCleanup: false}));
     }
   });
   return statsResource;

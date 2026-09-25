@@ -3,5 +3,5 @@ export * from './custom-view-service.svelte';
 export * from './publications.svelte';
 export * from './parts-of-speech.svelte';
 export * from './complex-form-types';
-export * from './project-stats';
+export * from './project-stats.svelte';
 export * from './semantic-domains';
