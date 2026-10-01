@@ -11,6 +11,7 @@ on:
       - '.github/actions/setup-k8s/**'
       - 'FwLiteCore.slnf'
       - 'FwLiteOnly.slnf'
+      - 'global.json'
     branches:
       - develop
       - main
@@ -24,6 +25,7 @@ on:
       - '.github/actions/setup-k8s/**'
       - 'FwLiteCore.slnf'
       - 'FwLiteOnly.slnf'
+      - 'global.json'
     branches:
       - develop
       - main
@@ -39,6 +41,8 @@ permissions:
 
 env:
   VIEWER_BUILD_OUTPUT_DIR: backend/FwLite/FwLiteShared/wwwroot/viewer
+  # Pinned so a new workload set (e.g. a new default Apple SDK pack) cannot silently break the MAUI builds.
+  MAUI_WORKLOAD_VERSION: 10.0.401
 jobs:
   build-and-test:
     name: Build FW Lite and run tests
@@ -293,6 +297,8 @@ jobs:
     needs: [build-and-test, frontend]
     timeout-minutes: 60
     runs-on: macos-latest
+    outputs:
+      signed: ${{ steps.signing.outputs.signed }}
     env:
       # Mirrors the HAS_SIGNING_KEY pattern in publish-android (fork PRs get no secrets → unsigned).
       HAS_APPLE_SIGNING: ${{ secrets.SIL_APPLE_DEVELOPER_ID_APPLICATION_CERT_URL != '' }}
@@ -307,7 +313,7 @@ jobs:
         with:
           dotnet-version: '10.x'
       - name: Setup Maui
-        run: dotnet workload install maui-ios maui-maccatalyst
+        run: dotnet workload install maui-ios maui-maccatalyst --version ${{ env.MAUI_WORKLOAD_VERSION }}
 
       # The iOS build targets the simulator (ad-hoc signed, see FwLiteMaui.csproj); there is no iOS
       # device signing here yet. Mac Catalyst is signed with the SIL Developer ID and notarized into a
@@ -332,6 +338,7 @@ jobs:
             -p:InformationalVersion=${{ needs.build-and-test.outputs.version }}
 
       - name: Import Developer ID signing certificate
+        id: signing
         if: env.HAS_APPLE_SIGNING == 'true'
         env:
           CERT_URL: ${{ secrets.SIL_APPLE_DEVELOPER_ID_APPLICATION_CERT_URL }}
@@ -356,6 +363,7 @@ jobs:
           IDENTITY="$(security find-identity -v -p codesigning "$KEYCHAIN" | awk '/Developer ID Application/ {print $2; exit}')"
           if [ -z "$IDENTITY" ]; then echo "No Developer ID Application identity in the certificate" >&2; exit 1; fi
           echo "CODESIGN_IDENTITY=$IDENTITY" >> "$GITHUB_ENV"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
           rm -f "$RUNNER_TEMP/devid.p12"
 
       # Universal (x86_64 + arm64) so the DMG runs on both Intel and Apple Silicon. The two RIDs come
@@ -385,38 +393,12 @@ jobs:
           ASC_PRIVATE_KEY: ${{ secrets.APPLE_APPSTORECONNECT_PRIVATE_KEY }}
         run: |
           set -euo pipefail
-          # `dotnet build` with two RIDs emits a separate per-arch .app for each; it does NOT lipo them
-          # into one universal bundle (that only happens on `dotnet publish`, which we can't use here —
-          # publish trips EF's runtime model build under Mac Catalyst, see #1603). So merge the two
-          # per-arch bundles into a universal one ourselves, then re-sign (lipo invalidates signatures).
-          X64="bin/Release/net10.0-maccatalyst/maccatalyst-x64/FieldWorks Lite.app"
-          ARM="bin/Release/net10.0-maccatalyst/maccatalyst-arm64/FieldWorks Lite.app"
-          for b in "$X64" "$ARM"; do [ -d "$b" ] || { echo "Missing per-arch bundle: $b" >&2; exit 1; }; done
-          APP="$RUNNER_TEMP/universal/FieldWorks Lite.app"
-          rm -rf "$RUNNER_TEMP/universal"; mkdir -p "$RUNNER_TEMP/universal"
-          cp -R "$ARM" "$APP"
-          # lipo each Mach-O file in the copy with its x64 counterpart, writing back into the copy
-          # (managed .dlls are arch-neutral, left as-is).
-          while IFS= read -r f; do
-            rel="${f#"$APP"/}"
-            x64f="$X64/$rel"
-            [ -f "$x64f" ] || continue
-            if file -b "$f" | grep -q 'Mach-O'; then
-              lipo -create "$f" "$x64f" -output "$f"
-            fi
-          done < <(find "$APP" -type f)
-          # Re-sign after the merge (lipo invalidates signatures). --deep is unreliable for notarization,
-          # so sign inside-out: every nested Mach-O with the hardened runtime first (deepest paths first),
-          # then seal the app bundle with the entitlements. Verify before packaging.
-          while IFS= read -r f; do
-            if file -b "$f" | grep -q 'Mach-O'; then
-              codesign --force --timestamp --options runtime --sign "$CODESIGN_IDENTITY" "$f"
-            fi
-          done < <(find "$APP/Contents" -type f | awk '{print length"\t"$0}' | sort -rn | cut -f2-)
-          codesign --force --timestamp --options runtime \
-            --entitlements Platforms/MacCatalyst/Entitlements.DeveloperId.plist \
-            --sign "$CODESIGN_IDENTITY" "$APP"
+          # The SDK merges and signs the universal bundle here; the maccatalyst-*/ bundles are incomplete intermediates.
+          APP="bin/Release/net10.0-maccatalyst/FieldWorks Lite.app"
           codesign --verify --deep --strict --verbose=2 "$APP"
+          for f in index.html _content/FwLiteShared/viewer/main.js; do
+            [ -f "$APP/Contents/Resources/wwwroot/$f" ] || { echo "Missing wwwroot/$f in $APP" >&2; exit 1; }
+          done
           # Fail loudly if the merged bundle isn't actually universal — the whole point is Intel + Apple Silicon.
           EXE="$APP/Contents/MacOS/$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP/Contents/Info.plist")"
           ARCHS="$(lipo -archs "$EXE" 2>/dev/null || true)"
@@ -466,6 +448,60 @@ jobs:
           name: fw-lite-apple
           if-no-files-found: error
           path: backend/FwLite/artifacts/apple/*
+
+  # Checks that Gatekeeper accepts the notarized DMG, then runs the app natively on each CPU the universal build supports.
+  launch-mac:
+    name: Launch the Mac DMG (${{ matrix.arch }})
+    needs: build-apple
+    if: needs.build-apple.outputs.signed == 'true'
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-latest
+          - arch: x86_64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: fw-lite-apple
+
+      - name: Check Gatekeeper accepts the DMG and the app
+        run: |
+          set -euo pipefail
+          # -vv names what the verdict is based on; require notarization, not just a valid signature.
+          gatekeeper() {
+            local out; out="$(spctl --assess -vv "$@" 2>&1)" || true
+            echo "$out"
+            [[ "$out" == *": accepted"* && "$out" == *"source=Notarized Developer ID"* ]]
+          }
+          xcrun stapler validate FieldWorksLite.dmg
+          gatekeeper --type open --context context:primary-signature FieldWorksLite.dmg
+          hdiutil attach FieldWorksLite.dmg -nobrowse -readonly -mountpoint /Volumes/FieldWorksLite
+          gatekeeper --type execute "/Volumes/FieldWorksLite/FieldWorks Lite.app"
+
+      - name: Launch the app and wait for the viewer to load
+        run: |
+          set -euo pipefail
+          echo "Runner CPU: $(uname -m)"
+          OUT="$RUNNER_TEMP/stdout.log"
+          # The app is sandboxed, so its app.log lands in its container.
+          CONTAINER="$HOME/Library/Containers/org.sil.FwLiteMaui"
+          "/Volumes/FieldWorksLite/FieldWorks Lite.app/Contents/MacOS/FwLiteMaui" > "$OUT" 2>&1 &
+          PID=$!
+          for _ in $(seq 120); do
+            grep -rqs 'Viewer loaded' "$OUT" "$CONTAINER" && break
+            kill -0 "$PID" 2>/dev/null || break
+            sleep 1
+          done
+          kill "$PID" 2>/dev/null || true
+          wait "$PID" 2>/dev/null || true
+          cat "$OUT"
+          find "$CONTAINER" -name 'app*.log' -print -exec cat {} \; 2>/dev/null || true
+          grep -rqs 'Viewer loaded' "$OUT" "$CONTAINER" || { echo "The app never logged 'Viewer loaded'" >&2; exit 1; }
 
   publish-linux:
     name: Publish FW Lite app for Linux
@@ -532,7 +568,7 @@ jobs:
           dotnet-version: '10.x'
 
       - name: Setup Maui
-        run: dotnet workload install maui-android
+        run: dotnet workload install maui-android --version ${{ env.MAUI_WORKLOAD_VERSION }}
       - name: Decode Android Keystore
         id: decodeKeystore
         if: env.HAS_SIGNING_KEY == 'true'
@@ -606,7 +642,7 @@ jobs:
             nuget-${{ runner.os }}-
 
       - name: Setup Maui
-        run: dotnet workload install maui-windows
+        run: dotnet workload install maui-windows --version ${{ env.MAUI_WORKLOAD_VERSION }}
 
       - name: Build MAUI tests
         run: dotnet build backend/FwLite/FwLiteMaui.Tests/FwLiteMaui.Tests.csproj -p:BuildAndroid=false
@@ -665,6 +701,27 @@ jobs:
           description:  'Release for version ${{ needs.build-and-test.outputs.version }} from branch ${{ github.ref_name || github.head_ref }}'
           description-url: 'https://github.com/sillsdev/languageforge-lexbox'
 
+      - name: Launch the portable app and wait for the viewer to load
+        shell: pwsh
+        run: |
+          # Run a copy: the app writes its WebView2 profile next to the exe, and the portable folder ships.
+          $dir = Join-Path $env:RUNNER_TEMP 'fwlite-portable'
+          Copy-Item -Recurse backend/FwLite/artifacts/sign/portable $dir
+          $exe = Get-ChildItem $dir -Recurse -Filter FwLiteMaui.exe | Select-Object -First 1
+          if (-not $exe) { throw 'FwLiteMaui.exe not found in the portable publish output' }
+          $env:FwLiteMaui__BaseDataDir = Join-Path $env:RUNNER_TEMP 'fwlite-data'
+          $env:FwLite__UpdateCheckCondition = 'Never'
+          $log = Join-Path $env:FwLiteMaui__BaseDataDir 'app.log'
+          $app = Start-Process -FilePath $exe.FullName -PassThru
+          $loaded = $false
+          for ($i = 0; $i -lt 120 -and -not $app.HasExited; $i++) {
+            if ((Test-Path $log) -and (Select-String -Path $log -Pattern 'Viewer loaded' -Quiet)) { $loaded = $true; break }
+            Start-Sleep -Seconds 1
+          }
+          if (-not $app.HasExited) { Stop-Process -Id $app.Id -Force }
+          if (Test-Path $log) { Get-Content $log }
+          if (-not $loaded) { throw "The app never logged 'Viewer loaded'" }
+
       - name: Upload FWLite Portable
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -685,7 +742,7 @@ jobs:
       name: production
       url: https://lexbox.org/fw-lite
     name: Create Release
-    needs: [ build-and-test, publish-win, publish-linux, build-apple, publish-android]
+    needs: [ build-and-test, publish-win, publish-linux, build-apple, launch-mac, publish-android]
     runs-on: ubuntu-latest
     permissions:
       contents: write
