@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using FwLiteShared.Sync;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi;
 using MiniLcm;
@@ -95,7 +96,27 @@ public static class MiniLcmRoutes
 
                 miniLcmHolder.MiniLcmApi = userFacingWrappers.Apply(
                     await projectProvider.OpenProject(project, services), project);
-                return await next(context);
+                var result = await next(context);
+
+                // REST writes skip MiniLcmJsInvokable.OnDataChanged, so unlike the Blazor path they never
+                // trigger a sync. Do it here. Every POST/DELETE in this group is a write, and only Harmony
+                // projects sync (FwData is local-only). The handler already returned without throwing, so
+                // the change is committed; a sync failure must not fail that request, hence the catch.
+                var method = context.HttpContext.Request.Method;
+                if (type == ProjectDataFormat.Harmony && (HttpMethods.IsPost(method) || HttpMethods.IsDelete(method)))
+                {
+                    try
+                    {
+                        services.GetRequiredService<IBackgroundSyncService>().TriggerSync(project);
+                    }
+                    catch (Exception e)
+                    {
+                        services.GetRequiredService<ILogger<MiniLcmHolder>>()
+                            .LogWarning(e, "Failed to trigger background sync for project {ProjectCode}", projectCode);
+                    }
+                }
+
+                return result;
             });
 
         api.MapGet("/writingSystems", MiniLcm.GetWritingSystems);
