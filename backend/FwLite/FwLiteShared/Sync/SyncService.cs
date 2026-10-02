@@ -151,10 +151,11 @@ public class SyncService(
         return status;
     }
 
-    public async Task<HttpResponseMessage?> TriggerSync()
+    public async Task<SyncJobResult?> TriggerSync()
     {
         var project = await currentProjectService.GetProjectData();
-        if (!authOptions.Value.TryGetServer(project, out var server)) return null;
+        if (!authOptions.Value.TryGetServer(project, out var server))
+            return new SyncJobResult(SyncJobStatusEnum.UnableToAuthenticate, "Unable to authenticate with Lexbox");
         return await lexboxProjectService.TriggerLexboxSync(server, project.Id);
     }
 
