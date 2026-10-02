@@ -18,6 +18,15 @@ interface OnEventOptions {
   includeLast?: boolean;
 }
 
+/**
+ * autoCleanup (default true): unsubscribe on the calling component's onDestroy.
+ * Pass false to own the returned unsubscribe yourself, needed when subscribing
+ * outside a component, e.g. a project-scoped cache that outlives its first caller.
+ */
+interface OnProjectEventOptions {
+  autoCleanup?: boolean;
+}
+
 export class EventBus {
   private _onEvent = new Set<(event: IFwEvent) => void>();
   private _onProjectClosed = new Set<(reason: CloseReason) => void>();
@@ -114,30 +123,30 @@ export class ProjectEventBus {
     } as IProjectEvent);
   }
 
-  public onEntryUpdated(callback: (entryId: string) => void) {
-    this.onProjectEvent(event => {
+  public onEntryUpdated(callback: (entryId: string) => void, options?: OnProjectEventOptions): () => void {
+    return this.onProjectEvent(event => {
       if (isEntriesChangedEvent(event)) {
         event.changedEntryIds.forEach(callback);
       }
-    });
+    }, options);
   }
 
-  public onEntryDeleted(callback: (entryId: string) => void) {
-    this.onProjectEvent(event => {
+  public onEntryDeleted(callback: (entryId: string) => void, options?: OnProjectEventOptions): () => void {
+    return this.onProjectEvent(event => {
       if (isEntriesChangedEvent(event)) {
         event.deletedEntryIds.forEach(callback);
       }
-    });
+    }, options);
   }
 
   // Bulk subscription: one callback per sync/edit, for consumers that re-query
   // the whole set rather than react per entry (the list, stats).
-  public onEntriesChanged(callback: (event: IEntriesChangedEvent) => void) {
-    this.onProjectEvent(event => {
+  public onEntriesChanged(callback: (event: IEntriesChangedEvent) => void, options?: OnProjectEventOptions): () => void {
+    return this.onProjectEvent(event => {
       if (isEntriesChangedEvent(event)) {
         callback(event);
       }
-    });
+    }, options);
   }
 
   public onSync(callback: (event: ISyncEvent) => void) {
@@ -150,13 +159,17 @@ export class ProjectEventBus {
     });
   }
 
-  private onProjectEvent(callback: (event: IFwEvent) => void) {
+  private onProjectEvent(callback: (event: IFwEvent) => void, options?: OnProjectEventOptions): () => void {
     const onProjectEventCallback = (event: IFwEvent) => {
       if (isProjectEvent(event) && event.project.name === this.projectCode) {
         callback(event.event);
       }
     }
-    onDestroy(this.eventBus.onEvent(onProjectEventCallback));
+    const unsubscribe = this.eventBus.onEvent(onProjectEventCallback);
+    if (options?.autoCleanup ?? true) {
+      onDestroy(unsubscribe);
+    }
+    return unsubscribe;
   }
 }
 
