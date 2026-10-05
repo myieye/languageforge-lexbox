@@ -47,4 +47,5 @@ backend/FwLite/LcmDebugger/logs/
 AGENTS.local.md
 .claude/scheduled_tasks.lock
 .claude/agent-memory-local/
+.claude/shots/
 screenshots/
