@@ -165,8 +165,11 @@ export function useDashboardStats() {
       return stats;
     });
     const debouncedRefetch = useDebounce(() => void resource.refetch(), 500);
-    projectEventBus.onEntryDeleted(() => void debouncedRefetch());
-    projectEventBus.onEntryUpdated(() => void debouncedRefetch());
+    // Subscribe via $effect, not onDestroy: this factory runs once inside the project's
+    // $effect.root (getOrAdd), so tie the subscription to the project, not to whichever
+    // component first mounted the view. Otherwise it dies with that component and the
+    // cached resource stops refetching on later visits.
+    $effect(() => projectEventBus.onEntriesChanged(() => void debouncedRefetch(), {autoCleanup: false}));
     return resource;
   });
 }
