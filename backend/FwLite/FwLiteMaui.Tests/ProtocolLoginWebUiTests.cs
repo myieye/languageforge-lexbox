@@ -98,6 +98,8 @@ public class ProtocolLoginWebUiTests
     [Theory]
     [InlineData("-ToastActivated")]
     [InlineData("https://lexbox.org/?state=x")]
+    [InlineData("silfwlite://localhost/link?x=1")]
+    [InlineData("silfwlite://lexbox.org/auth?state=x")]
     public void TryGetRedirectUriIgnoresOtherArgs(string arg)
     {
         ProtocolLoginRedirect.TryGetRedirectUri([arg], out _).Should().BeFalse();

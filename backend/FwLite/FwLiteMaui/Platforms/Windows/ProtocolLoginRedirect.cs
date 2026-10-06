@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
-using FwLiteShared.Auth;
 using Microsoft.Win32;
 
 namespace FwLiteMaui;
@@ -16,15 +15,18 @@ namespace FwLiteMaui;
 /// </summary>
 public static class ProtocolLoginRedirect
 {
-    public const string Scheme = "msal" + AuthConfig.DefaultClientId;
-    public const string RedirectUri = Scheme + "://auth";
+    // mirrors FieldWorks' silfw scheme (silfw://localhost/link?...); other silfwlite URIs are not login redirects
+    public const string Scheme = "silfwlite";
+    public const string RedirectUri = Scheme + "://localhost/auth";
 
     public static bool TryGetRedirectUri(string[] args, [NotNullWhen(true)] out Uri? redirectUri)
     {
         foreach (var arg in args)
         {
             if (Uri.TryCreate(arg, UriKind.Absolute, out var uri) &&
-                uri.Scheme.Equals(Scheme, StringComparison.OrdinalIgnoreCase))
+                uri.Scheme.Equals(Scheme, StringComparison.OrdinalIgnoreCase) &&
+                uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) &&
+                uri.AbsolutePath == "/auth")
             {
                 redirectUri = uri;
                 return true;
@@ -92,7 +94,7 @@ public static class ProtocolLoginRedirect
     {
         var exePath = Environment.ProcessPath ?? throw new InvalidOperationException("Unknown process path");
         using var key = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{Scheme}");
-        key.SetValue("", "URL:FieldWorks Lite login");
+        key.SetValue("", "URL:FieldWorks Lite");
         key.SetValue("URL Protocol", "");
         using var command = key.CreateSubKey(@"shell\open\command");
         command.SetValue("", $"\"{exePath}\" \"%1\"");
