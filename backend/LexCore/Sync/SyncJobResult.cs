@@ -36,6 +36,7 @@ public enum SyncJobStatusEnum
     SyncJobNotFound,
     SyncJobTimedOut,
     TimedOutAwaitingSyncStatus,
+    LostConnectionAwaitingStatus,
     UnableToAuthenticate,
     UnableToSync,
     ProjectIncompatible,

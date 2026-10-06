@@ -11,6 +11,10 @@ export function useSyncStatusService() {
   return new SyncStatusService(projectContext);
 }
 
+export type FwHeadlessSyncOutcome =
+  | {status: SyncJobStatusEnum.Success, syncResult?: ISyncResult}
+  | {status: SyncJobStatusEnum.LostConnectionAwaitingStatus};
+
 export class SyncStatusService {
   #projectContext: ProjectContext;
   get syncStatusApi(): ISyncServiceJsInvokable {
@@ -36,13 +40,13 @@ export class SyncStatusService {
     return this.syncStatusApi.executeSync(skipNotifications);
   }
 
-  async triggerFwHeadlessSync(): Promise<{status: SyncJobStatusEnum.Success, syncResult?: ISyncResult}> {
+  async triggerFwHeadlessSync(): Promise<FwHeadlessSyncOutcome> {
     const result = await this.syncStatusApi.triggerFwHeadlessSync();
     if (result.status === SyncJobStatusEnum.Success && !result.error) return {status: SyncJobStatusEnum.Success, syncResult: result.syncResult};
-    else {
-      const syncError = result.error as string ?? `Sync failed with status ${result.status} but no error message`;
-      throw new Error(gt`Failed to synchronize` + `\n${syncError}`);
-    }
+    // Not a failure: the server may still be running the job
+    if (result.status === SyncJobStatusEnum.LostConnectionAwaitingStatus) return {status: result.status};
+    const syncError = result.error as string ?? `Sync failed with status ${result.status} but no error message`;
+    throw new Error(gt`Failed to synchronize` + `\n${syncError}`);
     // TODO: Tweak SyncJobResult to have an error *message* and error *details*, and put the details in the `cause` property of the JS Error that we throw
     // throw new Error(result.errorMessage, {cause: result.errorDetails});
   }
