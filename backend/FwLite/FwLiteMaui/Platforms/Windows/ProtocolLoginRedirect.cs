@@ -61,10 +61,15 @@ public static class ProtocolLoginRedirect
         if (GetNamedPipeServerProcessId(pipe.SafePipeHandle.DangerousGetHandle(), out var serverPid))
             AllowSetForegroundWindow(serverPid);
 
-        using var writer = new StreamWriter(pipe, Encoding.UTF8);
-        writer.WriteLine(redirectUri.OriginalString);
-        writer.Flush();
-        pipe.WaitForPipeDrain();
+        pipe.Write(Encoding.UTF8.GetBytes(redirectUri.OriginalString + "\n"));
+        try
+        {
+            pipe.WaitForPipeDrain();
+        }
+        catch (IOException)
+        {
+            // broken pipe: the waiting login already read the redirect and closed its end
+        }
         return true;
     }
 
