@@ -1,4 +1,5 @@
 using System.IO.Pipes;
+using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Identity.Client;
 
@@ -69,6 +70,18 @@ public class ProtocolLoginWebUiTests
         await server.DisposeAsync();
 
         (await forward.WaitAsync(TimeSpan.FromSeconds(10))).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AnActivationThatNeverReadsTheAckDoesNotBlockTheLogin()
+    {
+        var state = NewState();
+        using var client = new NamedPipeClientStream(".", ProtocolLoginRedirect.PipeName(state), PipeDirection.InOut, PipeOptions.CurrentUserOnly);
+        var login = ProtocolLoginRedirect.WaitForRedirect(state, () => { }, CancellationToken.None);
+        await client.ConnectAsync(10_000);
+        await client.WriteAsync(Encoding.UTF8.GetBytes(Redirect(state) + "\n"));
+
+        (await login.WaitAsync(TimeSpan.FromSeconds(10))).Should().Be(Redirect(state));
     }
 
     [Fact]
