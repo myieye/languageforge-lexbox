@@ -47,7 +47,7 @@
   <div class="flex flex-col justify-center grow max-w-lg">
     <div class="flex-grow"></div>
     <div class="grid gap-x-3 gap-y-1 items-center" style="grid-template-columns: auto 1fr">
-      <div class="row-span-2">
+      <div class={error && errorDescription ? 'row-span-3' : 'row-span-2'}>
         {#if error}
           <Icon icon="i-mdi-alert-circle" color="text-error" size="text-5xl" />
         {:else}
@@ -57,11 +57,13 @@
       {#if error}
         <h2 class="text-3xl">{$t('fw_lite_signed_in.failed_title')}</h2>
         <div>
-          {error === 'access_denied'
-            ? $t('fw_lite_signed_in.access_denied')
-            : (errorDescription ?? $t('fw_lite_signed_in.unknown_error'))}
+          {error === 'access_denied' ? $t('fw_lite_signed_in.access_denied') : $t('fw_lite_signed_in.unknown_error')}
           {$t('fw_lite_signed_in.try_again')}
         </div>
+        {#if errorDescription}
+          <!-- untranslated server text, so only as a detail -->
+          <div class="text-sm opacity-75">{errorDescription}</div>
+        {/if}
       {:else if appUrl}
         <h2 class="text-3xl">{$t('fw_lite_signed_in.return_title')}</h2>
         <div>{$t('fw_lite_signed_in.browser_prompt')}</div>
@@ -72,12 +74,10 @@
     </div>
     {#if appUrl}
       <div class="flex flex-col items-center gap-4 mt-6">
-        <button bind:this={openButton} class="btn" class:btn-success={!error} onclick={openAppClicked}>
+        <button bind:this={openButton} class="btn" class:btn-success={!error} class:btn-outline={!!error} onclick={openAppClicked}>
           {$t('fw_lite_signed_in.open_app')}
         </button>
-        {#if !error}
-          <p class="text-sm opacity-75 text-center">{$t('fw_lite_signed_in.nothing_happened')}</p>
-        {/if}
+        <p class="text-sm opacity-75 text-center">{$t('fw_lite_signed_in.nothing_happened')}</p>
       </div>
     {/if}
     <div class="flex-grow-[2]"></div>
