@@ -18,7 +18,7 @@
       ? 'fw_lite_signed_in.return_title'
       : 'fw_lite_signed_in.title';
 
-  let openButton: HTMLButtonElement | undefined = $state();
+  let openButton: HTMLAnchorElement | undefined = $state();
   let lastOpened = 0;
 
   function openApp(): void {
@@ -71,9 +71,20 @@
     </div>
     {#if appUrl}
       <div class="flex flex-col items-center gap-4 mt-6">
-        <button bind:this={openButton} class="btn" class:btn-success={!error} class:btn-outline={!!error} onclick={openApp}>
+        <!-- a link, so it works before or without hydration -->
+        <a
+          bind:this={openButton}
+          href={appUrl}
+          class="btn"
+          class:btn-success={!error}
+          class:btn-outline={!!error}
+          onclick={(e) => {
+            e.preventDefault();
+            openApp();
+          }}
+        >
           {$t('fw_lite_signed_in.open_app')}
-        </button>
+        </a>
         <p class="text-sm opacity-75 text-center">{$t('fw_lite_signed_in.nothing_happened')}</p>
       </div>
     {/if}

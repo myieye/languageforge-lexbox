@@ -97,8 +97,8 @@ public static class ProtocolLoginRedirect
     /// <summary>
     /// Points the scheme at the current exe until disposed. Only for unpackaged (portable/dev) runs: a packaged
     /// install declares the scheme in its manifest instead, and its registry writes would be virtualized.
-    /// Registering only while a login waits means a portable exe that gets deleted or moved leaves nothing behind;
-    /// it has no uninstaller to clean up after it.
+    /// Registering only while a login waits means a portable exe that gets deleted or moved leaves nothing behind
+    /// (it has no uninstaller), unless the app exits mid-login.
     /// </summary>
     public static IDisposable RegisterForUnpackagedApp()
     {
