@@ -114,11 +114,13 @@ public static class ProtocolLoginRedirect
                 var line = await reader.ReadLineAsync(cancellationToken);
                 if (Uri.TryCreate(line, UriKind.Absolute, out var uri) && GetState(uri) == state)
                 {
-                    // the pipe has no buffer, so this write waits for the client to read it: bound it
+                    // closing our end before the client reads the ack could discard it, so wait for the client to
+                    // hang up, but not for long: a stalled client must not hold up the login
                     using var ackTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
                     try
                     {
                         await pipe.WriteAsync(new[] { Ack }, ackTimeout.Token);
+                        await pipe.ReadAsync(new byte[1], ackTimeout.Token);
                     }
                     catch (Exception e) when (e is IOException or OperationCanceledException)
                     {
