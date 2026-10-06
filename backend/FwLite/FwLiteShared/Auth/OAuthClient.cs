@@ -64,7 +64,7 @@ public class OAuthClient
             .WithOidcAuthority(lexboxServer.Authority.ToString());
         if (options.Value.CustomWebUiFactory is not null)
         {
-            // the custom scheme is intercepted by the authentication session itself; must be registered on the server
+            // the custom scheme is delivered to the custom web UI by the OS; must be registered on the server
             builder.WithRedirectUri(options.Value.CustomWebUiRedirectUri ?? $"msal{options.Value.ClientId}://auth");
         }
         else if (!options.Value.SystemWebViewLogin)

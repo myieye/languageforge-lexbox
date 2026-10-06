@@ -5,7 +5,8 @@
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap rescap com desktop">
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+  IgnorableNamespaces="uap rescap com desktop uap10">
 
 <!--    Name is the unique identifier for this app, do not change it, otherwise it will get installed as a different app and not replace the existing one-->
 <!--    We may want to use a different name to let users have multiple release channels, eg prod and beta-->
@@ -57,6 +58,14 @@
                   </com:ExeServer>
               </com:ComServer>
           </com:Extension>
+
+          <!--Login redirect (see ProtocolLoginRedirect.cs). uap10 because uap:Protocol names are limited to 39 chars.
+              Parameters puts the URI on the command line, the same way the unpackaged registration does.-->
+          <uap10:Extension Category="windows.protocol">
+              <uap10:Protocol Name="msalbecf2856-0690-434b-b192-a4032b72067f" Parameters="&quot;%1&quot;">
+                  <uap10:DisplayName>FieldWorks Lite login</uap10:DisplayName>
+              </uap10:Protocol>
+          </uap10:Extension>
       </Extensions>
     </Application>
   </Applications>

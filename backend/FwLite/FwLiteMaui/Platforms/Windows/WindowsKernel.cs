@@ -6,6 +6,8 @@ using FwLiteShared.Auth;
 using FwLiteShared.Services;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Maui.Platform;
 
 namespace FwLiteMaui;
@@ -37,6 +39,18 @@ public static class WindowsKernel
                 var hwnd = window.GetWindowHandle();
                 WindowHelper.SetForegroundWindow(hwnd);
             };
+        });
+
+        services.AddOptions<AuthConfig>().Configure<IOptions<FwLiteMauiConfig>, ILoggerFactory>((config, mauiConfig, loggerFactory) =>
+        {
+            if (mauiConfig.Value.UseLoopbackLogin) return;
+            config.CustomWebUiFactory = () =>
+            {
+                // per login, so a portable exe that was since moved or deleted gets replaced
+                if (FwLiteMauiKernel.IsPortableApp) ProtocolLoginRedirect.RegisterForUnpackagedApp();
+                return new ProtocolLoginWebUi(loggerFactory.CreateLogger<ProtocolLoginWebUi>());
+            };
+            config.CustomWebUiRedirectUri = ProtocolLoginRedirect.RedirectUri;
         });
 
         services.Configure<FwLiteConfig>(config =>
