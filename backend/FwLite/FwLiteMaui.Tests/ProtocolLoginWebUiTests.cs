@@ -2,18 +2,19 @@ using System.IO.Pipes;
 using System.Text;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Identity.Client;
+using Microsoft.Win32;
 
 namespace FwLiteMaui.Tests;
 
 #if WINDOWS
 public class ProtocolLoginWebUiTests
 {
-    private static readonly Uri RedirectUri = new(ProtocolLoginRedirect.RedirectUri);
+    private static readonly Uri RedirectUri = new("https://lexbox.example/fw-lite/signed-in");
 
     private static Uri AuthUri(string state) =>
         new($"https://lexbox.example/api/oauth/open-id-auth?client_id=x&redirect_uri=x&state={state}");
 
-    private static Uri Redirect(string state) => new($"{ProtocolLoginRedirect.RedirectUri}?code=abc&state={state}");
+    private static Uri Redirect(string state) => new($"{ProtocolLoginRedirect.ActivationUri}?code=abc&state={state}");
 
     private static string NewState() => Guid.NewGuid().ToString("N");
 
@@ -31,7 +32,7 @@ public class ProtocolLoginWebUiTests
         var result = await webUi.AcquireAuthorizationCodeAsync(AuthUri(state), RedirectUri, CancellationToken.None)
             .WaitAsync(TimeSpan.FromSeconds(10));
 
-        result.Should().Be(Redirect(state));
+        result.Should().Be(new Uri($"{RedirectUri}?code=abc&state={state}"));
         openedUri.Should().Be(AuthUri(state));
     }
 
@@ -82,6 +83,27 @@ public class ProtocolLoginWebUiTests
         await client.WriteAsync(Encoding.UTF8.GetBytes(Redirect(state) + "\n"));
 
         (await login.WaitAsync(TimeSpan.FromSeconds(10))).Should().Be(Redirect(state));
+    }
+
+    [Fact]
+    public void UnpackagedRegistrationIsRemovedOnlyIfStillOurs()
+    {
+        const string commandKey = @"Software\Classes\silfwlite\shell\open\command";
+        string? Command()
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(commandKey);
+            return key?.GetValue("") as string;
+        }
+
+        using (ProtocolLoginRedirect.RegisterForUnpackagedApp())
+            Command().Should().Contain(Environment.ProcessPath);
+        Command().Should().BeNull();
+
+        var registration = ProtocolLoginRedirect.RegisterForUnpackagedApp();
+        using (var key = Registry.CurrentUser.CreateSubKey(commandKey)) key.SetValue("", "\"other.exe\" \"%1\"");
+        registration.Dispose();
+        Command().Should().Be("\"other.exe\" \"%1\"");
+        Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\silfwlite");
     }
 
     [Fact]

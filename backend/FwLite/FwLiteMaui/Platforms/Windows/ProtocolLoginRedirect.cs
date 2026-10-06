@@ -9,15 +9,15 @@ using Microsoft.Win32;
 namespace FwLiteMaui;
 
 /// <summary>
-/// Login redirects arrive as a protocol activation, which Windows delivers to a new process. That process
-/// forwards the redirect URI over a named pipe named after the login's OAuth state, so it reaches exactly
-/// the process (packaged, portable or dev build) that started that login, and nothing else.
+/// Login redirects arrive as a protocol activation (launched by Lexbox's FW Lite signed-in page), which Windows
+/// delivers to a new process. That process forwards the URI over a named pipe named after the login's OAuth state,
+/// so it reaches exactly the process (packaged, portable or dev build) that started that login, and nothing else.
 /// </summary>
 public static class ProtocolLoginRedirect
 {
     // mirrors FieldWorks' silfw scheme (silfw://localhost/link?...); other silfwlite URIs are not login redirects
     public const string Scheme = "silfwlite";
-    public const string RedirectUri = Scheme + "://localhost/auth";
+    public const string ActivationUri = Scheme + "://localhost/auth";
 
     public static bool TryGetRedirectUri(string[] args, [NotNullWhen(true)] out Uri? redirectUri)
     {
@@ -81,23 +81,42 @@ public static class ProtocolLoginRedirect
     {
         if (ForwardToWaitingLogin(redirectUri)) return;
         MessageBox(IntPtr.Zero,
-            "FieldWorks Lite is not waiting for this login. It may have been closed or the login may have timed out.\n\nPlease log in again from FieldWorks Lite.",
+            "FieldWorks Lite is not waiting for this login. The login may have already finished or timed out, or FieldWorks Lite was closed.\n\nIf you are not logged in, please log in again from FieldWorks Lite.",
             "FieldWorks Lite",
             MbIconWarning);
     }
 
+    private const string ClassesKey = $@"Software\Classes\{Scheme}";
+
     /// <summary>
-    /// Points the login scheme at the current exe. Only for unpackaged (portable/dev) runs: a packaged
+    /// Points the scheme at the current exe until disposed. Only for unpackaged (portable/dev) runs: a packaged
     /// install declares the scheme in its manifest instead, and its registry writes would be virtualized.
+    /// Registering only while a login waits means a portable exe that gets deleted or moved leaves nothing behind;
+    /// it has no uninstaller to clean up after it.
     /// </summary>
-    public static void RegisterForUnpackagedApp()
+    public static IDisposable RegisterForUnpackagedApp()
     {
         var exePath = Environment.ProcessPath ?? throw new InvalidOperationException("Unknown process path");
-        using var key = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{Scheme}");
+        var commandLine = $"\"{exePath}\" \"%1\"";
+        using var key = Registry.CurrentUser.CreateSubKey(ClassesKey);
         key.SetValue("", "URL:FieldWorks Lite");
         key.SetValue("URL Protocol", "");
         using var command = key.CreateSubKey(@"shell\open\command");
-        command.SetValue("", $"\"{exePath}\" \"%1\"");
+        command.SetValue("", commandLine);
+        return new Registration(commandLine);
+    }
+
+    private sealed class Registration(string commandLine) : IDisposable
+    {
+        public void Dispose()
+        {
+            // another copy of the app may have registered itself since
+            using (var command = Registry.CurrentUser.OpenSubKey(ClassesKey + @"\shell\open\command"))
+            {
+                if (command?.GetValue("") as string != commandLine) return;
+            }
+            Registry.CurrentUser.DeleteSubKeyTree(ClassesKey, throwOnMissingSubKey: false);
+        }
     }
 
     public static async Task<Uri> WaitForRedirect(string state, Action onListening, CancellationToken cancellationToken)

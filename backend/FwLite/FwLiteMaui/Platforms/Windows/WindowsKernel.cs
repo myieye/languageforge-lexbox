@@ -29,28 +29,16 @@ public static class WindowsKernel
             services.AddSingleton<IMauiInitializeService, PackageUpdateLogger>();
         }
 
-        services.Configure<AuthConfig>(config =>
-        {
-            config.AfterLoginWebView = () =>
-            {
-                var window = Application.Current?.Windows.FirstOrDefault()?.Handler?.PlatformView as Microsoft.UI.Xaml.Window;
-                if (window is null) throw new InvalidOperationException("Could not find window");
-                //note, window.Activate() does not work per https://github.com/microsoft/microsoft-ui-xaml/issues/7595
-                var hwnd = window.GetWindowHandle();
-                WindowHelper.SetForegroundWindow(hwnd);
-            };
-        });
-
         services.AddOptions<AuthConfig>().Configure<IOptions<FwLiteMauiConfig>, ILoggerFactory>((config, mauiConfig, loggerFactory) =>
         {
+            var logger = loggerFactory.CreateLogger(typeof(WindowsKernel).FullName!);
+            config.AfterLoginWebView = () => BringAppToFront(logger);
             if (mauiConfig.Value.UseLoopbackLogin) return;
-            config.CustomWebUiFactory = () =>
-            {
-                // per login, so a portable exe that was since moved or deleted gets replaced
-                if (FwLiteMauiKernel.IsPortableApp) ProtocolLoginRedirect.RegisterForUnpackagedApp();
-                return new ProtocolLoginWebUi(loggerFactory.CreateLogger<ProtocolLoginWebUi>());
-            };
-            config.CustomWebUiRedirectUri = ProtocolLoginRedirect.RedirectUri;
+            config.CustomWebUiFactory = () => new ProtocolLoginWebUi(loggerFactory.CreateLogger<ProtocolLoginWebUi>(),
+                registerProtocol: FwLiteMauiKernel.IsPortableApp,
+                // don't wait for the token request: user input in the meantime takes away the foreground rights we were given
+                onRedirectReceived: () => MainThread.BeginInvokeOnMainThread(() => BringAppToFront(logger)));
+            config.CustomWebUiRedirectUri = OAuthClient.SignedInPage;
         });
 
         services.Configure<FwLiteConfig>(config =>
@@ -58,10 +46,33 @@ public static class WindowsKernel
             config.UseDevAssets = environment.IsDevelopment();
         });
     }
+
+    private static void BringAppToFront(ILogger logger)
+    {
+        if (Application.Current?.Windows.FirstOrDefault()?.Handler?.PlatformView is not Microsoft.UI.Xaml.Window window)
+        {
+            logger.LogWarning("Could not find the window to bring to the front after login");
+            return;
+        }
+        //note, window.Activate() does not work per https://github.com/microsoft/microsoft-ui-xaml/issues/7595
+        var hwnd = window.GetWindowHandle();
+        if (WindowHelper.IsIconic(hwnd)) WindowHelper.ShowWindow(hwnd, WindowHelper.SwRestore);
+        // Windows only allows this while we hold foreground rights, see ProtocolLoginRedirect.ForwardToWaitingLogin
+        if (!WindowHelper.SetForegroundWindow(hwnd))
+            logger.LogInformation("Windows did not let FieldWorks Lite come to the front after login");
+    }
 }
 
 public class WindowHelper
 {
+    public const int SwRestore = 9;
+
     [DllImport("user32.dll")]
-    public static extern void SetForegroundWindow(IntPtr hWnd);
+    public static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 }

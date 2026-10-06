@@ -307,7 +307,11 @@ public class SeedingData(
                 new Uri("http://127.0.0.1/api/auth/oauth-callback"),
                 new Uri("http://localhost"),//handles system web view case
                 new Uri("msalbecf2856-0690-434b-b192-a4032b72067f://auth"),//android and mac catalyst callback
-                new Uri("silfwlite://localhost/auth")//windows callback, via the protocol handler
+                //windows callback: the page hands the code on to the silfwlite protocol handler. One per server in FwLiteMauiKernel
+                new Uri("https://lexbox.org/fw-lite/signed-in"),
+                new Uri("https://staging.languagedepot.org/fw-lite/signed-in"),
+                new Uri("https://lexbox.dev.languagetechnology.org/fw-lite/signed-in"),
+                new Uri("https://localhost:3050/fw-lite/signed-in")
             }
         },
         new OpenIddictApplicationDescriptor
