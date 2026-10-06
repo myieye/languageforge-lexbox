@@ -38,15 +38,17 @@ public static class ProtocolLoginRedirect
     public static string? GetState(Uri uri) => HttpUtility.ParseQueryString(uri.Query).Get("state");
 
     // state comes from an external URI, so hash it rather than splice it into a pipe path
-    internal static string PipeName(string state) =>
+    public static string PipeName(string state) =>
         "FwLiteLogin-" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(state)))[..32];
 
-    /// <returns>false when no process is waiting for a login with this redirect's state</returns>
+    private const byte Ack = 1;
+
+    /// <returns>false unless the process waiting for a login with this redirect's state confirmed it got it</returns>
     public static bool ForwardToWaitingLogin(Uri redirectUri)
     {
         var state = GetState(redirectUri);
         if (string.IsNullOrEmpty(state)) return false;
-        using var pipe = new NamedPipeClientStream(".", PipeName(state), PipeDirection.Out, PipeOptions.CurrentUserOnly);
+        using var pipe = new NamedPipeClientStream(".", PipeName(state), PipeDirection.InOut, PipeOptions.CurrentUserOnly);
         try
         {
             pipe.Connect(TimeSpan.FromSeconds(2));
@@ -61,16 +63,16 @@ public static class ProtocolLoginRedirect
         if (GetNamedPipeServerProcessId(pipe.SafePipeHandle.DangerousGetHandle(), out var serverPid))
             AllowSetForegroundWindow(serverPid);
 
-        pipe.Write(Encoding.UTF8.GetBytes(redirectUri.OriginalString + "\n"));
         try
         {
-            pipe.WaitForPipeDrain();
+            pipe.Write(Encoding.UTF8.GetBytes(redirectUri.OriginalString + "\n"));
+            // the login can time out between our connect and its read
+            return pipe.ReadByte() == Ack;
         }
         catch (IOException)
         {
-            // broken pipe: the waiting login already read the redirect and closed its end
+            return false;
         }
-        return true;
     }
 
     public static void HandleActivation(Uri redirectUri)
@@ -99,7 +101,7 @@ public static class ProtocolLoginRedirect
     public static async Task<Uri> WaitForRedirect(string state, Action onListening, CancellationToken cancellationToken)
     {
         await using var pipe = new NamedPipeServerStream(PipeName(state),
-            PipeDirection.In,
+            PipeDirection.InOut,
             1,
             PipeTransmissionMode.Byte,
             PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
@@ -110,7 +112,20 @@ public static class ProtocolLoginRedirect
             using (var reader = new StreamReader(pipe, Encoding.UTF8, leaveOpen: true))
             {
                 var line = await reader.ReadLineAsync(cancellationToken);
-                if (Uri.TryCreate(line, UriKind.Absolute, out var uri) && GetState(uri) == state) return uri;
+                if (Uri.TryCreate(line, UriKind.Absolute, out var uri) && GetState(uri) == state)
+                {
+                    try
+                    {
+                        pipe.WriteByte(Ack);
+                        // closing the pipe before the client reads would discard the ack
+                        pipe.WaitForPipeDrain();
+                    }
+                    catch (IOException)
+                    {
+                        // the activation process is gone, but we have the redirect
+                    }
+                    return uri;
+                }
             }
 
             pipe.Disconnect();

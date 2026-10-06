@@ -1,3 +1,4 @@
+using System.IO.Pipes;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Identity.Client;
 
@@ -52,6 +53,22 @@ public class ProtocolLoginWebUiTests
     public void ActivationWithNoPendingLoginIsNotDelivered()
     {
         ProtocolLoginRedirect.ForwardToWaitingLogin(Redirect(NewState())).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ActivationIsNotDeliveredWhenTheLoginClosesWithoutAcceptingIt()
+    {
+        var state = NewState();
+        var server = new NamedPipeServerStream(ProtocolLoginRedirect.PipeName(state), PipeDirection.InOut, 1,
+            PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+        var connected = server.WaitForConnectionAsync();
+        var forward = Task.Run(() => ProtocolLoginRedirect.ForwardToWaitingLogin(Redirect(state)));
+        await connected.WaitAsync(TimeSpan.FromSeconds(10));
+        using (var reader = new StreamReader(server, leaveOpen: true))
+            await reader.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(10));
+        await server.DisposeAsync();
+
+        (await forward.WaitAsync(TimeSpan.FromSeconds(10))).Should().BeFalse();
     }
 
     [Fact]
