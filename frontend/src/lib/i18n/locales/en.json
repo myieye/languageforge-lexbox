@@ -156,6 +156,18 @@
       "back_to_login": "Back to login page"
     }
   },
+  "fw_lite_signed_in": {
+    "title": "You're logged in",
+    "message": "You can close this tab and return to FieldWorks Lite. If it is still waiting, log in again from FieldWorks Lite.",
+    "return_title": "Return to FieldWorks Lite",
+    "browser_prompt": "If your browser asks, choose to open FieldWorks Lite.",
+    "open_app": "Open FieldWorks Lite",
+    "nothing_happened": "If nothing happens, click the button. When FieldWorks Lite opens, you can close this tab.",
+    "failed_title": "Login failed",
+    "access_denied": "FieldWorks Lite was not allowed to access your account.",
+    "unknown_error": "Something went wrong.",
+    "try_again": "Return to FieldWorks Lite to try again."
+  },
   "login": {
     "bad_credentials": "The account information you entered is incorrect.",
     "your_account_is_locked": "Your account is locked. [Contact an administrator](mailto:admin@languagedepot.org) to have it unlocked or deleted.",

@@ -20,6 +20,12 @@ public class FwLiteMauiConfig
         set => field = Path.GetFullPath(value);
     }
 
+    /// <summary>
+    /// Windows only: log in via MSAL's http://localhost listener instead of the login protocol handler.
+    /// Escape hatch for machines where the browser can't launch the protocol handler.
+    /// </summary>
+    public bool UseLoopbackLogin { get; set; }
+
     public int MaxLogFileSize { get; set; } = 50 * 1024 * 1024;
     public int MaxLogFileCount { get; set; } = 2;
 

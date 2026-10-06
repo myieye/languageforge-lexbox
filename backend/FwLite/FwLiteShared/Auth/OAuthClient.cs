@@ -19,6 +19,9 @@ public class OAuthClient
     //profile, openid and offline_access are all required to work around https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/issues/5094;
     //sendandreceive is the API permission scope for our backend.
     public static IReadOnlyCollection<string> DefaultScopes { get; } = ["profile", "openid", "offline_access", "sendandreceive"];
+
+    /// <summary>Lexbox page that tells the user desktop login is done. Older servers don't have it.</summary>
+    public static Uri SignedInPage(LexboxServer server) => new(server.Authority, "/fw-lite/signed-in");
     public const string AuthHttpClientName = "LexboxHttpClient";
     public string? RedirectUrl { get; }
     private readonly IHttpMessageHandlerFactory _httpMessageHandlerFactory;
@@ -64,8 +67,8 @@ public class OAuthClient
             .WithOidcAuthority(lexboxServer.Authority.ToString());
         if (options.Value.CustomWebUiFactory is not null)
         {
-            // the custom scheme is intercepted by the authentication session itself; must be registered on the server
-            builder.WithRedirectUri(options.Value.CustomWebUiRedirectUri ?? $"msal{options.Value.ClientId}://auth");
+            // must be registered on the server
+            builder.WithRedirectUri(options.Value.CustomWebUiRedirectUri?.Invoke(lexboxServer).AbsoluteUri ?? $"msal{options.Value.ClientId}://auth");
         }
         else if (!options.Value.SystemWebViewLogin)
         {
