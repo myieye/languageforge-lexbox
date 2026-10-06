@@ -3,7 +3,9 @@ using System.IO.Pipes;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Security;
 using System.Web;
+using LexCore.Utils;
 using Microsoft.Win32;
 
 namespace FwLiteMaui;
@@ -18,15 +20,16 @@ public static class ProtocolLoginRedirect
     // mirrors FieldWorks' silfw scheme (silfw://localhost/link?...); other silfwlite URIs are not login redirects
     public const string Scheme = "silfwlite";
     public const string ActivationUri = Scheme + "://localhost/auth";
+    private static readonly Uri Activation = new(ActivationUri);
 
     public static bool TryGetRedirectUri(string[] args, [NotNullWhen(true)] out Uri? redirectUri)
     {
         foreach (var arg in args)
         {
             if (Uri.TryCreate(arg, UriKind.Absolute, out var uri) &&
-                uri.Scheme.Equals(Scheme, StringComparison.OrdinalIgnoreCase) &&
-                uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) &&
-                uri.AbsolutePath == "/auth")
+                uri.Scheme.Equals(Activation.Scheme, StringComparison.OrdinalIgnoreCase) &&
+                uri.Host.Equals(Activation.Host, StringComparison.OrdinalIgnoreCase) &&
+                uri.AbsolutePath == Activation.AbsolutePath)
             {
                 redirectUri = uri;
                 return true;
@@ -55,7 +58,8 @@ public static class ProtocolLoginRedirect
         {
             pipe.Connect(TimeSpan.FromSeconds(2));
         }
-        catch (TimeoutException)
+        // e.g. an elevated FW Lite owns the pipe, which CurrentUserOnly rejects
+        catch (Exception e) when (e is TimeoutException or IOException or UnauthorizedAccessException)
         {
             return false;
         }
@@ -87,6 +91,8 @@ public static class ProtocolLoginRedirect
     }
 
     private const string ClassesKey = $@"Software\Classes\{Scheme}";
+    private static readonly Lock RegistrationLock = new();
+    private static int _registrations;
 
     /// <summary>
     /// Points the scheme at the current exe until disposed. Only for unpackaged (portable/dev) runs: a packaged
@@ -98,24 +104,37 @@ public static class ProtocolLoginRedirect
     {
         var exePath = Environment.ProcessPath ?? throw new InvalidOperationException("Unknown process path");
         var commandLine = $"\"{exePath}\" \"%1\"";
-        using var key = Registry.CurrentUser.CreateSubKey(ClassesKey);
-        key.SetValue("", "URL:FieldWorks Lite");
-        key.SetValue("URL Protocol", "");
-        using var command = key.CreateSubKey(@"shell\open\command");
-        command.SetValue("", commandLine);
-        return new Registration(commandLine);
+        lock (RegistrationLock)
+        {
+            using var key = Registry.CurrentUser.CreateSubKey(ClassesKey);
+            key.SetValue("", "URL:FieldWorks Lite");
+            key.SetValue("URL Protocol", "");
+            using var command = key.CreateSubKey(@"shell\open\command");
+            command.SetValue("", commandLine);
+            _registrations++;
+        }
+        return Defer.Action(() => Unregister(commandLine));
     }
 
-    private sealed class Registration(string commandLine) : IDisposable
+    private static void Unregister(string commandLine)
     {
-        public void Dispose()
+        lock (RegistrationLock)
         {
-            // another copy of the app may have registered itself since
-            using (var command = Registry.CurrentUser.OpenSubKey(ClassesKey + @"\shell\open\command"))
+            // logins can overlap, e.g. a retry while an abandoned one waits out its timeout
+            if (--_registrations > 0) return;
+            try
             {
-                if (command?.GetValue("") as string != commandLine) return;
+                // another copy of the app may have registered itself since
+                using (var command = Registry.CurrentUser.OpenSubKey(ClassesKey + @"\shell\open\command"))
+                {
+                    if (command?.GetValue("") as string != commandLine) return;
+                }
+                Registry.CurrentUser.DeleteSubKeyTree(ClassesKey, throwOnMissingSubKey: false);
             }
-            Registry.CurrentUser.DeleteSubKeyTree(ClassesKey, throwOnMissingSubKey: false);
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or SecurityException)
+            {
+                // must not fail a login that already got its redirect; the next login rewrites the key anyway
+            }
         }
     }
 

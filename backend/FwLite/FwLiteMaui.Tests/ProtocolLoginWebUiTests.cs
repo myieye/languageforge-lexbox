@@ -95,15 +95,29 @@ public class ProtocolLoginWebUiTests
             return key?.GetValue("") as string;
         }
 
-        using (ProtocolLoginRedirect.RegisterForUnpackagedApp())
-            Command().Should().Contain(Environment.ProcessPath);
-        Command().Should().BeNull();
+        try
+        {
+            using (ProtocolLoginRedirect.RegisterForUnpackagedApp())
+                Command().Should().Contain(Environment.ProcessPath);
+            Command().Should().BeNull();
 
-        var registration = ProtocolLoginRedirect.RegisterForUnpackagedApp();
-        using (var key = Registry.CurrentUser.CreateSubKey(commandKey)) key.SetValue("", "\"other.exe\" \"%1\"");
-        registration.Dispose();
-        Command().Should().Be("\"other.exe\" \"%1\"");
-        Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\silfwlite");
+            var first = ProtocolLoginRedirect.RegisterForUnpackagedApp();
+            using (ProtocolLoginRedirect.RegisterForUnpackagedApp())
+            {
+                first.Dispose();
+                Command().Should().Contain(Environment.ProcessPath, "another login still waits");
+            }
+            Command().Should().BeNull();
+
+            var registration = ProtocolLoginRedirect.RegisterForUnpackagedApp();
+            using (var key = Registry.CurrentUser.CreateSubKey(commandKey)) key.SetValue("", "\"other.exe\" \"%1\"");
+            registration.Dispose();
+            Command().Should().Be("\"other.exe\" \"%1\"");
+        }
+        finally
+        {
+            Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\silfwlite", throwOnMissingSubKey: false);
+        }
     }
 
     [Fact]

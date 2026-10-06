@@ -12,14 +12,19 @@
   const appUrl = params.has('code') || params.has('error') ? `silfwlite://localhost/auth${page.url.search}` : undefined;
   const error = params.get('error');
   const errorDescription = params.get('error_description');
+  const titleKey = error
+    ? 'fw_lite_signed_in.failed_title'
+    : appUrl
+      ? 'fw_lite_signed_in.return_title'
+      : 'fw_lite_signed_in.title';
 
   let openButton: HTMLButtonElement | undefined = $state();
-  let lastClicked = 0;
+  let lastOpened = 0;
 
-  function openAppClicked(): void {
-    // a double click's second launch reaches an app that's no longer waiting, which shows a warning
-    if (!appUrl || Date.now() - lastClicked < 2000) return;
-    lastClicked = Date.now();
+  function openApp(): void {
+    // a second launch right after the first reaches an app that's no longer waiting, which shows a warning
+    if (!appUrl || Date.now() - lastOpened < 2000) return;
+    lastOpened = Date.now();
     location.href = appUrl;
   }
 
@@ -30,18 +35,12 @@
       // the code is single-use, but it has no business in the history either
       replaceState(page.url.pathname, {});
       openButton?.focus();
-      location.href = appUrl;
+      openApp();
     });
   });
 </script>
 
-<SetTitle
-  title={error
-    ? $t('fw_lite_signed_in.failed_title')
-    : appUrl
-      ? $t('fw_lite_signed_in.return_title')
-      : $t('fw_lite_signed_in.title')}
-/>
+<SetTitle title={$t(titleKey)} />
 
 <div class="flex flex-col items-center grow">
   <div class="flex flex-col justify-center grow max-w-lg">
@@ -54,27 +53,25 @@
           <Icon icon="i-mdi-check-decagram" color="text-success" size="text-5xl" />
         {/if}
       </div>
+      <h2 class="text-3xl">{$t(titleKey)}</h2>
       {#if error}
-        <h2 class="text-3xl">{$t('fw_lite_signed_in.failed_title')}</h2>
         <div>
           {error === 'access_denied' ? $t('fw_lite_signed_in.access_denied') : $t('fw_lite_signed_in.unknown_error')}
           {$t('fw_lite_signed_in.try_again')}
         </div>
         {#if errorDescription}
           <!-- untranslated server text, so only as a detail -->
-          <div class="text-sm opacity-75">{errorDescription}</div>
+          <div class="text-sm opacity-75 break-words">{errorDescription}</div>
         {/if}
       {:else if appUrl}
-        <h2 class="text-3xl">{$t('fw_lite_signed_in.return_title')}</h2>
         <div>{$t('fw_lite_signed_in.browser_prompt')}</div>
       {:else}
-        <h2 class="text-3xl">{$t('fw_lite_signed_in.title')}</h2>
         <div>{$t('fw_lite_signed_in.message')}</div>
       {/if}
     </div>
     {#if appUrl}
       <div class="flex flex-col items-center gap-4 mt-6">
-        <button bind:this={openButton} class="btn" class:btn-success={!error} class:btn-outline={!!error} onclick={openAppClicked}>
+        <button bind:this={openButton} class="btn" class:btn-success={!error} class:btn-outline={!!error} onclick={openApp}>
           {$t('fw_lite_signed_in.open_app')}
         </button>
         <p class="text-sm opacity-75 text-center">{$t('fw_lite_signed_in.nothing_happened')}</p>

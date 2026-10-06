@@ -3,6 +3,7 @@ import {AUTH_COOKIE_NAME, getUser, isAuthn} from '$lib/user';
 import {apiVersion} from '$lib/util/version';
 import {redirect, type Handle, type HandleFetch, type HandleServerError, type RequestEvent, type ResolveOptions} from '@sveltejs/kit';
 import {ensureErrorIsTraced, traceRequest, traceFetch} from '$lib/otel/otel.server';
+import {redactUrl} from '$lib/otel/otel.shared';
 import {env} from '$env/dynamic/private';
 import {getErrorMessage, validateFetchResponse} from './hooks.shared';
 import {setViewMode} from './routes/(authenticated)/shared';
@@ -30,7 +31,7 @@ async function initI18n(event: RequestEvent): Promise<void> {
 
 // eslint-disable-next-line func-style
 export const handle: Handle = ({event, resolve}) => {
-  console.log(`HTTP request: ${event.request.method} ${event.request.url}`);
+  console.log(`HTTP request: ${event.request.method} ${redactUrl(event.url).href}`);
   event.locals.getUser = () => getUser(event.cookies);
   return traceRequest(event, async () => {
     await initI18n(event);
