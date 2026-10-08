@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,7 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
     private static readonly Guid LocalMediaNamespace = new("45e563a3-f5a6-4d7a-9722-8d7d4d3adfa2");
     private const string LocalMediaAuthority = "localhost";
 
-    private Dictionary<Guid, string> Paths(LcmCache cache)
+    private ConcurrentDictionary<Guid, string> Paths(LcmCache cache)
     {
         return memoryCache.GetOrCreate("LocalMediaPath|" + cache.ProjectId.ProjectFolder,
             entry =>
@@ -23,9 +24,9 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
             }) ?? throw new Exception("Failed to get paths");
     }
 
-    internal static Dictionary<Guid, string> BuildPathsDictionary(string root, ILogger logger)
+    internal static ConcurrentDictionary<Guid, string> BuildPathsDictionary(string root, ILogger logger)
     {
-        var paths = new Dictionary<Guid, string>();
+        var paths = new ConcurrentDictionary<Guid, string>();
         if (!Directory.Exists(root)) return paths;
         foreach (var file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
