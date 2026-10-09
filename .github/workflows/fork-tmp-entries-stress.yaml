@@ -16,6 +16,8 @@ jobs:
           fetch-depth: 10
       - if: matrix.skeleton == 'old'
         run: git checkout f7da3bb78 -- frontend/viewer/src/project/browse/EntryRow.svelte && git diff --cached --stat
+      - name: Un-skip the webkit scroll test
+        run: sed -i "/test.skip(browserName === 'webkit', 'WebKit virtualized-scroll flakiness/d" frontend/viewer/tests/ui/entries-list.test.ts && git diff --stat
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
           package_json_file: 'frontend/package.json'
@@ -24,19 +26,22 @@ jobs:
           node-version-file: './frontend/package.json'
           cache: 'pnpm'
           cache-dependency-path: './frontend/pnpm-lock.yaml'
+      - uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2.0.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - working-directory: frontend
         run: pnpm install
       - working-directory: frontend/viewer
+        run: pnpm i18n:extract
+      - working-directory: frontend/viewer
         run: pnpm exec playwright install --with-deps chromium webkit
       - working-directory: frontend/viewer
-        env:
-          AUTO_START_SERVER: 'true'
-          CI: 'true'
         run: |
-          pnpm exec playwright test -c ./tests/ui/playwright.config.ts entries-list.test.ts zz-stress.test.ts \
-            --repeat-each=5 --retries=0 --reporter=list > out.txt 2>&1 || true
-          grep -E "^\s+[0-9]+ (passed|failed|flaky|skipped)" out.txt
+          task test:ui-standalone -- entries-list.test.ts zz-stress.test.ts --repeat-each=6 --retries=0 --reporter=list > "$RUNNER_TEMP/out.txt" 2>&1 || true
+          out="$RUNNER_TEMP/out.txt"
+          grep -E "^\S*\s+[0-9]+ (passed|failed|flaky|skipped)" "$out"
+          echo "--- context destroyed: $(grep -c 'Execution context was destroyed' "$out")"
           echo "--- errors"
-          grep -nE "^\s+[0-9]+\) |Error:|Expected|Received|Timeout|waiting for|^\s+> [0-9]+ \|" out.txt | head -400
+          grep -E "\) \[|Error:|Expected:|Received:|> [0-9]+ \|" "$out" | head -300
           echo "--- failures by test"
-          grep -E "^\s+✘" out.txt | sed -E 's/^\s+✘\s+[0-9]+ //; s/ \([0-9.]+m?s\)$//; s/ \(repeat #[0-9]+\)//' | sort | uniq -c
+          grep -E "✘" "$out" | sed -E 's/.*✘\s+[0-9]+ //; s/ \([0-9.]+m?s\)$//; s/ \(repeat #[0-9]+\)//' | sort | uniq -c
