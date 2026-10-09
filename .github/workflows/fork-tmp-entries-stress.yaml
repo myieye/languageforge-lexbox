@@ -1,0 +1,38 @@
+name: fork-tmp-entries-stress
+on:
+  push:
+    branches: [tmp/flaky-entries-stress]
+jobs:
+  stress:
+    if: github.repository == 'myieye/languageforge-lexbox'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        skeleton: [old, new]
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 3
+      - if: matrix.skeleton == 'old'
+        run: git checkout HEAD~2 -- frontend/viewer/src/project/browse/EntryRow.svelte && git diff --cached --stat
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: './frontend/package.json'
+          cache: 'pnpm'
+          cache-dependency-path: './frontend/pnpm-lock.yaml'
+      - working-directory: frontend
+        run: pnpm install
+      - working-directory: frontend/viewer
+        run: pnpm exec playwright install --with-deps chromium webkit
+      - working-directory: frontend/viewer
+        env:
+          AUTO_START_SERVER: 'true'
+          CI: 'true'
+        run: |
+          pnpm exec playwright test -c ./tests/ui/playwright.config.ts entries-list.test.ts zz-stress.test.ts \
+            --repeat-each=8 --retries=0 --reporter=list > out.txt 2>&1 || true
+          grep -E "^\s+[0-9]+ (passed|failed|flaky|skipped)" out.txt
+          echo "--- failures by test"
+          grep -E "^\s+✘" out.txt | sed -E 's/^\s+✘\s+[0-9]+ //; s/ \([0-9.]+m?s\)$//; s/ \(repeat #[0-9]+\)//' | sort | uniq -c
