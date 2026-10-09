@@ -13,9 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
-          fetch-depth: 3
+          fetch-depth: 10
       - if: matrix.skeleton == 'old'
-        run: git checkout HEAD~2 -- frontend/viewer/src/project/browse/EntryRow.svelte && git diff --cached --stat
+        run: git checkout f7da3bb78 -- frontend/viewer/src/project/browse/EntryRow.svelte && git diff --cached --stat
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
           package_json_file: 'frontend/package.json'
