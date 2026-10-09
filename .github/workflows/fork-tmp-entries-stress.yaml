@@ -36,5 +36,7 @@ jobs:
           pnpm exec playwright test -c ./tests/ui/playwright.config.ts entries-list.test.ts zz-stress.test.ts \
             --repeat-each=5 --retries=0 --reporter=list > out.txt 2>&1 || true
           grep -E "^\s+[0-9]+ (passed|failed|flaky|skipped)" out.txt
+          echo "--- errors"
+          grep -nE "^\s+[0-9]+\) |Error:|Expected|Received|Timeout|waiting for|^\s+> [0-9]+ \|" out.txt | head -400
           echo "--- failures by test"
           grep -E "^\s+✘" out.txt | sed -E 's/^\s+✘\s+[0-9]+ //; s/ \([0-9.]+m?s\)$//; s/ \(repeat #[0-9]+\)//' | sort | uniq -c
