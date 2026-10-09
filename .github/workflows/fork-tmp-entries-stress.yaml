@@ -17,6 +17,8 @@ jobs:
       - if: matrix.skeleton == 'old'
         run: git checkout HEAD~2 -- frontend/viewer/src/project/browse/EntryRow.svelte && git diff --cached --stat
       - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          package_json_file: 'frontend/package.json'
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version-file: './frontend/package.json'
