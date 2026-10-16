@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using FwDataMiniLcmBridge.Api;
 using FwDataMiniLcmBridge.LcmUtils;
@@ -48,21 +49,29 @@ public class FwDataFactory(
         return new FwDataMiniLcmApi(new(() => GetProjectServiceCached(project)), saveOnDispose, fwdataLogger, project, mediaAdapter, config);
     }
 
-    private HashSet<string> _projectCacheKeys = [];
+    private ConcurrentDictionary<string, byte> _projectCacheKeys = [];
+    private readonly Lock _loadLock = new();
     private LcmCache GetProjectServiceCached(FwDataProject project)
     {
         var key = CacheKey(project);
-        var projectService = cache.GetOrCreate(key,
-                entry =>
-                {
-                    entry.SlidingExpiration = CacheSlidingExpiration;
-                    entry.RegisterPostEvictionCallback(OnLcmProjectCacheEviction, (logger, _projectCacheKeys));
-                    logger.LogInformation("Loading project {ProjectFileName}", project.FileName);
-                    var projectService = projectLoader.LoadCache(project);
-                    logger.LogInformation("Project {ProjectFileName} loaded", project.FileName);
-                    _projectCacheKeys.Add(key);
-                    return projectService;
-                });
+        if (!cache.TryGetValue(key, out LcmCache? projectService))
+        {
+            // GetOrCreate isn't atomic: a second concurrent load would replace the first, and eviction disposes the replaced cache while it's in use
+            lock (_loadLock)
+            {
+                projectService = cache.GetOrCreate(key,
+                    entry =>
+                    {
+                        entry.SlidingExpiration = CacheSlidingExpiration;
+                        entry.RegisterPostEvictionCallback(OnLcmProjectCacheEviction, (logger, _projectCacheKeys));
+                        logger.LogInformation("Loading project {ProjectFileName}", project.FileName);
+                        var projectService = projectLoader.LoadCache(project);
+                        logger.LogInformation("Project {ProjectFileName} loaded", project.FileName);
+                        _projectCacheKeys.TryAdd(key, 0);
+                        return projectService;
+                    });
+            }
+        }
         if (projectService is null)
         {
             throw new InvalidOperationException("Project service is null");
@@ -82,7 +91,7 @@ public class FwDataFactory(
         // disposing of the service while it's still in use would be bad.
         // one way around this would be to return a lease object, only after a timeout and no more references to the lease object would the service be disposed.
         var lcmCache = (LcmCache)value;
-        var (logger, projectCacheKeys) = ((ILogger<FwDataFactory>, HashSet<string>))state!;
+        var (logger, projectCacheKeys) = ((ILogger<FwDataFactory>, ConcurrentDictionary<string, byte>))state!;
         if (keyObj.ToString() is not string key)
         {
             Debug.Fail($"Eviction callback called with null key {keyObj}");
@@ -91,7 +100,7 @@ public class FwDataFactory(
         }
         var filePath = FilePathFromCacheKey(key);
         logger.LogInformation("Evicting project {ProjectFileName} from cache", filePath);
-        projectCacheKeys.Remove(key);
+        projectCacheKeys.TryRemove(key, out _);
         if (!lcmCache.IsDisposed)
         {
             lcmCache.Dispose();
@@ -105,7 +114,7 @@ public class FwDataFactory(
         logger.LogInformation("Closing all projects");
         //ensure a race condition doesn't cause us to dispose of a project that's already been disposed
         var projectCacheKeys = Interlocked.Exchange(ref _projectCacheKeys, []);
-        foreach (var key in projectCacheKeys)
+        foreach (var key in projectCacheKeys.Keys)
         {
             var lcmCache = cache.Get<LcmCache>(key);
             if (lcmCache is null || lcmCache.IsDisposed) continue;
