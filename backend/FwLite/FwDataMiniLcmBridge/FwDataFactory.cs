@@ -114,7 +114,8 @@ public class FwDataFactory(
     {
         logger.LogInformation("Closing all projects");
         //ensure a race condition doesn't cause us to dispose of a project that's already been disposed
-        var projectCaches = Interlocked.Exchange(ref _projectCaches, []);
+        ConcurrentDictionary<string, LcmCache> projectCaches;
+        lock (_loadLock) projectCaches = Interlocked.Exchange(ref _projectCaches, []);
         foreach (var (key, lcmCache) in projectCaches)
         {
             if (lcmCache.IsDisposed) continue;
