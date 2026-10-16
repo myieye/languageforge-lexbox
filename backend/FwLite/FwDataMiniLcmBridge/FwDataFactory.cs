@@ -49,7 +49,7 @@ public class FwDataFactory(
         return new FwDataMiniLcmApi(new(() => GetProjectServiceCached(project)), saveOnDispose, fwdataLogger, project, mediaAdapter, config);
     }
 
-    private ConcurrentDictionary<string, byte> _projectCacheKeys = [];
+    private ConcurrentDictionary<string, LcmCache> _projectCaches = [];
     private readonly Lock _loadLock = new();
     private LcmCache GetProjectServiceCached(FwDataProject project)
     {
@@ -63,11 +63,11 @@ public class FwDataFactory(
                     entry =>
                     {
                         entry.SlidingExpiration = CacheSlidingExpiration;
-                        entry.RegisterPostEvictionCallback(OnLcmProjectCacheEviction, (logger, _projectCacheKeys));
+                        entry.RegisterPostEvictionCallback(OnLcmProjectCacheEviction, (logger, _projectCaches));
                         logger.LogInformation("Loading project {ProjectFileName}", project.FileName);
                         var projectService = projectLoader.LoadCache(project);
                         logger.LogInformation("Project {ProjectFileName} loaded", project.FileName);
-                        _projectCacheKeys.TryAdd(key, 0);
+                        _projectCaches[key] = projectService;
                         return projectService;
                     });
             }
@@ -91,7 +91,7 @@ public class FwDataFactory(
         // disposing of the service while it's still in use would be bad.
         // one way around this would be to return a lease object, only after a timeout and no more references to the lease object would the service be disposed.
         var lcmCache = (LcmCache)value;
-        var (logger, projectCacheKeys) = ((ILogger<FwDataFactory>, ConcurrentDictionary<string, byte>))state!;
+        var (logger, projectCaches) = ((ILogger<FwDataFactory>, ConcurrentDictionary<string, LcmCache>))state!;
         if (keyObj.ToString() is not string key)
         {
             Debug.Fail($"Eviction callback called with null key {keyObj}");
@@ -100,7 +100,8 @@ public class FwDataFactory(
         }
         var filePath = FilePathFromCacheKey(key);
         logger.LogInformation("Evicting project {ProjectFileName} from cache", filePath);
-        projectCacheKeys.TryRemove(key, out _);
+        // conditional: a reload may already have registered a new cache under this key
+        projectCaches.TryRemove(new KeyValuePair<string, LcmCache>(key, lcmCache));
         if (!lcmCache.IsDisposed)
         {
             lcmCache.Dispose();
@@ -113,11 +114,10 @@ public class FwDataFactory(
     {
         logger.LogInformation("Closing all projects");
         //ensure a race condition doesn't cause us to dispose of a project that's already been disposed
-        var projectCacheKeys = Interlocked.Exchange(ref _projectCacheKeys, []);
-        foreach (var key in projectCacheKeys.Keys)
+        var projectCaches = Interlocked.Exchange(ref _projectCaches, []);
+        foreach (var (key, lcmCache) in projectCaches)
         {
-            var lcmCache = cache.Get<LcmCache>(key);
-            if (lcmCache is null || lcmCache.IsDisposed) continue;
+            if (lcmCache.IsDisposed) continue;
             var filePath = FilePathFromCacheKey(key);
             lcmCache.Dispose(); //need to explicitly call dispose as that blocks, just removing from the cache does not block, meaning it will not finish disposing before the program exits.
             logger.LogInformation("FW Data Project {ProjectFileName} disposed", filePath);
@@ -131,7 +131,9 @@ public class FwDataFactory(
         if (_shuttingDown) return;
         logger.LogInformation("Explicitly Closing project {ProjectFileName}", project.FilePath);
         var cacheKey = CacheKey(project);
-        var lcmCache = cache.Get<LcmCache>(cacheKey);
+        LcmCache? lcmCache;
+        // waits out an in-progress load, which would otherwise publish the cache after we've closed it
+        lock (_loadLock) lcmCache = cache.Get<LcmCache>(cacheKey);
         if (lcmCache is null) return;
         // Dispose cache immediately so file locks are released before we return.
         // The caller assumes the project is ready to be opened somewhere else (e.g. in FieldWorks)

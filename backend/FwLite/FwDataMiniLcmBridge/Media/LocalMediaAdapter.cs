@@ -14,14 +14,21 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
     private static readonly Guid LocalMediaNamespace = new("45e563a3-f5a6-4d7a-9722-8d7d4d3adfa2");
     private const string LocalMediaAuthority = "localhost";
 
+    private readonly Lock _buildLock = new();
     private ConcurrentDictionary<Guid, string> Paths(LcmCache cache)
     {
-        return memoryCache.GetOrCreate("LocalMediaPath|" + cache.ProjectId.ProjectFolder,
-            entry =>
-            {
-                entry.SlidingExpiration = TimeSpan.FromMinutes(10);
-                return BuildPathsDictionary(cache.LangProject.LinkedFilesRootDir, logger);
-            }) ?? throw new Exception("Failed to get paths");
+        var key = "LocalMediaPath|" + cache.ProjectId.ProjectFolder;
+        if (memoryCache.TryGetValue(key, out ConcurrentDictionary<Guid, string>? paths) && paths is not null) return paths;
+        // GetOrCreate isn't atomic: paths added to a map that loses the race would be dropped
+        lock (_buildLock)
+        {
+            return memoryCache.GetOrCreate(key,
+                entry =>
+                {
+                    entry.SlidingExpiration = TimeSpan.FromMinutes(10);
+                    return BuildPathsDictionary(cache.LangProject.LinkedFilesRootDir, logger);
+                }) ?? throw new Exception("Failed to get paths");
+        }
     }
 
     internal static ConcurrentDictionary<Guid, string> BuildPathsDictionary(string root, ILogger logger)
