@@ -55,26 +55,15 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
         return Path.GetFileName(@new).IsNormalized(NormalizationForm.FormD) ? @new : curr;
     }
 
-    //path is expected to be relative to the LinkedFilesRootDir
     public MediaUri MediaUriFromPath(string path, LcmCache cache)
     {
-        EnsureCorrectRootFolder(path, cache);
+        if (!Path.IsPathRooted(path)) throw new ArgumentException("Path must be absolute, " + path, nameof(path));
+        //not limited to LinkedFilesRootDir, FW pictures can link files anywhere on disk
         if (!File.Exists(path)) return MediaUri.NotFound;
         var uri = PathToUri(path);
         //this may be a new file, so we need to add it to the cache
         Paths(cache)[uri.FileId] = path;
         return uri;
-    }
-
-    private void EnsureCorrectRootFolder(string path, LcmCache cache)
-    {
-        if (Path.IsPathRooted(path))
-        {
-            if (path.StartsWith(cache.LangProject.LinkedFilesRootDir)) return;
-            throw new ArgumentException("Path must be in the LinkedFilesRootDir", nameof(path));
-        }
-
-        throw new ArgumentException("Path must be absolute, " + path, nameof(path));
     }
 
     private static MediaUri PathToUri(string path)
