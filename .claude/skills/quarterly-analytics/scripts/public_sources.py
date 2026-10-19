@@ -86,8 +86,8 @@ def forum_topics(start, end):
             break
         for t in batch:
             topics[t["id"]] = t
-        # Topics are sorted by last activity, so keep paging until a whole page predates the quarter.
-        if all(t["last_posted_at"] and t["last_posted_at"][:10] < start.isoformat() for t in batch):
+        # Topics are sorted by bump date, so keep paging until a whole page was last bumped before the quarter.
+        if all((t.get("bumped_at") or "")[:10] < start.isoformat() for t in batch):
             break
         page += 1
     created = sorted((t for t in topics.values() if in_range(t["created_at"], start, end)),
