@@ -66,6 +66,7 @@ public class ProjectService(
             await hgService.InitRepo(input.Code);
             InvalidateProjectOrgIdsCache(projectId);
             InvalidateProjectConfidentialityCache(projectId);
+            InvalidateProjectRetentionPolicyCache(projectId);
             InvalidateProjectCodeCache(input.Code);
             await transaction.CommitAsync();
         }
@@ -228,6 +229,7 @@ public class ProjectService(
         InvalidateProjectCodeCache(project.Code);
         InvalidateProjectConfidentialityCache(projectId);
         InvalidateProjectOrgIdsCache(projectId);
+        InvalidateProjectRetentionPolicyCache(projectId);
         await dbContext.SaveChangesAsync();
         return project;
     }
@@ -262,6 +264,24 @@ public class ProjectService(
     public void InvalidateProjectConfidentialityCache(Guid projectId)
     {
         try { memoryCache.Remove($"ProjectConfidentiality:{projectId}"); }
+        catch (Exception) { } // Never allow this to throw
+    }
+
+    public async ValueTask<RetentionPolicy?> LookupProjectRetentionPolicy(Guid projectId)
+    {
+        var cacheKey = $"ProjectRetentionPolicy:{projectId}";
+        if (memoryCache.TryGetValue(cacheKey, out RetentionPolicy? retentionPolicy)) return retentionPolicy;
+        retentionPolicy = await dbContext.Projects
+            .Where(p => p.Id == projectId)
+            .Select(p => (RetentionPolicy?)p.RetentionPolicy)
+            .FirstOrDefaultAsync();
+        memoryCache.Set(cacheKey, retentionPolicy, TimeSpan.FromHours(1));
+        return retentionPolicy;
+    }
+
+    public void InvalidateProjectRetentionPolicyCache(Guid projectId)
+    {
+        try { memoryCache.Remove($"ProjectRetentionPolicy:{projectId}"); }
         catch (Exception) { } // Never allow this to throw
     }
 

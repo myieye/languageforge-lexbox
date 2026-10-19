@@ -1,6 +1,7 @@
 using LexBoxApi.Auth;
 using LexCore.Analytics;
 using LexCore.Auth;
+using LexCore.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
@@ -21,17 +22,24 @@ public class LexboxAnalyticsService(
     private readonly AnalyticsConfigBase _config = analyticsConfig.Value;
     private readonly TimeProvider _clock = timeProvider ?? TimeProvider.System;
 
-    public Task TrackSendReceive(Guid projectId, string direction) =>
+    public Task TrackSendReceive(Guid projectId, RetentionPolicy retentionPolicy, string direction) =>
         TrackCurrentUserEvent(ILexboxAnalyticsService.SendReceiveEvent,
             new()
             {
                 [ILexboxAnalyticsService.ProjectIdProperty] = projectId.ToString(),
+                [ILexboxAnalyticsService.RetentionPolicyProperty] = ToMixpanelValue(retentionPolicy),
                 [ILexboxAnalyticsService.DirectionProperty] = direction,
             });
 
-    public Task TrackFwLiteSync(Guid projectId) =>
+    public Task TrackFwLiteSync(Guid projectId, RetentionPolicy retentionPolicy) =>
         TrackCurrentUserEvent(ILexboxAnalyticsService.FwLiteSyncEvent,
-            new() { [ILexboxAnalyticsService.ProjectIdProperty] = projectId.ToString() });
+            new()
+            {
+                [ILexboxAnalyticsService.ProjectIdProperty] = projectId.ToString(),
+                [ILexboxAnalyticsService.RetentionPolicyProperty] = ToMixpanelValue(retentionPolicy),
+            });
+
+    private static string ToMixpanelValue(RetentionPolicy retentionPolicy) => retentionPolicy.ToString().ToLowerInvariant();
 
     /// <summary>
     /// Send <paramref name="eventName"/> for the currently signed-in user, with any <paramref name="extraProperties"/>

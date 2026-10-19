@@ -3,6 +3,7 @@ using LexBoxApi.Jobs;
 using LexCore;
 using LexCore.Auth;
 using LexCore.Config;
+using LexCore.Entities;
 using LexCore.ServiceInterfaces;
 using LexSyncReverseProxy;
 using Microsoft.Extensions.Options;
@@ -49,6 +50,11 @@ public class LexProxyService : ILexProxyService
     public ValueTask<Guid?> LookupProjectId(string projectCode)
     {
         return _projectService.LookupProjectId(projectCode);
+    }
+
+    public ValueTask<RetentionPolicy?> LookupProjectRetentionPolicy(Guid projectId)
+    {
+        return _projectService.LookupProjectRetentionPolicy(projectId);
     }
 
     public RequestInfo GetDestinationPrefix(HgType type)

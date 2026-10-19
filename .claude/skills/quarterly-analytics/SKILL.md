@@ -1,6 +1,6 @@
 ---
 name: quarterly-analytics
-description: Collect the quarterly product analytics for FieldWorks Lite and Lexbox and enter them in the FieldWorks Lite and Lexbox rows of the LangTech Analytics Dashboard Google Sheet. Gathers GitHub releases, forum topics, Mixpanel users/MAU/countries/installs and support tickets itself, hands the user one command for the prod-only numbers (aws-prod DB + hg pod), asks only about FTE and anomalies, then writes the sheet after a final OK.
+description: Collect the quarterly product analytics for FieldWorks Lite and Lexbox and enter them in the FieldWorks Lite and Lexbox rows of the LangTech Analytics Dashboard Google Sheet. Gathers GitHub releases, forum topics, Mixpanel users/MAU/countries/installs and support tickets itself, reads the project counts from a Lexbox admin endpoint through the user's browser session, asks only about FTE and anomalies, then writes the sheet after a final OK.
 when_to_use: User says "quarterly analytics", "collect the analytics", "fill the analytics sheet", "LangTech analytics", "/quarterly-analytics FY27Q1", or a scheduled quarterly reminder kicks it off.
 argument-hint: "[FYyyQn, default: the last finished quarter]"
 disable-model-invocation: true
@@ -15,8 +15,8 @@ SIL fiscal years start Oct 1 and are named after the calendar year they end in: 
 
 ## Ground rules
 
-- **Privacy.** The scripts print counts and write nothing sensitive to disk. The only project codes that leave prod are those of repos `hg log` fails on, which the scan names in its progress output. Those codes, support-thread subjects and anything else user-identifying stay in this conversation: don't save them to files, commit them or post them anywhere (repo AGENTS.md privacy rules).
-- **Prod is the user's to run.** Never run kubectl or psql against aws-prod yourself. Show `scripts/prod-collect.ps1` as a click-to-run command and read the counts it prints.
+- **Privacy.** The script and the metrics endpoint return counts only and write nothing sensitive to disk. Support-thread subjects and anything else user-identifying stay in this conversation: don't save them to files, commit them or post them anywhere (repo AGENTS.md privacy rules).
+- **No cluster access.** Everything from prod comes through the admin metrics endpoint on lexbox.org, read as the user; never kubectl, psql or port-forwards.
 - **Ask little, with AskUserQuestion, lightest question first.** Ask about FTE every quarter and anything the standing rules below don't settle (anomalies, flags). Don't ask the user to read files.
 - **Nothing goes into the sheet before the user's final OK.** Write only the two product rows, never another product's cells.
 
@@ -28,11 +28,9 @@ SIL fiscal years start Oct 1 and are named after the calendar year they end in: 
 2. **Read the sheet.** Find "LangTech Analytics Dashboard" with Drive search. Read rows 1-2 (headers) and the FieldWorks Lite and Lexbox rows of this quarter's tab, plus the previous quarter's tab for comparison and the FTE history. Map columns by header text, because the columns change between quarters. If the quarter's tab doesn't exist yet, stop and say so: the sheet owner creates it.
 3. **Collect, in parallel where you can:**
    - `python .claude/skills/quarterly-analytics/scripts/public_sources.py <quarter>` covers releases, forum topics and the FTE sanity check (about 20 s).
-   - Give the user the prod command, in its own `powershell` block so they can run it from the Terminal panel. psql asks for the prod DB password once; the hg scan takes a few minutes:
-     `pwsh .claude/skills/quarterly-analytics/scripts/prod-collect.ps1 -Quarter <quarter>`
-     When they say it's done, read the counts it prints at the end from the Terminal panel, or ask them to paste them. `-Step db` or `-Step hg` re-runs one half. A re-run of the hg half refuses to start while an earlier scan is still running in the pod.
+   - Project counts from the Lexbox admin endpoint: `https://lexbox.org/api/metrics/projects/<start>/<end>`, with `start` the quarter's first day and `end` the first day of the next quarter (exclusive), e.g. `https://lexbox.org/api/metrics/projects/2026-10-01/2027-01-01` for FY27Q1. It needs a logged-in Lexbox admin. If the built-in browser pane or Claude in Chrome is available, open the URL there (the user is logged in) and read the JSON; otherwise give the user the URL and ask them to paste the JSON. The response is `{"fwLite": {"activeProjects", "newProjects", "languagesImpacted"}, "lexbox": {"createdProjects"}}`. Dates are UTC. The FW Lite numbers go by each commit's client-assigned HybridDateTime (the server keeps no receipt time), so a device with a wrong clock can move a project between quarters.
    - Mixpanel and support tickets, as described below.
-4. **Check.** Compare every value with last quarter. Flag changes over about 50%, missing values, `hg_failures` above 0, and any `check:` lines from `public_sources.py`.
+4. **Check.** Compare every value with last quarter. Flag changes over about 50%, missing values, and any `check:` lines from `public_sources.py`.
 5. **Ask.** FTE first (see the rules), then any anomalies. Then show the final two rows, the sheet's URL and tab, and ask for the OK to write them and sign off as the Owner listed on the "Product List" tab.
 6. **Write and verify.** Write with the Sheets connector (`update_values`, numbers as numbers, `null` for cells to leave alone), then read the rows back.
 7. **Offer the doc update.** Offer to update the doc's per-quarter bullets ("FY27Q1: ...") as suggestions.
@@ -45,12 +43,12 @@ SIL fiscal years start Oct 1 and are named after the calendar year they end in: 
 | Supported FTE, Paid FTE | Ask every quarter, pre-filled from last quarter's tab. It's the team total split across the two rows, never the total on both. History is in earlier tabs and the doc's "Supported FTE" section. Show the PR-label share from `public_sources.py` as a sanity check. | Same question |
 | Downloads | Not collected from FY27Q1 on (dropped 2026-10-14, though the sheet config still marks it required). Leave blank. | n/a |
 | Installs | Mixpanel: users whose first-ever `app_launched` falls in the quarter. See the FY27Q1 caveat. | n/a |
-| Active Projects | `fwl_active_projects`: projects with a CRDT commit in the quarter, deleted ones included | `lexbox_active_projects`: hg repos with a commit dated in the quarter. Every folder is included, deleted and reset backups too, so a project reset during the quarter counts twice (the doc's method). |
-| New Projects Started | `fwl_new_projects`: first-ever CRDT commit in the quarter | `lexbox_created_projects`: projects created in the quarter, deleted ones included |
+| Active Projects | Endpoint `fwLite.activeProjects`: projects with a CRDT commit in the quarter, deleted ones included | Mixpanel: distinct `project_id` on `send_receive` with `direction` = `send` in the quarter, i.e. projects someone pushed to. See "Lexbox project counts" under Mixpanel. |
+| New Projects Started | Endpoint `fwLite.newProjects`: first-ever CRDT commit in the quarter | Endpoint `lexbox.createdProjects`: projects created in the quarter, deleted ones included |
 | Active Users | Mixpanel unique users of `app_launched` in the quarter | Mixpanel unique users of any `lexbox` event in the quarter |
 | Avg MAU, MAU month 1-3 | Mixpanel unique users per calendar month; Avg = mean, 1 decimal | Same |
 | Number of User Countries | Mixpanel distinct `mp_country_code` over the quarter | Same (Lexbox events carry the client IP) |
-| Number of Languages Impacted | `fwl_languages_impacted`: active projects whose code doesn't contain test, train, demo, dev or copy (in `prod-queries.sql` and `hg-active-repos.sh`). No manual judgment. | `lexbox_languages_impacted`, same filter |
+| Number of Languages Impacted | Endpoint `fwLite.languagesImpacted`: active projects whose retention policy isn't test, dev or training (unknown and verified count). No manual judgment. | Lexbox Active Projects minus the projects whose `retention_policy` is `test`, `dev` or `training` (same recipe) |
 | New Support Tickets | Threads *started* in the quarter in the `lexbox_support` group, sorted into FW Lite or Lexbox by content. Count borderline support requests. Exclude FW Lite beta join requests, alerts (prod alerts, Honeycomb triggers), spam, FYI forwards and messages with no request in them. | Same |
 | New Community Topics | Topics created in the quarter in the FW Lite forum category (`public_sources.py`) | 0, there is no forum |
 | Analytics contain test projects/users (Product List tab) | Yes | Yes |
@@ -67,9 +65,13 @@ Queries go through the connector's `Run-Query` (`insights`):
 - **Installs:** the query schema has no "first time ever" filter, so subtract: unique users from 2026-01-01 to the quarter's last day, minus unique users from 2026-01-01 to the day before the quarter.
 - To split by event, break down on `$event_name` ("Event Name" returns `undefined`).
 
+**Lexbox project counts.** Run `insights` on `send_receive` filtered on `direction` = `send` over the quarter's absolute date range, measuring `unique_values` of `project_id` (the `aggregate-property` measurement), broken down on `retention_policy`. Active Projects is the total; Languages Impacted is the total minus the `test`, `dev` and `training` buckets. Subtract buckets rather than filtering on `retention_policy` "does not equal": events sent before the property shipped (October 2026) lack it, and those count as real projects. Differences from the old hg scan: it counts the push date, not the commit date; it only sees identified users who haven't opted out, so service-account pushes (FwHeadless's, for one) aren't in it; and tracking started 2026-09-28, so FY27Q1 is the first full quarter and there's no earlier number to compare with.
+
 Use only `Run-Query` and the Get/List tools; never create, edit, delete, merge or dismiss anything in Mixpanel.
 
 Users who opted out of analytics never show up, and the team's own devices do.
+
+**FY27Q1 cross-check (delete this paragraph once FY27Q1 is done).** FY27Q1 is the first quarter whose Lexbox Active Projects come from Mixpanel instead of the hg scan. If the user wants to measure the gap, the old scan is still in git history: `git show 92a1a06d1:.claude/skills/quarterly-analytics/scripts/prod-collect.ps1` plus the `hg-active-repos.sh` and `prod-queries.sql` next to it. It needs cluster access, so the user runs it, not you.
 
 **FY27Q1 caveat (delete this paragraph once FY27Q2 is done).** Installs overcount in FY27Q1. Existing devices that first sent `app_launched` after updating to an analytics build (Sep 2026 or later) look like new installs. The effect fades in FY27Q2 and is negligible after that. In FY27Q1 add a short note to the FW Lite Notes cell; in FY27Q2 add one only if Installs look high against Active Users.
 
@@ -82,11 +84,6 @@ Search `list:lexbox_support@groups.sil.org after:YYYY/MM/DD before:YYYY/MM/DD -s
 
 Use only search and read; never the connector's draft, send, label, trash or filter tools.
 
-## Prod scripts and load
+## The metrics endpoint
 
-`prod-collect.ps1` port-forwards the DB and kills the forward's whole process tree afterwards. It runs `prod-queries.sql` in a read-only transaction with statement and lock timeouts, then pipes `hg-active-repos.sh` into the hg pod. Both bring back counts; the scan also names any repo `hg log` fails on. The scan:
-- runs one `hg log` at a time, at `nice 19`;
-- skips repos whose changelog hasn't changed in the month before the quarter;
-- takes a lock in the pod, so two scans never overlap.
-
-Never parallelize it: a parallel scan has taken a node down before. Both scripts are measured against the methods the doc had before them and must stay at or below their load.
+`MetricsController` in `backend/LexBoxApi` serves `/api/metrics/projects/{start}/{end}` to admins only. It reads the whole CRDT commits table once for the date range (the table is only indexed by project), then does one indexed check per active project; expect it to take a few seconds, and don't call it in a loop. Put the dates in the path, not a query string: the browser pane hides page output when the URL has one.

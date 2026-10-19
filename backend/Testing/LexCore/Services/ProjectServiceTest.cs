@@ -35,6 +35,7 @@ public class ProjectServiceTest
     };
 
     private readonly LexBoxDbContext _lexBoxDbContext;
+    private readonly MemoryCache _memoryCache = new(new MemoryCacheOptions());
 
     public ProjectServiceTest(TestingServicesFixture testing)
     {
@@ -45,7 +46,7 @@ public class ProjectServiceTest
             _lexBoxDbContext,
             hgService,
             serviceProvider.GetRequiredService<IOptions<HgConfig>>(),
-            Mock.Of<IMemoryCache>(),
+            _memoryCache,
             Mock.Of<IEmailService>(),
             null!
         );
@@ -57,6 +58,27 @@ public class ProjectServiceTest
         var projectId = await _projectService.CreateProject(
             new(null, "TestProject", "Test", "test1", ProjectType.FLEx, RetentionPolicy.Test, false, null, null));
         projectId.Should().NotBe(Guid.Empty);
+    }
+
+    [Fact]
+    public async Task RetentionPolicyLookupIsCachedUntilInvalidated()
+    {
+        var projectId = await _projectService.CreateProject(
+            new(null, "TestProject", "Test", "test-retention-cache", ProjectType.FLEx, RetentionPolicy.Test, false, null, null));
+        (await _projectService.LookupProjectRetentionPolicy(projectId)).Should().Be(RetentionPolicy.Test);
+
+        await _lexBoxDbContext.Projects.Where(p => p.Id == projectId)
+            .ExecuteUpdateAsync(u => u.SetProperty(p => p.RetentionPolicy, RetentionPolicy.Verified));
+        (await _projectService.LookupProjectRetentionPolicy(projectId)).Should().Be(RetentionPolicy.Test);
+
+        _projectService.InvalidateProjectRetentionPolicyCache(projectId);
+        (await _projectService.LookupProjectRetentionPolicy(projectId)).Should().Be(RetentionPolicy.Verified);
+    }
+
+    [Fact]
+    public async Task RetentionPolicyLookupIsNullForUnknownProject()
+    {
+        (await _projectService.LookupProjectRetentionPolicy(Guid.NewGuid())).Should().BeNull();
     }
 
     [Fact]
