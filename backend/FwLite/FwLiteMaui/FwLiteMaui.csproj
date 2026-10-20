@@ -33,6 +33,8 @@
     <IncludeFwDataBridge>false</IncludeFwDataBridge>
     <IncludeFwDataBridge Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">true</IncludeFwDataBridge>
     <DefineConstants Condition="$(IncludeFwDataBridge)">$(DefineConstants);INCLUDE_FWDATA_BRIDGE</DefineConstants>
+    <!-- Platforms/Windows/Program.cs provides Main -->
+    <DefineConstants Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
     <!-- controls display name in Package.appxmanifest -->
     <ApplicationTitle>FieldWorks Lite</ApplicationTitle>
     <!-- App Identifier -->

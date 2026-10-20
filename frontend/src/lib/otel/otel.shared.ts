@@ -200,7 +200,8 @@ export function traceEventAttributes(span: Span, event: RequestEvent | Navigatio
   if (isBrowserEvent(event)) {
     traceBrowserAttributes(span, window);
   } else {
-    const {route, url} = event;
+    const {route} = event;
+    const url = redactUrl(event.url);
     span.setAttribute(SemanticAttributes.HTTP_ROUTE, route.id as string);
     span.setAttribute(SemanticAttributes.HTTP_URL, url.href);
     span.setAttribute(
@@ -232,13 +233,14 @@ export function traceEventAttributes(span: Span, event: RequestEvent | Navigatio
 }
 
 function traceBrowserAttributes(span: Span, window: Window): void {
+  const location = redactUrl(new URL(window.location.href));
   span.setAttributes({
     ['window.location.hostname']: window.location.hostname,
     ['window.location.scheme']: window.location.protocol,
-    ['window.location.href']: window.location.href,
+    ['window.location.href']: location.href,
     ['window.location.port']: window.location.port,
     ['window.location.path']: window.location.pathname,
-    ['window.location.query']: window.location.search,
+    ['window.location.query']: location.search,
     ['window.location.hash']: window.location.hash,
     ['window.location.origin']: window.location.origin,
     ['window.navigator.user_agent']: window.navigator.userAgent,
@@ -343,3 +345,11 @@ export const tracingExchange: Exchange = mapExchange({
     operationSpan?.end();
   },
 });
+
+// FW Lite's login redirect page receives an OAuth authorization code in its query
+export function redactUrl(url: URL): URL {
+  if (!url.searchParams.has('code')) return url;
+  const redacted = new URL(url);
+  redacted.searchParams.set('code', 'redacted');
+  return redacted;
+}
