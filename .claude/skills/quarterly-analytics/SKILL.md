@@ -22,7 +22,7 @@ SIL fiscal years start Oct 1 and are named after the calendar year they end in: 
 
 ## Steps
 
-1. **Quarter and preflight.** Use the argument, or the last finished quarter. Check which connectors are attached: Google Drive + Sheets (required), Mixpanel. Support tickets need the built-in browser pane or Claude in Chrome; without either, ask the user for the group's thread list (date and subject) for the quarter.
+1. **Quarter and preflight.** Use the argument, or the last finished quarter. Check which connectors are attached: Google Drive + Sheets (required), Mixpanel. Support tickets need the built-in browser pane or Claude in Chrome; without either, see the Google Group section.
    - **No Mixpanel connector:** ask whether to browse Mixpanel with Claude in Chrome, or use Mixpanel's Query API with a service account. For the API, the user sets `MIXPANEL_SA_USER` and `MIXPANEL_SA_SECRET` in their environment. Hand them to curl on stdin, never on its command line, where other processes can read them: `printf 'user = "%s:%s"\n' "$MIXPANEL_SA_USER" "$MIXPANEL_SA_SECRET" | curl -K - ...` (`printf` is a shell builtin). Print only aggregate results, and never echo, log or inspect those variables.
 2. **Read the sheet.** Find "LangTech Analytics Dashboard" with Drive search. Read rows 1-2 (headers) and the FieldWorks Lite and Lexbox rows of this quarter's tab, plus the previous quarter's tab for comparison and the FTE history. Map columns by header text, because the columns change between quarters. If the quarter's tab doesn't exist yet, stop and say so: the sheet owner creates it.
 3. **Collect, in parallel where you can:**
@@ -74,8 +74,12 @@ Users who opted out of analytics never show up, and the team's own devices do.
 
 ## Support tickets via the Google Group
 
-Read the `lexbox_support@groups.sil.org` Google Group in the browser (the user is signed in). Never use a Gmail connector, even if one is attached: it can read the user's whole mailbox, and only holds the group mail that user happened to receive.
+Read the `lexbox_support@groups.sil.org` Google Group in the browser. Never use a Gmail connector, even if one is attached: it can read the user's whole mailbox, and only holds the group mail that user happened to receive. The built-in browser pane keeps its own sign-ins, so if the group shows a Google sign-in or no permission, ask the user to sign in there with an account that can see the group, or switch to Claude in Chrome. If neither works, ask the user to count the quarter's new threads themselves, using the rules below.
 
-The conversation list is sorted by last activity, so page back until the threads were last active before the quarter, and count only threads whose first message falls in the quarter. Classify from the list (subject, sender, snippet); everything read goes to Anthropic, so open a thread only when the list doesn't settle its product or whether it's a request. When in doubt, open it: the count matters more. Skip alerts (FIRING, RESOLVED, Triggered), spam and marketing mail.
+The conversation list is sorted by last activity, so page back until the threads were last active before the quarter, and count only threads whose first message falls in the quarter. Read dates in UTC, and double-check threads that start within a day of a quarter boundary. Classify from the list (subject, sender, snippet); everything read goes to Anthropic, so open a thread only when the list doesn't settle its start date, its product or whether it's a request. When in doubt, open it: the count matters more. Skip alerts (FIRING, RESOLVED, Triggered), spam and marketing mail.
+
+The group splits conversations by subject, so:
+- **A follow-up under a new subject** from the same person about the same request counts once.
+- **A conversation whose first message is a reply** ("Re: …") continues an earlier one; date it by that original.
 
 Only read; never post, reply or change anything in the group.
