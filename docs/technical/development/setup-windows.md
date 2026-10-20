@@ -1,3 +1,8 @@
+---
+title: Windows setup
+sidebar_position: 1
+---
+
 ### Prerequisites
   * docker and compose
     * enable Kubernetes in the Docker Desktop settings
@@ -9,7 +14,7 @@
   * to install [Tilt](https://docs.tilt.dev/) and add it to your path:
     * the Tilt installer will create a `bin` folder in your home folder and put the Tilt binary there
     * you may then need to add `C:\Users\YOUR_USER_NAME\bin` to your PATH
-  * run `task setup` as per main instructions
+  * run `task setup` as per the [main instructions](./index.md)
     * seed Mercurial repos are pulled automatically from the published `ghcr.io/sillsdev/lexbox-test-repos` image on first startup — no manual download needed
   * add the following lines to your `C:\Windows\system32\drivers\etc\hosts` file:
 
