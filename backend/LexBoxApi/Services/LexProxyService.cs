@@ -52,7 +52,7 @@ public class LexProxyService : ILexProxyService
         return _projectService.LookupProjectId(projectCode);
     }
 
-    public ValueTask<RetentionPolicy?> LookupProjectRetentionPolicy(Guid projectId)
+    public ValueTask<RetentionPolicy> LookupProjectRetentionPolicy(Guid projectId)
     {
         return _projectService.LookupProjectRetentionPolicy(projectId);
     }

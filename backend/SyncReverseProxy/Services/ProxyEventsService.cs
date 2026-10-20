@@ -67,7 +67,6 @@ public class ProxyEventsService(ILexProxyService lexProxyService, ILexboxAnalyti
     private async Task TrackSendReceive(string projectCode, string direction)
     {
         if (await lexProxyService.LookupProjectId(projectCode) is not { } projectId) return;
-        if (await lexProxyService.LookupProjectRetentionPolicy(projectId) is not { } retentionPolicy) return;
-        _ = analytics.TrackSendReceive(projectId, retentionPolicy, direction);
+        _ = analytics.TrackSendReceive(projectId, await lexProxyService.LookupProjectRetentionPolicy(projectId), direction);
     }
 }

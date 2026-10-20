@@ -52,16 +52,6 @@ public class ProxyEventsServiceTests
     }
 
     [Fact]
-    public async Task HgRequestTracksNothingWhenTheRetentionPolicyIsUnknown()
-    {
-        _proxyService.Setup(s => s.LookupProjectRetentionPolicy(_projectId)).ReturnsAsync((RetentionPolicy?)null);
-
-        await _service.OnHgRequest(HgRequest("unbundle"));
-
-        _analytics.VerifyNoOtherCalls();
-    }
-
-    [Fact]
     public async Task ResumablePushTracksOnTheLastChunkOnly()
     {
         var context = new DefaultHttpContext();

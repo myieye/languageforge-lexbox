@@ -267,14 +267,14 @@ public class ProjectService(
         catch (Exception) { } // Never allow this to throw
     }
 
-    public async ValueTask<RetentionPolicy?> LookupProjectRetentionPolicy(Guid projectId)
+    public async ValueTask<RetentionPolicy> LookupProjectRetentionPolicy(Guid projectId)
     {
         var cacheKey = $"ProjectRetentionPolicy:{projectId}";
-        if (memoryCache.TryGetValue(cacheKey, out RetentionPolicy? retentionPolicy)) return retentionPolicy;
-        retentionPolicy = await dbContext.Projects
+        if (memoryCache.TryGetValue(cacheKey, out RetentionPolicy retentionPolicy)) return retentionPolicy;
+        retentionPolicy = await dbContext.Projects.IgnoreQueryFilters()
             .Where(p => p.Id == projectId)
             .Select(p => (RetentionPolicy?)p.RetentionPolicy)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync() ?? RetentionPolicy.Unknown;
         memoryCache.Set(cacheKey, retentionPolicy, TimeSpan.FromHours(1));
         return retentionPolicy;
     }

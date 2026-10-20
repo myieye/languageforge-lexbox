@@ -76,9 +76,9 @@ public class ProjectServiceTest
     }
 
     [Fact]
-    public async Task RetentionPolicyLookupIsNullForUnknownProject()
+    public async Task RetentionPolicyLookupIsUnknownForMissingProject()
     {
-        (await _projectService.LookupProjectRetentionPolicy(Guid.NewGuid())).Should().BeNull();
+        (await _projectService.LookupProjectRetentionPolicy(Guid.NewGuid())).Should().Be(RetentionPolicy.Unknown);
     }
 
     [Fact]
