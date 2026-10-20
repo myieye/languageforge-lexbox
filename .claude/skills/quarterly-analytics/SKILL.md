@@ -71,12 +71,13 @@ Use only `Run-Query` and the Get/List tools; never create, edit, delete, merge o
 
 Users who opted out of analytics never show up, and the team's own devices do.
 
-**FY27Q1 caveat (delete this paragraph once FY27Q2 is done).** Installs overcount in FY27Q1. Existing devices that first sent `app_launched` after updating to an analytics build (Sep 2026 or later) look like new installs. The effect fades in FY27Q2 and is negligible after that. In FY27Q1 add a short note to the FW Lite Notes cell; in FY27Q2 add one only if Installs look high against Active Users. Lexbox Languages Impacted is also an upper bound in FY27Q1: pushes before `retention_policy` was deployed carry no policy, so test projects pushed to only then count as real. Say so in the Lexbox Notes cell.
+**FY27Q1 caveat (delete this paragraph once FY27Q2 is done).** Installs overcount in FY27Q1. Existing devices that first sent `app_launched` after updating to an analytics build (Sep 2026 or later) look like new installs. The effect fades in FY27Q2 and is negligible after that. In FY27Q1 add a short note to the FW Lite Notes cell; in FY27Q2 add one only if Installs look high against Active Users.
 
 ## Support tickets via Gmail
 
 Search `list:lexbox_support@groups.sil.org after:YYYY/MM/DD before:YYYY/MM/DD -subject:FIRING -subject:RESOLVED -subject:Triggered` (Gmail's `before:` is exclusive, and the dates are Pacific time, so double-check threads that start right at a boundary). Page through all results and classify from what the search returns (date, subject, sender, snippet). This is outside users' personal data and everything read goes to Anthropic, so open a thread only when the results don't settle its start date, its product or whether it's a request. When in doubt, open it: the count matters more. Things Gmail does differently from the group itself:
 - **Subject changes split threads.** A follow-up about a new problem from the same person can land in its own Gmail thread, while the group shows one conversation. Count it once.
+- **Old threads match too.** A thread matches when any message falls in the range, so a thread started before the quarter shows up if someone replied during it. Check the date of its first message.
 - **Only mail the user received is there.** If the earliest message is a reply ("Re: …"), the thread started earlier; take the date from the quoted original.
 - **Spam is still there.** Marketing mail ("Congrats on launching…") still arrives; skip it.
 
