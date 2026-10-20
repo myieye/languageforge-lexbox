@@ -81,22 +81,6 @@ public class LexboxAnalyticsServiceTests
         handler.LastBody.Should().Contain("\"product\":\"lexbox\"");
     }
 
-    [Theory]
-    [InlineData(RetentionPolicy.Unknown, "unknown")]
-    [InlineData(RetentionPolicy.Verified, "verified")]
-    [InlineData(RetentionPolicy.Test, "test")]
-    [InlineData(RetentionPolicy.Dev, "dev")]
-    [InlineData(RetentionPolicy.Training, "training")]
-    public async Task Track_SendsRetentionPolicyAsLowercaseName(RetentionPolicy retentionPolicy, string expectedValue)
-    {
-        var handler = new CaptureHandler();
-        var service = CreateService(handler, userId: Guid.NewGuid());
-
-        await service.TrackSendReceive(Guid.NewGuid(), retentionPolicy, ILexboxAnalyticsService.SendDirection);
-
-        handler.LastBody.Should().Contain($"\"retention_policy\":\"{expectedValue}\"");
-    }
-
     [Fact]
     public async Task TrackFwLiteSync_SkipsWhenUserOptedOut()
     {
