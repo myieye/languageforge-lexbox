@@ -22,7 +22,7 @@ jobs:
   test-api:
     name: Build API and run unit tests
     timeout-minutes: 30
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # hg 6.5.1 in SIL.Chorus.Mercurial crashes on 26.04's Python 3.14
 
     # postgres db is for automated tests
     services:
