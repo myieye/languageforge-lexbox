@@ -1,6 +1,6 @@
 ---
 name: quarterly-analytics
-description: Collect the quarterly product analytics for FieldWorks Lite and Lexbox and enter them in the FieldWorks Lite and Lexbox rows of the LangTech Analytics Dashboard Google Sheet. Gathers GitHub releases, forum topics, Mixpanel users/MAU/countries/installs and support tickets itself, reads the project counts from a Lexbox admin endpoint through the user's browser session, asks only about FTE and anomalies, then writes the sheet after a final OK.
+description: Collect the quarterly product analytics for FieldWorks Lite and Lexbox and enter them in the FieldWorks Lite and Lexbox rows of the LangTech Analytics Dashboard Google Sheet. Gathers GitHub releases, forum topics, Mixpanel users/MAU/countries/installs and support tickets (from the support Google Group) itself, reads the project counts from a Lexbox admin endpoint through the user's browser session, asks only about FTE and anomalies, then writes the sheet after a final OK.
 when_to_use: User says "quarterly analytics", "collect the analytics", "fill the analytics sheet", "LangTech analytics", "/quarterly-analytics FY27Q1", or a scheduled quarterly reminder kicks it off.
 argument-hint: "[FYyyQn, default: the last finished quarter]"
 disable-model-invocation: true
@@ -22,9 +22,8 @@ SIL fiscal years start Oct 1 and are named after the calendar year they end in: 
 
 ## Steps
 
-1. **Quarter and preflight.** Use the argument, or the last finished quarter. Check which connectors are attached: Google Drive + Sheets (required), Gmail, Mixpanel.
+1. **Quarter and preflight.** Use the argument, or the last finished quarter. Check which connectors are attached: Google Drive + Sheets (required), Mixpanel. Support tickets need the built-in browser pane or Claude in Chrome; without either, ask the user for the group's thread list (date and subject) for the quarter.
    - **No Mixpanel connector:** ask whether to browse Mixpanel with Claude in Chrome, or use Mixpanel's Query API with a service account. For the API, the user sets `MIXPANEL_SA_USER` and `MIXPANEL_SA_SECRET` in their environment. Hand them to curl on stdin, never on its command line, where other processes can read them: `printf 'user = "%s:%s"\n' "$MIXPANEL_SA_USER" "$MIXPANEL_SA_SECRET" | curl -K - ...` (`printf` is a shell builtin). Print only aggregate results, and never echo, log or inspect those variables.
-   - **No Gmail connector:** page the `lexbox_support` Google Group in Chrome instead. Its list is sorted by last activity, so check each thread's first-message date.
 2. **Read the sheet.** Find "LangTech Analytics Dashboard" with Drive search. Read rows 1-2 (headers) and the FieldWorks Lite and Lexbox rows of this quarter's tab, plus the previous quarter's tab for comparison and the FTE history. Map columns by header text, because the columns change between quarters. If the quarter's tab doesn't exist yet, stop and say so: the sheet owner creates it.
 3. **Collect, in parallel where you can:**
    - `python .claude/skills/quarterly-analytics/scripts/public_sources.py <quarter>` covers releases, forum topics and the FTE sanity check (about 20 s).
@@ -73,12 +72,10 @@ Users who opted out of analytics never show up, and the team's own devices do.
 
 **FY27Q1 caveat (delete this paragraph once FY27Q2 is done).** Installs overcount in FY27Q1. Existing devices that first sent `app_launched` after updating to an analytics build (Sep 2026 or later) look like new installs. The effect fades in FY27Q2 and is negligible after that. In FY27Q1 add a short note to the FW Lite Notes cell; in FY27Q2 add one only if Installs look high against Active Users.
 
-## Support tickets via Gmail
+## Support tickets via the Google Group
 
-Search `list:lexbox_support@groups.sil.org after:YYYY/MM/DD before:YYYY/MM/DD -subject:FIRING -subject:RESOLVED -subject:Triggered` (Gmail's `before:` is exclusive, and the dates are Pacific time, so double-check threads that start right at a boundary). Page through all results and classify from what the search returns (date, subject, sender, snippet). This is outside users' personal data and everything read goes to Anthropic, so open a thread only when the results don't settle its start date, its product or whether it's a request. When in doubt, open it: the count matters more. Things Gmail does differently from the group itself:
-- **Subject changes split threads.** A follow-up about a new problem from the same person can land in its own Gmail thread, while the group shows one conversation. Count it once.
-- **Old threads match too.** A thread matches when any message falls in the range, so a thread started before the quarter shows up if someone replied during it. Check the date of its first message.
-- **Only mail the user received is there.** If the earliest message is a reply ("Re: …"), the thread started earlier; take the date from the quoted original.
-- **Spam is still there.** Marketing mail ("Congrats on launching…") still arrives; skip it.
+Read the `lexbox_support@groups.sil.org` Google Group in the browser (the user is signed in). Never use a Gmail connector, even if one is attached: it can read the user's whole mailbox, and only holds the group mail that user happened to receive.
 
-Use only search and read; never the connector's draft, send, label, trash or filter tools.
+The conversation list is sorted by last activity, so page back until the threads were last active before the quarter, and count only threads whose first message falls in the quarter. Classify from the list (subject, sender, snippet); everything read goes to Anthropic, so open a thread only when the list doesn't settle its product or whether it's a request. When in doubt, open it: the count matters more. Skip alerts (FIRING, RESOLVED, Triggered), spam and marketing mail.
+
+Only read; never post, reply or change anything in the group.
