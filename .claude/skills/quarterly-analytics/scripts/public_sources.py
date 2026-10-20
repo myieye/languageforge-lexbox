@@ -27,7 +27,7 @@ def quarter_range(quarter):
 
 
 def gh_json(*args):
-    out = subprocess.run(["gh", *args], capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    out = subprocess.run(["gh", *args], stdout=subprocess.PIPE, text=True, encoding="utf-8", check=True).stdout
     # --paginate prints one JSON array per page back to back.
     decoder, items, i = json.JSONDecoder(), [], 0
     while i < len(out):
@@ -64,7 +64,7 @@ def releases(start, end):
             flags.append(f"{r['tag_name']}: FW Lite release notes but no FW Lite assets (not counted for FW Lite)")
         if not has_assets and not lex_notes and not fwl_notes:
             flags.append(f"{r['tag_name']}: no assets and no FW Lite/Lexbox notes (not counted)")
-        if r["prerelease"]:
+        if r["prerelease"] and (has_assets or lex_notes):
             flags.append(f"{r['tag_name']}: marked pre-release (counted)")
 
     def summary(rs):

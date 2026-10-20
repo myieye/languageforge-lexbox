@@ -76,6 +76,18 @@ public class ProjectServiceTest
     }
 
     [Fact]
+    public async Task CreatingAProjectClearsACachedUnknownRetentionPolicy()
+    {
+        var projectId = Guid.NewGuid();
+        (await _projectService.LookupProjectRetentionPolicy(projectId)).Should().Be(RetentionPolicy.Unknown);
+
+        await _projectService.CreateProject(
+            new(projectId, "TestProject", "Test", "test-retention-create", ProjectType.FLEx, RetentionPolicy.Test, false, null, null));
+
+        (await _projectService.LookupProjectRetentionPolicy(projectId)).Should().Be(RetentionPolicy.Test);
+    }
+
+    [Fact]
     public async Task RetentionPolicyLookupIsUnknownForMissingProject()
     {
         (await _projectService.LookupProjectRetentionPolicy(Guid.NewGuid())).Should().Be(RetentionPolicy.Unknown);

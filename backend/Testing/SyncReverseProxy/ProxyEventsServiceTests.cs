@@ -20,8 +20,6 @@ public class ProxyEventsServiceTests
     {
         _proxyService.Setup(s => s.LookupProjectId(ProjectCode)).ReturnsAsync(_projectId);
         _proxyService.Setup(s => s.LookupProjectRetentionPolicy(_projectId)).ReturnsAsync(RetentionPolicy.Training);
-        _analytics.Setup(a => a.TrackSendReceive(It.IsAny<Guid>(), It.IsAny<RetentionPolicy>(), It.IsAny<string>()))
-            .Returns(Task.CompletedTask);
         _service = new ProxyEventsService(_proxyService.Object, _analytics.Object);
     }
 
@@ -30,6 +28,14 @@ public class ProxyEventsServiceTests
         var context = new DefaultHttpContext();
         context.Request.QueryString = new QueryString($"?cmd={cmd}");
         context.Request.RouteValues[ProxyConstants.HgProjectCodeRouteKey] = projectCode;
+        return context;
+    }
+
+    private static HttpContext PushChunkRequest(int offset)
+    {
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/api/v03/pushBundleChunk";
+        context.Request.QueryString = new QueryString($"?repoId={ProjectCode}&chunksize=10&offset={offset}&bundlesize=30");
         return context;
     }
 
@@ -44,24 +50,30 @@ public class ProxyEventsServiceTests
     }
 
     [Fact]
-    public async Task HgRequestTracksNothingForAnUnknownProject()
+    public async Task HgRequestTracksNothingWhenTheProjectCodeDoesNotResolve()
     {
+        _proxyService.Setup(s => s.LookupProjectId("no-such-project")).ReturnsAsync((Guid?)null);
+
         await _service.OnHgRequest(HgRequest("unbundle", "no-such-project"));
 
         _analytics.VerifyNoOtherCalls();
     }
 
-    [Fact]
-    public async Task ResumablePushTracksOnTheLastChunkOnly()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    public async Task ResumablePushTracksNothingBeforeTheLastChunk(int offset)
     {
-        var context = new DefaultHttpContext();
-        context.Request.Path = "/api/v03/pushBundleChunk";
-        context.Request.QueryString = new QueryString($"?repoId={ProjectCode}&chunksize=10&offset=0&bundlesize=20");
-        await _service.OnResumableRequest(context);
-        _analytics.VerifyNoOtherCalls();
+        await _service.OnResumableRequest(PushChunkRequest(offset));
 
-        context.Request.QueryString = new QueryString($"?repoId={ProjectCode}&chunksize=10&offset=10&bundlesize=20");
-        await _service.OnResumableRequest(context);
+        _analytics.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ResumablePushTracksTheLastChunk()
+    {
+        await _service.OnResumableRequest(PushChunkRequest(20));
+
         _analytics.Verify(a => a.TrackSendReceive(_projectId, RetentionPolicy.Training, ILexboxAnalyticsService.SendDirection), Times.Once);
     }
 }

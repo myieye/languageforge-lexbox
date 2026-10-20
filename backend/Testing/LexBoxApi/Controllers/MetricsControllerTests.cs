@@ -21,7 +21,9 @@ public class MetricsControllerTests
         _controller = new MetricsController(_dbContext);
     }
 
-    // The database is shared with the other RequiresDb tests, so each test counts inside its own far-off year.
+    // The database is shared with the other RequiresDb tests, so each test counts inside a far-off year of its own.
+    private static int _lastYear = 2040;
+    private static int NextYear() => Interlocked.Increment(ref _lastYear);
     private static DateOnly Start(int year) => new(year, 1, 1);
     private static DateOnly End(int year) => new(year, 4, 1);
     private static DateTimeOffset Utc(DateOnly date) => new(date, TimeOnly.MinValue, TimeSpan.Zero);
@@ -63,32 +65,43 @@ public class MetricsControllerTests
 
     private async Task<MetricsController.ProjectMetrics> Query(int year)
     {
-        var result = await _controller.Projects(Start(year), End(year));
+        var result = await _controller.Projects(Start(year), End(year), CancellationToken.None);
         return result.Value ?? throw new InvalidOperationException($"unexpected result {result.Result}");
     }
 
     [Fact]
-    public async Task ActiveProjectsCountCommitsFromStartInclusiveToEndExclusive()
+    public async Task ACommitAtTheStartCountsAndMakesTheProjectNew()
     {
-        const int year = 2041;
+        var year = NextYear();
         var atStart = await CreateProject();
         await SeedCommit(atStart.Id, Utc(Start(year)));
+        var justBeforeStart = await CreateProject();
+        await SeedCommit(justBeforeStart.Id, Utc(Start(year)).AddTicks(-1));
+
+        var metrics = await Query(year);
+
+        metrics.FwLite.ActiveProjects.Should().Be(1);
+        metrics.FwLite.NewProjects.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task ACommitAtTheEndDoesNotCount()
+    {
+        var year = NextYear();
         var atEnd = await CreateProject();
         await SeedCommit(atEnd.Id, Utc(End(year)));
         var justBeforeEnd = await CreateProject();
         await SeedCommit(justBeforeEnd.Id, Utc(End(year)).AddTicks(-1));
-        var beforeStart = await CreateProject();
-        await SeedCommit(beforeStart.Id, Utc(Start(year)).AddTicks(-1));
 
         var metrics = await Query(year);
 
-        metrics.FwLite.ActiveProjects.Should().Be(2);
+        metrics.FwLite.ActiveProjects.Should().Be(1);
     }
 
     [Fact]
     public async Task ActiveProjectsIncludeDeletedProjectsAndCountEachProjectOnce()
     {
-        const int year = 2042;
+        var year = NextYear();
         var deleted = await CreateProject(deleted: true);
         await SeedCommit(deleted.Id, Utc(Start(year)).AddDays(1));
         await SeedCommit(deleted.Id, Utc(Start(year)).AddDays(2));
@@ -102,7 +115,7 @@ public class MetricsControllerTests
     [Fact]
     public async Task NewProjectsAreThoseWithoutACommitBeforeTheRange()
     {
-        const int year = 2043;
+        var year = NextYear();
         var existing = await CreateProject();
         await SeedCommit(existing.Id, Utc(Start(year)).AddDays(-1));
         await SeedCommit(existing.Id, Utc(Start(year)).AddDays(1));
@@ -117,28 +130,28 @@ public class MetricsControllerTests
         metrics.FwLite.NewProjects.Should().Be(1);
     }
 
-    [Fact]
-    public async Task LanguagesImpactedExcludeTestDevAndTrainingProjects()
+    [Theory]
+    [InlineData(RetentionPolicy.Unknown, 1)]
+    [InlineData(RetentionPolicy.Verified, 1)]
+    [InlineData(RetentionPolicy.Test, 0)]
+    [InlineData(RetentionPolicy.Dev, 0)]
+    [InlineData(RetentionPolicy.Training, 0)]
+    public async Task LanguagesImpactedLeaveOutTestDevAndTrainingProjects(RetentionPolicy policy, int languagesImpacted)
     {
-        const int year = 2044;
-        var policies = Enum.GetValues<RetentionPolicy>();
-        foreach (var policy in policies)
-        {
-            var project = await CreateProject(policy);
-            await SeedCommit(project.Id, Utc(Start(year)).AddDays(1));
-        }
+        var year = NextYear();
+        var project = await CreateProject(policy);
+        await SeedCommit(project.Id, Utc(Start(year)).AddDays(1));
 
         var metrics = await Query(year);
 
-        metrics.FwLite.ActiveProjects.Should().Be(policies.Length);
-        // Unknown and Verified
-        metrics.FwLite.LanguagesImpacted.Should().Be(2);
+        metrics.FwLite.ActiveProjects.Should().Be(1);
+        metrics.FwLite.LanguagesImpacted.Should().Be(languagesImpacted);
     }
 
     [Fact]
     public async Task CreatedProjectsCountCreatedDateInRangeIncludingDeleted()
     {
-        const int year = 2045;
+        var year = NextYear();
         await CreateProject(createdDate: Utc(Start(year)));
         await CreateProject(createdDate: Utc(End(year)).AddTicks(-1), deleted: true);
         await CreateProject(createdDate: Utc(End(year)));
@@ -150,10 +163,14 @@ public class MetricsControllerTests
         metrics.FwLite.ActiveProjects.Should().Be(0);
     }
 
-    [Fact]
-    public async Task RejectsARangeThatDoesNotStartBeforeItEnds()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task RejectsARangeThatDoesNotStartBeforeItEnds(int endOffsetDays)
     {
-        var result = await _controller.Projects(Start(2046), Start(2046));
+        var start = Start(NextYear());
+
+        var result = await _controller.Projects(start, start.AddDays(endOffsetDays), CancellationToken.None);
 
         result.Result.Should().BeOfType<BadRequestObjectResult>();
     }

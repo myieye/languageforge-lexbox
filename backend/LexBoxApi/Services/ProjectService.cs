@@ -64,10 +64,7 @@ public class ProjectService(
         try
         {
             await hgService.InitRepo(input.Code);
-            InvalidateProjectOrgIdsCache(projectId);
-            InvalidateProjectConfidentialityCache(projectId);
-            InvalidateProjectRetentionPolicyCache(projectId);
-            InvalidateProjectCodeCache(input.Code);
+            InvalidateProjectCaches(projectId, input.Code);
             await transaction.CommitAsync();
         }
         catch
@@ -225,11 +222,7 @@ public class ProjectService(
         dbContext.Projects.Remove(project);
         await hgService.DeleteRepoIfExists(project.Code);
         project.UpdateUpdatedDate();
-        // Don't forget to add more Invalidate calls here if we add new caches
-        InvalidateProjectCodeCache(project.Code);
-        InvalidateProjectConfidentialityCache(projectId);
-        InvalidateProjectOrgIdsCache(projectId);
-        InvalidateProjectRetentionPolicyCache(projectId);
+        InvalidateProjectCaches(projectId, project.Code);
         await dbContext.SaveChangesAsync();
         return project;
     }
@@ -283,6 +276,15 @@ public class ProjectService(
     {
         try { memoryCache.Remove($"ProjectRetentionPolicy:{projectId}"); }
         catch (Exception) { } // Never allow this to throw
+    }
+
+    // Don't forget to add new project caches here
+    private void InvalidateProjectCaches(Guid projectId, string projectCode)
+    {
+        InvalidateProjectCodeCache(projectCode);
+        InvalidateProjectConfidentialityCache(projectId);
+        InvalidateProjectOrgIdsCache(projectId);
+        InvalidateProjectRetentionPolicyCache(projectId);
     }
 
     public async Task UpdateProjectMetadataForCode(string projectCode)
