@@ -22,8 +22,9 @@ tick **Invite**. They get an invitation email with a **Join Project** button, wh
 expires after 3 days.
 
 Adding a whole class or workshop at once (a list of logins or emails and a shared
-password, creating missing accounts) is something only Lexbox administrators can do.
-Write to [admin@languagedepot.org](mailto:admin@languagedepot.org) for that.
+password, creating missing accounts) uses **Bulk Add/Create Members**, which only Lexbox
+administrators see. Write to [admin@languagedepot.org](mailto:admin@languagedepot.org) to
+have it done.
 
 Members of an organization that owns your project can also find it themselves and choose
 **Ask to join project**, if it is marked not confidential. You get an email with an
