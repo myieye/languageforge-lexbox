@@ -61,12 +61,13 @@ public class ProxyEventsService(ILexProxyService lexProxyService, ILexboxAnalyti
     }
 
     /// <summary>
-    /// Resolves the project id (cached by ProjectService, usually already warm from the auth check), then fires the
-    /// analytics event without awaiting the send itself.
+    /// Resolves the project id and retention policy (both cached by ProjectService; the id is usually already warm
+    /// from the auth check), then fires the analytics event without awaiting the send itself.
     /// </summary>
     private async Task TrackSendReceive(string projectCode, string direction)
     {
         if (await lexProxyService.LookupProjectId(projectCode) is not { } projectId) return;
-        _ = analytics.TrackSendReceive(projectId, direction);
+        var retentionPolicy = await lexProxyService.LookupProjectRetentionPolicy(projectId);
+        _ = analytics.TrackSendReceive(projectId, retentionPolicy, direction);
     }
 }

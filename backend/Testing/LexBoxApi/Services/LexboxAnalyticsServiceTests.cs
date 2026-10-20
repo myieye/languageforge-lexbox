@@ -6,6 +6,7 @@ using LexBoxApi.Auth;
 using LexBoxApi.Services;
 using LexCore.Analytics;
 using LexCore.Auth;
+using LexCore.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
@@ -27,12 +28,13 @@ public class LexboxAnalyticsServiceTests
         var projectId = Guid.NewGuid();
         var service = CreateService(handler, userId: userId);
 
-        await service.TrackSendReceive(projectId, direction);
+        await service.TrackSendReceive(projectId, RetentionPolicy.Verified, direction);
 
         handler.RequestCount.Should().Be(1);
         handler.LastBody.Should().Contain("\"event\":\"send_receive\"");
         handler.LastBody.Should().Contain($"\"direction\":\"{direction}\"");
         handler.LastBody.Should().Contain($"\"project_id\":\"{projectId}\"");
+        handler.LastBody.Should().Contain("\"retention_policy\":\"verified\"");
         handler.LastBody.Should().Contain($"\"$user_id\":\"{userId}\"");
         handler.LastBody.Should().Contain("\"product\":\"lexbox\"");
         handler.LastBody.Should().Contain($"\"$app_version_string\":{JsonSerializer.Serialize(AppVersionService.Version)}");
@@ -45,7 +47,7 @@ public class LexboxAnalyticsServiceTests
         var handler = new CaptureHandler();
         var service = CreateService(handler, userId: null);
 
-        await service.TrackSendReceive(Guid.NewGuid(), ILexboxAnalyticsService.SendDirection);
+        await service.TrackSendReceive(Guid.NewGuid(), RetentionPolicy.Verified, ILexboxAnalyticsService.SendDirection);
 
         handler.RequestCount.Should().Be(0);
     }
@@ -56,7 +58,7 @@ public class LexboxAnalyticsServiceTests
         var handler = new CaptureHandler();
         var service = CreateService(handler, userId: Guid.NewGuid(), optedOutOfAnalytics: true);
 
-        await service.TrackSendReceive(Guid.NewGuid(), ILexboxAnalyticsService.SendDirection);
+        await service.TrackSendReceive(Guid.NewGuid(), RetentionPolicy.Verified, ILexboxAnalyticsService.SendDirection);
 
         handler.RequestCount.Should().Be(0);
     }
@@ -69,11 +71,12 @@ public class LexboxAnalyticsServiceTests
         var projectId = Guid.NewGuid();
         var service = CreateService(handler, userId: userId);
 
-        await service.TrackFwLiteSync(projectId);
+        await service.TrackFwLiteSync(projectId, RetentionPolicy.Test);
 
         handler.RequestCount.Should().Be(1);
         handler.LastBody.Should().Contain("\"event\":\"fw_lite_sync\"");
         handler.LastBody.Should().Contain($"\"project_id\":\"{projectId}\"");
+        handler.LastBody.Should().Contain("\"retention_policy\":\"test\"");
         handler.LastBody.Should().Contain($"\"$user_id\":\"{userId}\"");
         handler.LastBody.Should().Contain("\"product\":\"lexbox\"");
     }
@@ -84,7 +87,7 @@ public class LexboxAnalyticsServiceTests
         var handler = new CaptureHandler();
         var service = CreateService(handler, userId: Guid.NewGuid(), optedOutOfAnalytics: true);
 
-        await service.TrackFwLiteSync(Guid.NewGuid());
+        await service.TrackFwLiteSync(Guid.NewGuid(), RetentionPolicy.Verified);
 
         handler.RequestCount.Should().Be(0);
     }
@@ -172,7 +175,7 @@ public class LexboxAnalyticsServiceTests
         var handler = new CaptureHandler();
         var service = CreateService(handler, userId: Guid.NewGuid(), clientIp: "203.0.113.7");
 
-        await service.TrackSendReceive(Guid.NewGuid(), ILexboxAnalyticsService.SendDirection);
+        await service.TrackSendReceive(Guid.NewGuid(), RetentionPolicy.Verified, ILexboxAnalyticsService.SendDirection);
 
         handler.RequestCount.Should().Be(1);
         // The end user's IP is sent as the reserved "ip" property so Mixpanel geolocates them...
@@ -187,7 +190,7 @@ public class LexboxAnalyticsServiceTests
         var handler = new CaptureHandler();
         var service = CreateService(handler, userId: Guid.NewGuid(), enabled: false);
 
-        await service.TrackSendReceive(Guid.NewGuid(), ILexboxAnalyticsService.SendDirection);
+        await service.TrackSendReceive(Guid.NewGuid(), RetentionPolicy.Verified, ILexboxAnalyticsService.SendDirection);
 
         handler.RequestCount.Should().Be(0);
     }
@@ -199,7 +202,7 @@ public class LexboxAnalyticsServiceTests
         // Production environment with no release token configured => nothing sent.
         var service = CreateService(handler, userId: Guid.NewGuid(), isDevelopment: false, productionToken: "");
 
-        await service.TrackSendReceive(Guid.NewGuid(), ILexboxAnalyticsService.SendDirection);
+        await service.TrackSendReceive(Guid.NewGuid(), RetentionPolicy.Verified, ILexboxAnalyticsService.SendDirection);
 
         handler.RequestCount.Should().Be(0);
     }

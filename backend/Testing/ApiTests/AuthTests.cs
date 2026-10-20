@@ -84,6 +84,14 @@ public class AuthTests : ApiTestBase
     }
 
     [Fact]
+    public async Task ManagerIsForbiddenFromMetricsApi()
+    {
+        await LoginAs("manager", TestingEnvironmentVariables.DefaultPassword);
+        var response = await HttpClient.GetAsync($"{BaseUrl}/api/metrics/projects/2026-10-01/2027-01-01");
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task AdminIsPermittedToCallAdminApi()
     {
         await LoginAs("admin", TestingEnvironmentVariables.DefaultPassword);
