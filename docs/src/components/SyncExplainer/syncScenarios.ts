@@ -225,7 +225,7 @@ export const SCENARIOS: Scenario[] = [
         t2: 'leg2',
         hlNodes: ['cloud'],
         badge: 'done',
-        text: 'If you both changed the very same field, one version wins: the FieldWorks Classic value (between two FieldWorks Lite users, the later change). The other stays in the word’s History. Syncing often keeps such overlaps rare.',
+        text: 'If you both changed the very same field, the FieldWorks Classic value wins (between two FieldWorks Lite users, the later change), and the other stays in the word’s History.',
       },
     ],
   },

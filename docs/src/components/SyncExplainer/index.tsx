@@ -566,16 +566,19 @@ const SyncExplainer = (): ReactNode => {
     });
   }, [scenario, step, resizeTick]);
 
+  // Observe the stage, not the window: the docs column also resizes when the sidebar collapses.
   useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return undefined;
     let timer: ReturnType<typeof setTimeout>;
-    const onResize = (): void => {
+    const observer = new ResizeObserver(() => {
       clearTimeout(timer);
       timer = setTimeout(() => setResizeTick((n) => n + 1), 120);
-    };
-    window.addEventListener('resize', onResize);
+    });
+    observer.observe(stage);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', onResize);
+      observer.disconnect();
     };
   }, []);
 

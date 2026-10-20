@@ -29,7 +29,7 @@ flowchart LR
     LITE <-- "1. Harmony sync over HTTP<br/>+ SignalR push" --> API
     API --- HARMONY
     API -- "2. user presses Sync<br/>POST /api/merge/execute" --> WORKER
-    WORKER <-- "2a. Harmony sync" --> HARMONY
+    WORKER <-- "2a. Harmony sync over HTTP<br/>(/api/crdt)" --> API
     WORKER <-- "3. Chorus Send/Receive" --> HG
     FLEX <-- "4. Send/Receive" --> HG
 
