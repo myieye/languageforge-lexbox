@@ -23,7 +23,8 @@ On your project's page on lexbox.org, choose **Try FieldWorks Lite?** and confir
 **Yes, please!**. Lexbox prepares a FieldWorks Lite copy of your project; the first time
 can take a few minutes on a large project. Afterwards the project carries a **Using
 FieldWorks Lite** badge, and your team can
-[install the app and download the project](/fw-lite/getting-started).
+[install the app](https://lexbox.org/fw-lite) and
+[download the project](/fw-lite/getting-started#download-your-project).
 
 FieldWorks Lite support is still in beta, so only people with early access see the
 button, and only a project manager can confirm it. Managers can request early access on

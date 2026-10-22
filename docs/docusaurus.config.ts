@@ -99,6 +99,7 @@ const config: Config = {
         {to: '/fw-lite/', label: 'FieldWorks Lite', position: 'left'},
         {to: '/lexbox/', label: 'Lexbox', position: 'left'},
         {to: '/technical/', label: 'Technical', position: 'left'},
+        {href: 'https://lexbox.org/fw-lite', label: 'Download FieldWorks Lite', position: 'right'},
         {href: repoUrl, label: 'GitHub', position: 'right'},
       ],
     },
@@ -106,6 +107,7 @@ const config: Config = {
       style: 'dark',
       links: [
         {label: 'lexbox.org', href: 'https://lexbox.org'},
+        {label: 'Download FieldWorks Lite', href: 'https://lexbox.org/fw-lite'},
         {label: 'Community forum', href: 'https://community.software.sil.org/c/fwlite/48'},
         {label: 'Email support', href: 'mailto:lexbox_support@groups.sil.org'},
         {label: 'GitHub', href: repoUrl},

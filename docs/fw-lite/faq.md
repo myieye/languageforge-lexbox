@@ -1,6 +1,6 @@
 ---
 title: Questions and answers
-sidebar_position: 3
+sidebar_position: 99
 ---
 
 Common questions about FieldWorks Lite. Questions about syncing are answered on

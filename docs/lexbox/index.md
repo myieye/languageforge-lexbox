@@ -9,9 +9,10 @@ server where everyone's changes meet, and gives you a website,
 called **Language Depot**. It is the same service, and old accounts and projects are still
 there.
 
-Lexbox hosts projects for **FieldWorks** (the desktop program, often called FLEx;
-FieldWorks Lite calls it *FieldWorks Classic*), **WeSay**, **OneStory Editor**,
-**OurWord** and **Adapt It**. Those programs exchange work with Lexbox through
+Lexbox hosts projects for [FieldWorks](https://software.sil.org/fieldworks/) (the desktop
+program, often called FLEx; FieldWorks Lite calls it *FieldWorks Classic*),
+[WeSay](https://software.sil.org/wesay/),
+[OneStory Editor](https://software.sil.org/onestoryeditor/), **OurWord** and **Adapt It**. Those programs exchange work with Lexbox through
 **Send/Receive**. Lexbox is free to use, and is provided by SIL Language Technology and
 the Linguistics Institute at Payap University.
 

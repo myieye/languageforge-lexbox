@@ -13,6 +13,12 @@ Docusaurus site with three sections: `fw-lite/` (FieldWorks Lite users), `lexbox
 
 `git grep` the old label or behavior under `docs/` to find every page that mentions it.
 
+## Adding pages
+
+- A feature gets its own page in its section (e.g. `fw-lite/views.md` for choosing and customizing views), titled by what the user does, with headings that answer the questions support gets. Order it with `sidebar_position` between the existing pages; the FAQ sits last at 99.
+- Add the page to its section's `index.md` "In this guide" list. Once a section has more than about six feature pages, group them in a folder with a `_category_.json`.
+- Downloads always link to `https://lexbox.org/fw-lite`, never to files. Only exception: the Mac early-tester build (GitHub releases), with its warning.
+
 ## Writing rules
 
 - Name buttons, menus and tabs exactly as the app shows them: FW Lite text is a `msgid` in `frontend/viewer/src/locales/en.po`, lexbox.org text a value in `frontend/src/lib/i18n/locales/en.json`. `fw-lite/` says FieldWorks Classic (FW Lite's name for the desktop app); `lexbox/` says FieldWorks (lexbox.org's name). No doc-only names.
