@@ -12,7 +12,7 @@ FieldWorks Lite ↔ FieldWorks Classic sync is the hardest thing to explain: sev
 
 ## Decision
 
-- **One Docusaurus site** with product sections: `/fw-lite/` (FieldWorks Lite app users), `/lexbox/` (lexbox.org and Send/Receive users) and `/technical/` (developers). One pipeline, one search index. "Which app do you use?" is a factual question; persona labels ("I'm a manager") are a known audience-navigation failure (NN/g). The homepage routes with product tiles; `/lexbox/fw-lite` bridges project managers to the FieldWorks Lite guide.
+- **One Docusaurus site** with product sections: `/fw-lite/` (FieldWorks Lite app users), `/lexbox/` (lexbox.org and Send/Receive users) and `/technical/` (how it works, for developers and anyone curious). One pipeline, one search index. "Which app do you use?" is a factual question; persona labels ("I'm a manager") are a known audience-navigation failure (NN/g). The homepage routes with product tiles; `/lexbox/fw-lite` bridges project managers to the FieldWorks Lite guide.
 - **Source in this monorepo**, so the docs change in the same PR as the code and reviewers see drift in the diff. Rules for keeping them current: `docs/AGENTS.md`.
 - **Terminology follows the shipped UI.** CRDT, Harmony, Mercurial and FwHeadless are technical-section vocabulary only.
 - **Link to FieldWorks Classic docs, don't duplicate them.** Sibling products, sibling doc sites.

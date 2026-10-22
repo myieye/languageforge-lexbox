@@ -33,7 +33,7 @@ const more: Section[] = [
   {
     to: '/technical/',
     title: 'Technical documentation',
-    description: 'Architecture, sync internals and development setup, for developers.',
+    description: 'How it works under the hood: architecture, sync internals and development setup.',
   },
 ];
 

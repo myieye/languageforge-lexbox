@@ -3,8 +3,8 @@ title: Technical documentation
 sidebar_position: 1
 ---
 
-How FieldWorks Lite and Lexbox are built, deployed and developed. For using the apps, see
-the [FieldWorks Lite](/fw-lite/) and [Lexbox](/lexbox/) guides.
+How FieldWorks Lite and Lexbox work under the hood, and how they are built and deployed.
+For using the apps, see the [FieldWorks Lite](/fw-lite/) and [Lexbox](/lexbox/) guides.
 
 ## Architecture
 

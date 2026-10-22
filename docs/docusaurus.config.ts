@@ -9,7 +9,7 @@ const repoUrl = 'https://github.com/sillsdev/languageforge-lexbox';
 
 const config: Config = {
   title: 'FieldWorks Lite & Lexbox Docs',
-  tagline: 'Guides for using FieldWorks Lite and Lexbox, and technical documentation for developers.',
+  tagline: 'Guides for using FieldWorks Lite and Lexbox, and technical documentation on how they work.',
   favicon: 'img/favicon.png',
 
   future: {

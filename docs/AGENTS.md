@@ -1,6 +1,6 @@
 # Docs site
 
-Docusaurus site with three sections: `fw-lite/` (FieldWorks Lite users), `lexbox/` (lexbox.org and Send/Receive users) and `technical/` (developers). `adr/` and `research/` are not published. Check a change with `pnpm install && pnpm build` in this folder; broken links and anchors fail the build. `pnpm typecheck` covers the React components.
+Docusaurus site with three sections: `fw-lite/` (FieldWorks Lite users), `lexbox/` (lexbox.org and Send/Receive users) and `technical/` (how it works: for developers and anyone curious). `adr/` and `research/` are not published. Check a change with `pnpm install && pnpm build` in this folder; broken links and anchors fail the build. `pnpm typecheck` covers the React components.
 
 ## Which page to update
 
