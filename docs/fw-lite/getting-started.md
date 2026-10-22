@@ -9,6 +9,7 @@ This page takes you from nothing installed to your first edit.
 
 Go to [lexbox.org/fw-lite](https://lexbox.org/fw-lite) and choose the download for your
 device. On an Android phone or tablet, install it from Google Play like any other app.
+On a Mac, see [the early-tester version](/fw-lite/faq#which-devices-can-i-use-it-on).
 
 ## Try it first, or log in
 

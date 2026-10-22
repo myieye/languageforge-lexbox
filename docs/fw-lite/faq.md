@@ -38,6 +38,13 @@ some dictionary fields, such as custom fields, aren't shown yet.
 Windows and Linux computers, and Android phones and tablets (from Google Play). It is the
 same app on every device. There is no iPhone or iPad version yet.
 
+:::warning[Mac: early testers only]
+A Mac version is available for people who want to try it early. It doesn't update itself
+yet, and it is less tested than the other versions. To try it, open the
+[FieldWorks Lite releases on GitHub](https://github.com/sillsdev/languageforge-lexbox/releases)
+and download `FieldWorksLite.dmg` from the newest release that lists it under **Assets**.
+:::
+
 ## Is my work safe if my phone or computer breaks?
 
 Anything that has reached Lexbox is safe. You can install FieldWorks Lite on a new device,

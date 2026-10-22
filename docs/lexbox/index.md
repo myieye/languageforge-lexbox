@@ -12,8 +12,8 @@ there.
 Lexbox hosts projects for **FieldWorks** (the desktop program, often called FLEx;
 FieldWorks Lite calls it *FieldWorks Classic*), **WeSay**, **OneStory Editor**,
 **OurWord** and **Adapt It**. Those programs exchange work with Lexbox through
-**Send/Receive**. Lexbox is free to use, and is provided by SIL Global and the
-Linguistics Institute at Payap University.
+**Send/Receive**. Lexbox is free to use, and is provided by SIL Language Technology and
+the Linguistics Institute at Payap University.
 
 :::tip[Do you use FieldWorks Lite?]
 You rarely need this guide: syncing happens inside the app, and the

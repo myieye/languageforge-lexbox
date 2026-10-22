@@ -31,9 +31,9 @@ their work by accident.
 ## Approval
 
 If you manage (or have managed) a project on Lexbox, the form's last button reads
-**Create Project** and the project is created right away. Otherwise it reads **Request Project**: the project
-shows up under My Projects marked **Awaiting approval**, an administrator reviews the
-request, and you get an email when it is approved.
+**Create Project** and the project is created right away. Otherwise it reads **Request
+Project**: the project shows up under My Projects marked **Awaiting approval**, an
+administrator reviews the request, and you get an email when it is approved.
 
 ## Fill it with data
 
