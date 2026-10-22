@@ -40,9 +40,9 @@ same app on every device. There is no iPhone or iPad version yet.
 
 :::warning[Mac: early testers only]
 A Mac version is available for people who want to try it early. It doesn't update itself
-yet, and it is less tested than the other versions. To try it, open the
-[FieldWorks Lite releases on GitHub](https://github.com/sillsdev/languageforge-lexbox/releases)
-and download `FieldWorksLite.dmg` from the newest release that lists it under **Assets**.
+yet, and it is less tested than the other versions. To try it, download
+`FieldWorksLite.dmg` from the **Assets** of the
+[latest FieldWorks Lite release on GitHub](https://github.com/sillsdev/languageforge-lexbox/releases/latest).
 :::
 
 ## Is my work safe if my phone or computer breaks?
