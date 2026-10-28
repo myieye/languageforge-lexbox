@@ -2,6 +2,7 @@ using System.Text;
 using FwDataMiniLcmBridge.Api;
 using FwDataMiniLcmBridge.Media;
 using FwDataMiniLcmBridge.Tests.Fixtures;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using MiniLcm.Media;
 using MiniLcm.Models;
@@ -16,10 +17,12 @@ public class MediaFileTests : IAsyncLifetime
     private readonly FwDataMiniLcmApi _api;
     private readonly WritingSystemId _audioWs = "en-Zxxx-x-audio";
     private IMediaAdapter _mediaAdapter;
+    private readonly IMemoryCache _memoryCache;
 
     public MediaFileTests(ProjectLoaderFixture fixture)
     {
         _mediaAdapter = fixture.Services.GetRequiredService<IMediaAdapter>();
+        _memoryCache = fixture.Services.GetRequiredService<IMemoryCache>();
         _api = fixture.NewProjectApi("media-file-test", "en", "en");
     }
 
@@ -118,12 +121,21 @@ public class MediaFileTests : IAsyncLifetime
         var entryId = await AddPictureDirectly(outsidePath);
 
         var entry = await _api.GetEntry(entryId);
+        var mediaUri = entry!.Senses[0].Pictures[0].MediaUri;
 
-        var file = await _api.GetFileStream(entry!.Senses[0].Pictures[0].MediaUri);
+        (await ReadFile(mediaUri)).Should().Be("test");
+        // the expired path cache is rebuilt from LinkedFiles alone
+        _memoryCache.Remove(LocalMediaAdapter.PathsCacheKey(_api.Cache));
+        (await ReadFile(mediaUri)).Should().Be("test");
+    }
+
+    private async Task<string> ReadFile(MediaUri mediaUri)
+    {
+        var file = await _api.GetFileStream(mediaUri);
         await using var stream = file.Stream;
         stream.Should().NotBeNull();
         using var streamReader = new StreamReader(stream);
-        (await streamReader.ReadToEndAsync()).Should().Be("test");
+        return await streamReader.ReadToEndAsync();
     }
 
     [Fact]

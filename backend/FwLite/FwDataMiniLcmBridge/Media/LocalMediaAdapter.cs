@@ -15,12 +15,21 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
 
     private Dictionary<Guid, string> Paths(LcmCache cache)
     {
-        return memoryCache.GetOrCreate("LocalMediaPath|" + cache.ProjectId.ProjectFolder,
+        return memoryCache.GetOrCreate(PathsCacheKey(cache),
             entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromMinutes(10);
                 return BuildPathsDictionary(cache.LangProject.LinkedFilesRootDir, logger);
             }) ?? throw new Exception("Failed to get paths");
+    }
+
+    internal static string PathsCacheKey(LcmCache cache) => "LocalMediaPath|" + cache.ProjectId.ProjectFolder;
+
+    // FLEx can link a picture in place anywhere on disk. Rebuilding Paths only scans LinkedFiles, so these never expire.
+    private Dictionary<Guid, string> ExternalPaths(LcmCache cache)
+    {
+        return memoryCache.GetOrCreate("LocalMediaExternalPath|" + cache.ProjectId.ProjectFolder,
+            _ => new Dictionary<Guid, string>()) ?? throw new Exception("Failed to get external paths");
     }
 
     internal static Dictionary<Guid, string> BuildPathsDictionary(string root, ILogger logger)
@@ -58,11 +67,11 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
     public MediaUri MediaUriFromPath(string path, LcmCache cache)
     {
         if (!Path.IsPathRooted(path)) throw new ArgumentException("Path must be absolute, " + path, nameof(path));
-        //not limited to LinkedFilesRootDir, FW pictures can link files anywhere on disk
         if (!File.Exists(path)) return MediaUri.NotFound;
         var uri = PathToUri(path);
         //this may be a new file, so we need to add it to the cache
-        Paths(cache)[uri.FileId] = path;
+        var paths = path.StartsWith(cache.LangProject.LinkedFilesRootDir) ? Paths(cache) : ExternalPaths(cache);
+        paths[uri.FileId] = path;
         return uri;
     }
 
@@ -73,9 +82,8 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
 
     public string? PathFromMediaUri(MediaUri mediaUri, LcmCache cache)
     {
-        var paths = Paths(cache);
         if (mediaUri.Authority != LocalMediaAuthority) throw new ArgumentException("MediaUri must be local", nameof(mediaUri));
-        if (paths.TryGetValue(mediaUri.FileId, out var path))
+        if (Paths(cache).TryGetValue(mediaUri.FileId, out var path) || ExternalPaths(cache).TryGetValue(mediaUri.FileId, out path))
         {
             return path;
         }
