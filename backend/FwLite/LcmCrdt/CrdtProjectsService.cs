@@ -92,13 +92,14 @@ public partial class CrdtProjectsService(
         UserProjectRole role)
     {
         if (project.Data?.LastUserName == userName && project.Data?.LastUserId == userId && project.Data?.Role == role) return false;
-        var roleChanged = false;
-        await ExecInProject(project, async (scopedServices, currentProjectService) =>
-        {
-            await currentProjectService.UpdateLastUser(userName, userId);
-            roleChanged = await currentProjectService.UpdateUserRole(role);
-        });
-        return roleChanged;
+        //the project is being opened, and the sync after opening refreshes the user and role anyway
+        if (CurrentProjectService.IsMigrating(project)) return false;
+        await using var scope = provider.CreateAsyncScope();
+        var currentProjectService = scope.ServiceProvider.GetRequiredService<CurrentProjectService>();
+        //not SetupProjectContext: a project not opened since an app update would first replay its whole history
+        await currentProjectService.SetupProjectDataContext(project);
+        await currentProjectService.UpdateLastUser(userName, userId);
+        return await currentProjectService.UpdateUserRole(role);
     }
 
     public IEnumerable<CrdtProject> ListProjects()

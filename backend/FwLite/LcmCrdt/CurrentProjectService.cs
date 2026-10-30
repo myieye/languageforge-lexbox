@@ -74,12 +74,28 @@ public class CurrentProjectService(
     {
         using var activity = LcmCrdtActivitySource.Value.StartActivity();
         activity?.SetTag("app.project_code", project.Name);
-        if (_project != null && project != _project)
-            throw new InvalidOperationException($"Cannot setup project context for '{project.Name}' when already in context of project '{_project.Name}'");
-        _project = project;
+        SetProject(project);
         //migrate will only execute once with a static which tracks if we've already migrated
         await MigrateDb();
         return await RefreshProjectData();
+    }
+
+    /// <summary>
+    /// Setup the project context for reading or writing <see cref="ProjectData"/> only. Runs the EF migrations but not the
+    /// model version replay, which can take minutes, so nothing else may use the db in this context.
+    /// </summary>
+    public async ValueTask<ProjectData> SetupProjectDataContext(CrdtProject project)
+    {
+        SetProject(project);
+        await MigrateSchema();
+        return await RefreshProjectData();
+    }
+
+    private void SetProject(CrdtProject project)
+    {
+        if (_project != null && project != _project)
+            throw new InvalidOperationException($"Cannot setup project context for '{project.Name}' when already in context of project '{_project.Name}'");
+        _project = project;
     }
 
     public async ValueTask<ProjectData> SetupProjectContext(string projectCode)
@@ -92,13 +108,21 @@ public class CurrentProjectService(
         return Project.Data = await GetProjectData(true);
     }
 
+    private static readonly ConcurrentDictionary<string, Lazy<Task>> SchemaMigrationTasks = [];
     private static readonly ConcurrentDictionary<string, Lazy<Task>> MigrationTasks = [];
-    private Task MigrateDb()
+
+    /// <returns>true while the project's db is fully migrating, which holds its write lock during the model version replay</returns>
+    public static bool IsMigrating(CrdtProject project)
+    {
+        return MigrationTasks.TryGetValue(project.DbPath, out var task) && task.IsValueCreated && !task.Value.IsCompleted;
+    }
+
+    private Task MigrateSchema()
     {
         //ensure we only execute migrations once, this avoids race conditions, as well as doing duplicate work on startup
         //design based on https://andrewlock.net/making-getoradd-on-concurrentdictionary-thread-safe-using-lazy/
 #pragma warning disable VSTHRD011
-        return MigrationTasks.GetOrAdd(Project.DbPath, _ => new Lazy<Task>(Execute)).Value;
+        return SchemaMigrationTasks.GetOrAdd(Project.DbPath, _ => new Lazy<Task>(Execute)).Value;
 #pragma warning restore VSTHRD011
         async Task Execute()
         {
@@ -106,6 +130,26 @@ public class CurrentProjectService(
             {
                 await using var dbContext = await DbContextFactory.CreateDbContextAsync();
                 await dbContext.Database.MigrateAsync();
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Failed to migrate database schema for project '{Project}'", Project.Name);
+                throw;
+            }
+        }
+    }
+
+    private Task MigrateDb()
+    {
+#pragma warning disable VSTHRD011
+        return MigrationTasks.GetOrAdd(Project.DbPath, _ => new Lazy<Task>(Execute)).Value;
+#pragma warning restore VSTHRD011
+        async Task Execute()
+        {
+            await MigrateSchema();
+            try
+            {
+                await using var dbContext = await DbContextFactory.CreateDbContextAsync();
                 await ReconcileModelVersions();
 
                 if (EntrySearchServiceFactory is not null)
