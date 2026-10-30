@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using LcmCrdt.Utils;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -221,6 +222,52 @@ public class OpenProjectTests
             config => config.ThrowOnModelVersionReconcileFailure = true);
 
         await open.Should().ThrowAsync<Exception>();
+    }
+
+    [Fact]
+    public async Task UpdatingServerInfoDoesNotReconcileModelVersions()
+    {
+        var copyCode = $"server-info-copy-{Guid.NewGuid():N}";
+        await WithProjectFromTemplate(new CreateProjectRequest("Server Info", $"server-info-{Guid.NewGuid():N}"), "fr", async (services, _) =>
+        {
+            var crdtProjectsService = services.GetRequiredService<CrdtProjectsService>();
+            var original = services.GetRequiredService<CurrentProjectService>().Project;
+            var copyPath = Path.Combine(Path.GetDirectoryName(original.DbPath)!, $"{copyCode}.sqlite");
+            await using (var dbContext = await services.GetRequiredService<IDbContextFactory<LcmCrdtDbContext>>().CreateDbContextAsync())
+            {
+                // no stored model versions makes the next reconcile regenerate every snapshot; the copy is a db this process hasn't migrated
+                await dbContext.Database.ExecuteSqlRawAsync("DELETE FROM LocalState");
+                await dbContext.Database.ExecuteSqlAsync($"VACUUM INTO {copyPath}");
+            }
+
+            try
+            {
+                var copy = crdtProjectsService.GetProject(copyCode) ?? throw new InvalidOperationException("copy not found");
+                (await crdtProjectsService.UpdateProjectServerInfo(copy, "Server User", "server-user-id", UserProjectRole.Observer))
+                    .Should().BeTrue();
+                (await CountLocalState(copyPath)).Should().Be(0, "recording the server info must not replay the project");
+
+                await using var copyScope = services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
+                var copyData = await copyScope.ServiceProvider.GetRequiredService<CurrentProjectService>().SetupProjectContext(copy);
+                copyData.Role.Should().Be(UserProjectRole.Observer);
+                copyData.LastUserId.Should().Be("server-user-id");
+                (await CountLocalState(copyPath)).Should().BeGreaterThan(0, "opening the project reconciles its model versions");
+            }
+            finally
+            {
+                SqliteConnection.ClearAllPools();
+                File.Delete(copyPath);
+            }
+        });
+    }
+
+    private static async Task<long> CountLocalState(string dbPath)
+    {
+        await using var connection = new SqliteConnection($"Data Source={dbPath};Pooling=false");
+        await connection.OpenAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM LocalState";
+        return (long)(await command.ExecuteScalarAsync())!;
     }
 
     private static async Task<Guid[]> SnapshotIds(IServiceProvider services)
