@@ -8,7 +8,7 @@ on:
       ref:
         description: Branch to build the docs from
         required: true
-        default: claude/fw-lite-lexbox-docs-0e3415
+        default: claude/docs-site-preview
 
 permissions:
   contents: read
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./docs
+        working-directory: ./docs/site
     env:
       DOCS_URL: https://myieye.github.io
       DOCS_BASE_URL: /languageforge-lexbox/
@@ -30,17 +30,17 @@ jobs:
           persist-credentials: false
       - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
-          package_json_file: 'docs/package.json'
+          package_json_file: 'docs/site/package.json'
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: './docs/package.json'
+          node-version-file: './docs/site/package.json'
           cache: 'pnpm'
-          cache-dependency-path: './docs/pnpm-lock.yaml'
+          cache-dependency-path: './docs/site/pnpm-lock.yaml'
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: docs/build
+          path: docs/site/build
 
   deploy:
     name: Deploy to GitHub Pages
