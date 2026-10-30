@@ -81,14 +81,27 @@ public class CurrentProjectService(
     }
 
     /// <summary>
-    /// Setup the project context for reading or writing <see cref="ProjectData"/> only. Runs the EF migrations but not the
-    /// model version replay, which can take minutes, so nothing else may use the db in this context.
+    /// Setup the project context for reading or writing <see cref="ProjectData"/> only, and run <paramref name="exec"/> in it.
+    /// Runs the EF migrations but not the model version replay, which can take minutes, so <paramref name="exec"/> may not use
+    /// anything else in the db.
     /// </summary>
-    public async ValueTask<ProjectData> SetupProjectDataContext(CrdtProject project)
+    /// <returns>false without running <paramref name="exec"/> while the replay runs, since it holds the db's write lock</returns>
+    public async Task<bool> TryExecOnProjectData(CrdtProject project, Func<Task> exec)
     {
         SetProject(project);
         await MigrateSchema();
-        return await RefreshProjectData();
+        var replayLock = ReplayLock(project);
+        if (!await replayLock.WaitAsync(0)) return false;
+        try
+        {
+            await RefreshProjectData();
+            await exec();
+            return true;
+        }
+        finally
+        {
+            replayLock.Release();
+        }
     }
 
     private void SetProject(CrdtProject project)
@@ -110,12 +123,8 @@ public class CurrentProjectService(
 
     private static readonly ConcurrentDictionary<string, Lazy<Task>> SchemaMigrationTasks = [];
     private static readonly ConcurrentDictionary<string, Lazy<Task>> MigrationTasks = [];
-
-    /// <returns>true while the project's db is fully migrating, which holds its write lock during the model version replay</returns>
-    public static bool IsMigrating(CrdtProject project)
-    {
-        return MigrationTasks.TryGetValue(project.DbPath, out var task) && task.IsValueCreated && !task.Value.IsCompleted;
-    }
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> ReplayLocks = [];
+    private static SemaphoreSlim ReplayLock(CrdtProject project) => ReplayLocks.GetOrAdd(project.DbPath, _ => new SemaphoreSlim(1, 1));
 
     private Task MigrateSchema()
     {
@@ -147,6 +156,8 @@ public class CurrentProjectService(
         async Task Execute()
         {
             await MigrateSchema();
+            var replayLock = ReplayLock(Project);
+            await replayLock.WaitAsync();
             try
             {
                 await using var dbContext = await DbContextFactory.CreateDbContextAsync();
@@ -162,6 +173,10 @@ public class CurrentProjectService(
             {
                 logger.LogError(e, "Failed to migrate database for project '{Project}'", Project.Name);
                 throw;
+            }
+            finally
+            {
+                replayLock.Release();
             }
         }
 
