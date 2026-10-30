@@ -70,9 +70,15 @@ public class LocalMediaAdapter(IMemoryCache memoryCache, ILogger<LocalMediaAdapt
         if (!File.Exists(path)) return MediaUri.NotFound;
         var uri = PathToUri(path);
         //this may be a new file, so we need to add it to the cache
-        var paths = path.StartsWith(cache.LangProject.LinkedFilesRootDir) ? Paths(cache) : ExternalPaths(cache);
+        var paths = IsInLinkedFiles(path, cache) ? Paths(cache) : ExternalPaths(cache);
         paths[uri.FileId] = path;
         return uri;
+    }
+
+    private static bool IsInLinkedFiles(string path, LcmCache cache)
+    {
+        var relative = Path.GetRelativePath(cache.LangProject.LinkedFilesRootDir, path);
+        return !Path.IsPathRooted(relative) && !relative.StartsWith("..");
     }
 
     private static MediaUri PathToUri(string path)
