@@ -48,6 +48,7 @@ backend/FwLite/LcmDebugger/logs/
 AGENTS.local.md
 .claude/scheduled_tasks.lock
 .claude/agent-memory-local/
+.claude/shots/
 screenshots/
 
 # nx (affected detection only): cache/workspace-data and the root node_modules
