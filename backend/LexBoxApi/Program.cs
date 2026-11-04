@@ -17,6 +17,7 @@ using LexData;
 using LexSyncReverseProxy;
 using LexSyncReverseProxy.Auth;
 using LfClassicData;
+using MiniLcm.Push;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
@@ -70,18 +71,16 @@ builder.Services.AddHealthChecks();
 builder.Services.AddSingleton<IDeveloperPageExceptionFilter, AddExceptionFeatureDevExceptionFilter>();
 builder.Services.AddExceptionHandler((options) =>
 {
-    options.StatusCodeSelector = exception =>
-    {
-        if (exception is UnauthorizedAccessException)
-            return StatusCodes.Status401Unauthorized;
-        return StatusCodes.Status500InternalServerError;
-    };
+    options.StatusCodeSelector = ExceptionStatusCodes.Select;
 });
 builder.Services.AddProblemDetails(o =>
 {
     o.CustomizeProblemDetails = context =>
     {
         var exceptionHandlerFeature = context.HttpContext.Features.Get<IExceptionHandlerFeature>();
+        // the exception handler leaves detail empty; FwHeadless's message is meant for the caller
+        if (exceptionHandlerFeature?.Error is FwHeadlessException fwHeadlessException)
+            context.ProblemDetails.Detail = fwHeadlessException.Message;
         if (exceptionHandlerFeature?.Error is not IExceptionWithCode exceptionWithCode) return;
         context.ProblemDetails.Extensions["app-error-code"] = exceptionWithCode.Code;
     };
@@ -145,7 +144,10 @@ app.Use(async (context, next) =>
     await next();
 });
 app.UseStatusCodePages();
-if (!app.Environment.IsDevelopment())
+// Defaults to on everywhere except Development. Turning it on in Development (e.g. the CI cluster) lets tests see
+// production-shaped errors: WebApplication still adds the developer exception page, but as the outermost middleware,
+// so this handler catches exceptions first and the developer page never sees them.
+if (app.Configuration.GetValue("ErrorHandling:UseProductionExceptionHandler", !app.Environment.IsDevelopment()))
     app.UseExceptionHandler();
 app.UseHealthChecks("/api/healthz");
 // Configure the HTTP request pipeline.
@@ -170,7 +172,7 @@ app.MapTus("/api/tus-test",
 app.MapTus($"/api/project/upload-zip/{{{ProxyConstants.HgProjectCodeRouteKey}}}",
         async context => await context.RequestServices.GetRequiredService<TusService>().GetResetZipUploadConfig())
     .RequireAuthorization(new AdminRequiredAttribute());
-app.MapHub<CrdtProjectChangeHub>("/api/hub/crdt/project-changes")
+app.MapHub<CrdtProjectChangeHub>("/" + IProjectChangeHubServer.Path)
     .RequireAuthorization(new RequireScopeAttribute(LexboxAuthScope.LexboxApi, LexboxAuthScope.SendAndReceive));
 // /api routes should never make it to this point, they should be handled by the controllers, so return 404
 app.Map("/api/{**catch-all}", () => Results.NotFound()).AllowAnonymous();
@@ -179,6 +181,7 @@ app.Map("/api/{**catch-all}", () => Results.NotFound()).AllowAnonymous();
 app.Map("/login", Results.Unauthorized).AllowAnonymous();
 
 app.MapFileUploadProxy();
+app.MapLexiconProxy();
 app.MapSyncProxy(AuthKernel.DefaultScheme);
 
 if (generatingOpenApiSchema)
