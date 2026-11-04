@@ -120,6 +120,21 @@ tasks:
     cmds:
       - node download-fw-headless-project.js "{{.id}}" "{{.code}}" "{{.context}}" "{{.namespace}}"
 
+  dump-crdt-commits:
+    aliases: [dump-commits, dc]
+    desc: >
+      Dump a project's server-side CRDT commits into a ChangesResult<Commit> JSON (under _downloads/)
+      that LcmDebugger's FakeSyncSource.FromJsonFile can replay. Use to reproduce a server-only sync
+      failure locally. Example:
+      `task dump-crdt-commits id="<project id>" code="<project code>" context="aws-prod" namespace="languagedepot"`.
+    requires:
+      vars: [id, code]
+    vars:
+      context: '{{.context | default "docker-desktop"}}'
+      namespace: '{{.namespace | default "languagedepot"}}'
+    cmds:
+      - node dump-crdt-commits.js "{{.id}}" "{{.code}}" "{{.context}}" "{{.namespace}}"
+
   diff-staging:
     dir: ./staging
     cmds:
