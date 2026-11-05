@@ -130,9 +130,9 @@
 {#snippet linkEnd(entry: IEntry | undefined, snapshotHeadwords: IMultiString | undefined, snapshotHomographNumber: number | undefined)}
   {@const liveEntry = live(entry)}
   <!-- A deleted entry's last state beats the link's copy, which dates from when the link was made -->
-  {@const deletedHeadword = entry
-    ? writingSystemService.viewBestHeadword(entry, viewService.currentView)
-    : snapshotHeadwords && writingSystemService.viewBestHeadwordOf(snapshotHeadwords, viewService.currentView)}
+  {@const deletedHeadword =
+    (entry && writingSystemService.viewBestHeadword(entry, viewService.currentView)) ||
+    (snapshotHeadwords && writingSystemService.viewBestHeadwordOf(snapshotHeadwords, viewService.currentView))}
   {@const deletedHomographNumber = entry ? entry.homographNumber : (snapshotHomographNumber ?? 0)}
   <span class="text-lg font-semibold text-foreground">
     {#if liveEntry}
