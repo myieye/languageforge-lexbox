@@ -721,6 +721,7 @@ msgstr ""
 #: src/lib/troubleshoot/TroubleshootDialog.svelte
 #: src/lib/troubleshoot/TroubleshootDialog.svelte
 #: src/lib/views/custom/CustomViewForm.svelte
+#: src/project/sync/UploadToLexboxDialog.svelte
 msgid "Cancel"
 msgstr "취소"
 
@@ -759,6 +760,10 @@ msgstr "FieldWorks Lite의 새 버전에 필드가 추가되어 변경 사항이
 #: src/project/sync/FwClassicSyncView.svelte
 msgid "Changing the same field twice, for example, can result in two commits but only one change that needs to be applied to FieldWorks Classic. Commits can also consist of multiple changes."
 msgstr "예를 들어 동일한 필드를 두 번 변경하면 두 개의 커밋이 발생하지만 FieldWorks Classic에 적용해야 하는 변경 사항은 하나만 발생할 수 있습니다. 커밋은 여러 변경 사항으로 구성될 수도 있습니다."
+
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Checking {0}..."
+msgstr ""
 
 #. Relevant view: Classic
 #. Lite view equivalent: "Checking for similar words…"
@@ -1040,6 +1045,10 @@ msgstr "항목 만들기"
 #: src/home/HomeView.svelte
 msgid "Create Example Project"
 msgstr "예제 프로젝트 만들기"
+
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Create the project on Lexbox"
+msgstr ""
 
 #. Submit button in the create custom view dialog.
 #: src/lib/views/custom/CreateCustomViewDialog.svelte
@@ -2307,6 +2316,10 @@ msgstr "로컬 및 원격"
 msgid "Local only"
 msgstr "로컬 전용"
 
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Log in to Lexbox first."
+msgstr ""
+
 #. Button label in the sync panel when the user is not logged in. Initiates authentication with the server.
 #: src/project/sync/FwClassicSyncView.svelte
 #: src/project/sync/FwLiteSyncView.svelte
@@ -2810,6 +2823,7 @@ msgstr ""
 
 #. Status text in the project sidebar indicating the user is not authenticated with the sync server.
 #: src/project/ProjectSidebar.svelte
+#: src/project/sync/UploadToLexboxDialog.svelte
 msgid "Not logged in"
 msgstr "로그인하지 않음"
 
@@ -3221,6 +3235,10 @@ msgstr "프로젝트 {0} {1}에서 찾을 수 없음"
 #: src/home/Server.svelte
 msgid "Project {0} on {1} is not yet set up for FieldWorks Lite"
 msgstr "{1} 의 프로젝트 {0} 는 아직 FieldWorks Lite용으로 설정되지 않았습니다."
+
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Project ID"
+msgstr ""
 
 #: src/lib/plugins/studio/panels/NewPluginAiPanel.svelte
 msgid "Prompt options"
@@ -3752,6 +3770,10 @@ msgstr ""
 msgid "Sentence"
 msgstr "문장"
 
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Server"
+msgstr ""
+
 #. Activity-log line. {0} = field label; used when the new value is an audio recording (an audio marker chip follows instead of a text value). Compare "Set {0} to", which shows a text value chip.
 #: src/lib/activity/ChangeSummary.svelte
 msgid "Set {0}"
@@ -4105,6 +4127,10 @@ msgstr "FieldWorks Lite 커밋 수가 동기화 결과 메시지에 표시되는
 msgid "The plugin “{0}” is asking to make this change to your dictionary:"
 msgstr ""
 
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "The project exists on {0}. Ready to upload."
+msgstr ""
+
 #: src/lib/plugins/studio/panels/ChangeAiPanel.svelte
 msgid "The prompt includes the API guide, this project's setup and this plugin's current code. Attach the file in any AI chat."
 msgstr ""
@@ -4125,6 +4151,10 @@ msgstr ""
 
 #: src/lib/plugins/studio/InternetPromptDialog.svelte
 msgid "The version before it worked offline. Online, a plugin can send this project's data to any website."
+msgstr ""
+
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "There is no project with this ID on {0} yet. Create it, then come back here and upload."
 msgstr ""
 
 #. Error message when changes are pending upload
@@ -4510,6 +4540,10 @@ msgstr ""
 msgid "Updates"
 msgstr "업데이트"
 
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Upload"
+msgstr ""
+
 #: src/lib/plugins/studio/panels/SourcePanel.svelte
 msgid "Upload file"
 msgstr ""
@@ -4517,6 +4551,14 @@ msgstr ""
 #: src/lib/media-manager/MediaManagerView.svelte
 msgid "Upload pending"
 msgstr "업로드 대기 중"
+
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Upload to Lexbox"
+msgstr ""
+
+#: src/project/sync/FwLiteSyncView.svelte
+msgid "Upload to Lexbox..."
+msgstr ""
 
 #: src/lib/media-manager/MediaFileDetail.svelte
 msgid "Uploaded"
