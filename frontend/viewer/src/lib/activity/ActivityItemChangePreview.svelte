@@ -129,12 +129,16 @@
 
 {#snippet linkEnd(entry: IEntry | undefined, snapshotHeadwords: IMultiString | undefined, snapshotHomographNumber: number | undefined)}
   {@const liveEntry = live(entry)}
-  {@const snapshotHeadword = snapshotHeadwords && writingSystemService.viewBestHeadwordOf(snapshotHeadwords, viewService.currentView)}
+  <!-- A deleted entry's last state beats the link's copy, which dates from when the link was made -->
+  {@const deletedHeadword = entry
+    ? writingSystemService.viewBestHeadword(entry, viewService.currentView)
+    : snapshotHeadwords && writingSystemService.viewBestHeadwordOf(snapshotHeadwords, viewService.currentView)}
+  {@const deletedHomographNumber = entry ? entry.homographNumber : (snapshotHomographNumber ?? 0)}
   <span class="text-lg font-semibold text-foreground">
     {#if liveEntry}
       <Headwords class="font-semibold" entry={liveEntry} placeholder={$t`Untitled`} />
     {:else}
-      <span class="text-muted-foreground">{#if snapshotHeadword}{snapshotHeadword}<HomographNumber homographNumber={snapshotHomographNumber ?? 0} />{:else}{$t`Untitled`}{/if} <span class="text-base font-normal">{$t`(deleted)`}</span></span>
+      <span class="text-muted-foreground">{#if deletedHeadword}{deletedHeadword}<HomographNumber homographNumber={deletedHomographNumber} />{:else}{$t`Untitled`}{/if} <span class="text-base font-normal">{$t`(deleted)`}</span></span>
     {/if}
   </span>
 {/snippet}
