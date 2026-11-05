@@ -1,3 +1,4 @@
+using MiniLcm.Tests.Helpers;
 using MiniLcm.Tests.AutoFakerHelpers;
 
 namespace MiniLcm.Tests;
@@ -23,6 +24,7 @@ public abstract class CreateEntryTestsBase : MiniLcmTestBase
             .For(e => e.Components).Exclude(e => e.Id)
             .For(e => e.ComplexForms).Exclude(e => e.Id)
             .Excluding(e => e.HomographNumber) // FwData auto-assigns to fix broken CRDT numbering
+            .ExcludingLinkHomographNumbers()
             .Excluding(member => member.Name == nameof(IOrderable.Order)));
     }
 
@@ -41,9 +43,9 @@ public abstract class CreateEntryTestsBase : MiniLcmTestBase
                 {
                     Id = Guid.NewGuid(),
                     ComponentEntryId = component.Id,
-                    ComponentHeadword = component.Headword(),
+                    ComponentHeadword = component.Headwords(),
                     ComplexFormEntryId = entryId,
-                    ComplexFormHeadword = "test"
+                    ComplexFormHeadword = { { "en", "test" } }
                 }
             ]
         });
@@ -67,9 +69,9 @@ public abstract class CreateEntryTestsBase : MiniLcmTestBase
                 {
                     Id = Guid.NewGuid(),
                     ComponentEntryId = entryId,
-                    ComponentHeadword = "test",
+                    ComponentHeadword = { { "en", "test" } },
                     ComplexFormEntryId = complexForm.Id,
-                    ComplexFormHeadword = "test complex form"
+                    ComplexFormHeadword = { { "en", "test complex form" } }
                 }
             ]
         });
@@ -98,10 +100,10 @@ public abstract class CreateEntryTestsBase : MiniLcmTestBase
                 {
                     Id = Guid.NewGuid(),
                     ComponentEntryId = component.Id,
-                    ComponentHeadword = component.Headword(),
+                    ComponentHeadword = component.Headwords(),
                     ComponentSenseId = componentSenseId,
                     ComplexFormEntryId = complexFormEntryId,
-                    ComplexFormHeadword = "test"
+                    ComplexFormHeadword = { { "en", "test" } }
                 }
             ]
         });

@@ -181,13 +181,17 @@ public static class LcmCrdtKernel
                     .Entity<ComplexFormComponent>().Association(c => EntryQueryHelpers.QueryComponentEntry(c), c => c.ComponentEntryId, e => e!.Id)
                     .Entity<ComplexFormComponent>().Association(c => EntryQueryHelpers.QueryComponentSense(c), c => c.ComponentSenseId, s => s!.Id)
                     .Entity<ComplexFormComponent>().Association(c => EntryQueryHelpers.QueryComplexFormEntry(c), c => c.ComplexFormEntryId, e => e!.Id)
-                    .Entity<ComplexFormComponent>().Property(c => c.ComponentHeadword).IsExpression(c => EntryQueryHelpers.QueryComponentEntry(c)!.QueryHeadwordWithTokens(EntryQueryHelpers.DefaultWritingSystem(WritingSystemType.Vernacular)), isColumn: true, alias: "componentHeadword")
-                    .Entity<ComplexFormComponent>().Property(c => c.ComplexFormHeadword).IsExpression(c => EntryQueryHelpers.QueryComplexFormEntry(c)!.QueryHeadwordWithTokens(EntryQueryHelpers.DefaultWritingSystem(WritingSystemType.Vernacular)), isColumn: true, alias: "complexFormHeadword")
+                    .Entity<ComplexFormComponent>().Property(c => c.ComponentHeadword).IsExpression(c => EntryQueryHelpers.QueryComponentEntry(c)!.QueryHeadwords(), isColumn: true, alias: "componentHeadword")
+                    .Entity<ComplexFormComponent>().Property(c => c.ComponentHomographNumber).IsExpression(c => (int?)EntryQueryHelpers.QueryComponentEntry(c)!.HomographNumber ?? 0, isColumn: true, alias: "componentHomographNumber")
+                    .Entity<ComplexFormComponent>().Property(c => c.ComplexFormHeadword).IsExpression(c => EntryQueryHelpers.QueryComplexFormEntry(c)!.QueryHeadwords(), isColumn: true, alias: "complexFormHeadword")
+                    .Entity<ComplexFormComponent>().Property(c => c.ComplexFormHomographNumber).IsExpression(c => (int?)EntryQueryHelpers.QueryComplexFormEntry(c)!.HomographNumber ?? 0, isColumn: true, alias: "complexFormHomographNumber")
                     .Entity<RichString>().Member(r => r.GetPlainText()).IsExpression(r => Json.GetPlainText(r))
                     .Entity<Guid>().Member(g => g.ToString()).IsExpression(g => Json.ToString(g))
                     .Build();
                 mappingSchema.SetConvertExpression((WritingSystemId id) =>
                     new DataParameter { Value = id.Code, DataType = DataType.Text });
+                // computed columns (like EntryQueryHelpers.QueryHeadwords) don't go through EF's value converters
+                mappingSchema.SetConvertExpression((string json) => MultiString.FromJson(json));
                 optionsBuilder.AddCustomOptions(options => options.UseSQLite());
 
                 // Register read-relevant interceptors for LinqToDB
@@ -358,6 +362,9 @@ public static class LcmCrdtKernel
                 const string componentSenseId = "ComponentSenseId";
                 builder.ToTable("ComplexFormComponents");
                 builder.Property(c => c.ComponentSenseId).HasColumnName(componentSenseId);
+                // were plain-text columns; keeping the old column definition avoids a table rebuild in the migration
+                builder.Property(c => c.ComplexFormHeadword).HasColumnType("TEXT").IsRequired(false);
+                builder.Property(c => c.ComponentHeadword).HasColumnType("TEXT").IsRequired(false);
                 //these indexes are used to ensure that we don't create duplicate complex form components
                 //we need the filter otherwise 2 components which are the same and have a null sense id can be created because 2 rows with the same null are not considered duplicates
                 builder.HasIndex(component => new

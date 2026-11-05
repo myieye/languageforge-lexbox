@@ -1714,8 +1714,13 @@ components:
           type: string
           format: uuid
         complexFormHeadword:
-          type: string
-          nullable: true
+          $ref: '#/components/schemas/MultiString'
+        complexFormHomographNumber:
+          pattern: '^-?(?:0|[1-9]\d*)$'
+          anyOf:
+            - type: integer
+            - type: string
+          format: int32
         componentEntryId:
           type: string
           format: uuid
@@ -1724,8 +1729,13 @@ components:
           format: uuid
           nullable: true
         componentHeadword:
-          type: string
-          nullable: true
+          $ref: '#/components/schemas/MultiString'
+        componentHomographNumber:
+          pattern: '^-?(?:0|[1-9]\d*)$'
+          anyOf:
+            - type: integer
+            - type: string
+          format: int32
     ComplexFormType:
       required:
         - name

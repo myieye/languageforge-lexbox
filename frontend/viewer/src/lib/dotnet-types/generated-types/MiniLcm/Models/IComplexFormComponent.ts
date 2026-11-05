@@ -4,14 +4,17 @@
 //     the code is regenerated.
 
 import type {IObjectWithId} from './IObjectWithId';
+import type {IMultiString} from '$lib/dotnet-types/i-multi-string';
 
 export interface IComplexFormComponent extends IObjectWithId
 {
 	deletedAt?: string;
 	complexFormEntryId: string;
-	complexFormHeadword?: string;
+	complexFormHeadword: IMultiString;
+	complexFormHomographNumber: number;
 	componentEntryId: string;
 	componentSenseId?: string;
-	componentHeadword?: string;
+	componentHeadword: IMultiString;
+	componentHomographNumber: number;
 }
 /* eslint-enable */

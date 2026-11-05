@@ -322,10 +322,16 @@
         "Order": 0,
         "DeletedAt": null,
         "ComplexFormEntryId": "82cf7254-3a4f-497a-9e15-7d93fc830356",
-        "ComplexFormHeadword": "\uD83C\uDF4C",
+        "ComplexFormHeadword": {
+          "default": "\uD83C\uDF4C"
+        },
+        "ComplexFormHomographNumber": 0,
         "ComponentEntryId": "e5dbeb7f-4df4-4fc7-82c2-a1e14f49365a",
         "ComponentSenseId": null,
-        "ComponentHeadword": "Pine apple"
+        "ComponentHeadword": {
+          "default": "Pine apple"
+        },
+        "ComponentHomographNumber": 0
       }
     }
   },
@@ -396,10 +402,16 @@
         "Order": 0,
         "DeletedAt": null,
         "ComplexFormEntryId": "8f403ae3-9859-4a74-a52d-3c0736bb5917",
-        "ComplexFormHeadword": "Pineapple",
+        "ComplexFormHeadword": {
+          "default": "Pineapple"
+        },
+        "ComplexFormHomographNumber": 0,
         "ComponentEntryId": "c06e7e0e-7822-41fa-9347-00f8115d5791",
         "ComponentSenseId": null,
-        "ComponentHeadword": "Pine"
+        "ComponentHeadword": {
+          "default": "Pine"
+        },
+        "ComponentHomographNumber": 0
       }
     }
   },
@@ -9301,6 +9313,158 @@
         "IcuCollationRules": null,
         "SystemCollationLocale": null,
         "Order": 0.14806393624996905
+      }
+    }
+  },
+  {
+    "Input": {
+      "$type": "MiniLcmCrdtAdapter",
+      "Obj": {
+        "$type": "ComplexFormComponent",
+        "Id": "29ff092d-1e5a-4bc9-95b9-22be9d9143c5",
+        "MaybeId": "29ff092d-1e5a-4bc9-95b9-22be9d9143c5",
+        "Order": 0,
+        "DeletedAt": null,
+        "ComplexFormEntryId": "82cf7254-3a4f-497a-9e15-7d93fc830356",
+        "ComplexFormHeadword": "\uD83C\uDF4C",
+        "ComponentEntryId": "e5dbeb7f-4df4-4fc7-82c2-a1e14f49365a",
+        "ComponentSenseId": null,
+        "ComponentHeadword": "Pine apple"
+      }
+    },
+    "Output": {
+      "$type": "MiniLcmCrdtAdapter",
+      "Obj": {
+        "$type": "ComplexFormComponent",
+        "Id": "29ff092d-1e5a-4bc9-95b9-22be9d9143c5",
+        "MaybeId": "29ff092d-1e5a-4bc9-95b9-22be9d9143c5",
+        "Order": 0,
+        "DeletedAt": null,
+        "ComplexFormEntryId": "82cf7254-3a4f-497a-9e15-7d93fc830356",
+        "ComplexFormHeadword": {
+          "default": "\uD83C\uDF4C"
+        },
+        "ComplexFormHomographNumber": 0,
+        "ComponentEntryId": "e5dbeb7f-4df4-4fc7-82c2-a1e14f49365a",
+        "ComponentSenseId": null,
+        "ComponentHeadword": {
+          "default": "Pine apple"
+        },
+        "ComponentHomographNumber": 0
+      }
+    }
+  },
+  {
+    "Input": {
+      "$type": "MiniLcmCrdtAdapter",
+      "Obj": {
+        "$type": "ComplexFormComponent",
+        "Id": "ac7cd20f-3d9e-ed6b-ce38-ba17d1cce9d2",
+        "MaybeId": "ac7cd20f-3d9e-ed6b-ce38-ba17d1cce9d2",
+        "Order": 0,
+        "DeletedAt": null,
+        "ComplexFormEntryId": "acb161b4-07a7-b4b8-9f94-d2e6dc2e98ec",
+        "ComplexFormHeadword": "Swedish Krona",
+        "ComponentEntryId": "262788b5-18fc-5cac-83ff-79e33b7db28d",
+        "ComponentSenseId": "fc5773e3-d82e-5475-22e2-b4672dfbd7ae",
+        "ComponentHeadword": "Soft"
+      }
+    },
+    "Output": {
+      "$type": "MiniLcmCrdtAdapter",
+      "Obj": {
+        "$type": "ComplexFormComponent",
+        "Id": "ac7cd20f-3d9e-ed6b-ce38-ba17d1cce9d2",
+        "MaybeId": "ac7cd20f-3d9e-ed6b-ce38-ba17d1cce9d2",
+        "Order": 0,
+        "DeletedAt": null,
+        "ComplexFormEntryId": "acb161b4-07a7-b4b8-9f94-d2e6dc2e98ec",
+        "ComplexFormHeadword": {
+          "default": "Swedish Krona"
+        },
+        "ComplexFormHomographNumber": 0,
+        "ComponentEntryId": "262788b5-18fc-5cac-83ff-79e33b7db28d",
+        "ComponentSenseId": "fc5773e3-d82e-5475-22e2-b4672dfbd7ae",
+        "ComponentHeadword": {
+          "default": "Soft"
+        },
+        "ComponentHomographNumber": 0
+      }
+    }
+  },
+  {
+    "Input": {
+      "$type": "MiniLcmCrdtAdapter",
+      "Obj": {
+        "$type": "ComplexFormComponent",
+        "Id": "925daf31-61de-4330-8b90-23af0f5967f7",
+        "MaybeId": "925daf31-61de-4330-8b90-23af0f5967f7",
+        "Order": 0,
+        "DeletedAt": null,
+        "ComplexFormEntryId": "8f403ae3-9859-4a74-a52d-3c0736bb5917",
+        "ComplexFormHeadword": "Pineapple",
+        "ComponentEntryId": "c06e7e0e-7822-41fa-9347-00f8115d5791",
+        "ComponentSenseId": null,
+        "ComponentHeadword": "Pine"
+      }
+    },
+    "Output": {
+      "$type": "MiniLcmCrdtAdapter",
+      "Obj": {
+        "$type": "ComplexFormComponent",
+        "Id": "925daf31-61de-4330-8b90-23af0f5967f7",
+        "MaybeId": "925daf31-61de-4330-8b90-23af0f5967f7",
+        "Order": 0,
+        "DeletedAt": null,
+        "ComplexFormEntryId": "8f403ae3-9859-4a74-a52d-3c0736bb5917",
+        "ComplexFormHeadword": {
+          "default": "Pineapple"
+        },
+        "ComplexFormHomographNumber": 0,
+        "ComponentEntryId": "c06e7e0e-7822-41fa-9347-00f8115d5791",
+        "ComponentSenseId": null,
+        "ComponentHeadword": {
+          "default": "Pine"
+        },
+        "ComponentHomographNumber": 0
+      }
+    }
+  },
+  {
+    "Input": {
+      "$type": "MiniLcmCrdtAdapter",
+      "Obj": {
+        "$type": "ComplexFormComponent",
+        "Id": "e5f725a5-fc2b-ff4b-98d4-21b30360028b",
+        "MaybeId": "e5f725a5-fc2b-ff4b-98d4-21b30360028b",
+        "Order": 0,
+        "DeletedAt": null,
+        "ComplexFormEntryId": "566b22cd-12c2-eeca-3252-5e853a919e77",
+        "ComplexFormHeadword": "copying",
+        "ComponentEntryId": "2378252c-6c0c-c286-25c7-cc9f037d5cc8",
+        "ComponentSenseId": "63356fab-b0de-1634-098f-a495295f8ae0",
+        "ComponentHeadword": "Kip"
+      }
+    },
+    "Output": {
+      "$type": "MiniLcmCrdtAdapter",
+      "Obj": {
+        "$type": "ComplexFormComponent",
+        "Id": "e5f725a5-fc2b-ff4b-98d4-21b30360028b",
+        "MaybeId": "e5f725a5-fc2b-ff4b-98d4-21b30360028b",
+        "Order": 0,
+        "DeletedAt": null,
+        "ComplexFormEntryId": "566b22cd-12c2-eeca-3252-5e853a919e77",
+        "ComplexFormHeadword": {
+          "default": "copying"
+        },
+        "ComplexFormHomographNumber": 0,
+        "ComponentEntryId": "2378252c-6c0c-c286-25c7-cc9f037d5cc8",
+        "ComponentSenseId": "63356fab-b0de-1634-098f-a495295f8ae0",
+        "ComponentHeadword": {
+          "default": "Kip"
+        },
+        "ComponentHomographNumber": 0
       }
     }
   }

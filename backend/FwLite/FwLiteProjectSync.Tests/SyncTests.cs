@@ -50,9 +50,9 @@ public class SyncTests : IClassFixture<SyncFixture>, IAsyncLifetime
                 {
                     Id = Guid.NewGuid(),
                     ComplexFormEntryId = _complexEntryId,
-                    ComplexFormHeadword = "Pineapple",
+                    ComplexFormHeadword = { { "en", "Pineapple" } },
                     ComponentEntryId = _testEntry.Id,
-                    ComponentHeadword = "Apple"
+                    ComponentHeadword = { { "en", "Apple" } }
                 }
             ]
         });
@@ -591,9 +591,9 @@ public class SyncTests : IClassFixture<SyncFixture>, IAsyncLifetime
                 new ComplexFormComponent()
                 {
                     ComponentEntryId = _testEntry.Id,
-                    ComponentHeadword = "apple",
+                    ComponentHeadword = { { "en", "apple" } },
                     ComplexFormEntryId = newEntryId,
-                    ComplexFormHeadword = "pineapple"
+                    ComplexFormHeadword = { { "en", "pineapple" } }
                 }
             ]
         });

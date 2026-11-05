@@ -48,8 +48,8 @@ public abstract class ComplexFormComponentTestsBase : MiniLcmTestBase
         component.ComplexFormEntryId.Should().Be(_complexFormEntryId);
         component.ComponentEntryId.Should().Be(_componentEntryId);
         component.ComponentSenseId.Should().BeNull();
-        component.ComplexFormHeadword.Should().Be("complex form");
-        component.ComponentHeadword.Should().Be("component");
+        component.ComplexFormHeadword.Values.Should().BeEquivalentTo(En("complex form"));
+        component.ComponentHeadword.Values.Should().BeEquivalentTo(En("component"));
     }
 
     [Fact]
@@ -65,8 +65,8 @@ public abstract class ComplexFormComponentTestsBase : MiniLcmTestBase
         await Api.CreateComplexFormComponent(ComplexFormComponent.FromEntries(_complexFormEntry, suffix));
 
         var component = (await Api.GetEntry(_complexFormEntryId))!.Components.Should().ContainSingle().Subject;
-        component.ComponentHeadword.Should().Be("-s");
-        component.ComplexFormHeadword.Should().Be("complex form");
+        component.ComponentHeadword.Values.Should().BeEquivalentTo(En("-s"));
+        component.ComplexFormHeadword.Values.Should().BeEquivalentTo(En("complex form"));
 
         var beforeSuffix = suffix.Copy();
         suffix.LexemeForm["en"] = "es";
@@ -79,9 +79,99 @@ public abstract class ComplexFormComponentTestsBase : MiniLcmTestBase
 
         // headwords are recomputed from the referenced entries on read (with morph tokens), not stored on the component
         var updated = (await Api.GetEntry(_complexFormEntryId))!.Components.Should().ContainSingle().Subject;
-        updated.ComponentHeadword.Should().Be("-es");
-        updated.ComplexFormHeadword.Should().Be("renamed complex form");
+        updated.ComponentHeadword.Values.Should().BeEquivalentTo(En("-es"));
+        updated.ComplexFormHeadword.Values.Should().BeEquivalentTo(En("renamed complex form"));
     }
+
+    [Fact]
+    public async Task ComplexFormComponentHeadwords_CarryEveryVernacularWritingSystem()
+    {
+        await Api.CreateWritingSystem(new WritingSystem()
+        {
+            Id = Guid.NewGuid(),
+            Type = WritingSystemType.Vernacular,
+            WsId = "es",
+            Name = "Spanish",
+            Abbreviation = "es",
+            Font = "Arial",
+        });
+        var bilingual = await Api.CreateEntry(new()
+        {
+            Id = Guid.NewGuid(),
+            LexemeForm = { { "en", "lexeme" }, { "es", "lexema" } },
+            CitationForm = { { "es", "citacion" } },
+        });
+
+        var created = await Api.CreateComplexFormComponent(ComplexFormComponent.FromEntries(_complexFormEntry, bilingual));
+        created.ComponentHeadword.Values.Should().BeEquivalentTo(new Dictionary<WritingSystemId, string>
+        {
+            ["en"] = "lexeme",
+            ["es"] = "citacion",
+        });
+
+        var component = (await Api.GetEntry(_complexFormEntryId))!.Components.Should().ContainSingle().Subject;
+        component.ComponentHeadword.Values.Should().BeEquivalentTo(created.ComponentHeadword.Values);
+        component.ComplexFormHeadword.Values.Should().BeEquivalentTo(En("complex form"));
+    }
+
+    [Fact]
+    public async Task ComplexFormComponentHeadwords_CarryTheReferencedEntriesHomographNumbers()
+    {
+        var bank1 = await Api.CreateEntry(new() { Id = Guid.NewGuid(), LexemeForm = { { "en", "bank" } } });
+        var bank2 = await Api.CreateEntry(new() { Id = Guid.NewGuid(), LexemeForm = { { "en", "bank" } } });
+
+        var created = await Api.CreateComplexFormComponent(ComplexFormComponent.FromEntries(_complexFormEntry, bank2));
+        created.ComponentHeadword.Values.Should().BeEquivalentTo(En("bank"));
+        created.ComponentHomographNumber.Should().Be(2);
+        created.ComplexFormHomographNumber.Should().Be(0);
+        // bank1 is stale here (it was created as 0), so the number must come from the entry as it is now
+        var createdForBank1 = await Api.CreateComplexFormComponent(ComplexFormComponent.FromEntries(bank1, _componentEntry));
+        createdForBank1.ComplexFormHomographNumber.Should().Be(1);
+
+        var component = (await Api.GetEntry(_complexFormEntryId))!.Components.Should().ContainSingle().Subject;
+        component.ComponentHomographNumber.Should().Be(2);
+
+        var complexForm = (await Api.GetEntry(_componentEntryId))!.ComplexForms.Should().ContainSingle().Subject;
+        complexForm.ComplexFormHeadword.Values.Should().BeEquivalentTo(En("bank"));
+        complexForm.ComplexFormHomographNumber.Should().Be(1);
+        complexForm.ComponentHomographNumber.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ComplexFormComponentHeadwords_UpdateWhenAHomographIsAdded()
+    {
+        var bank1 = await Api.CreateEntry(new() { Id = Guid.NewGuid(), LexemeForm = { { "en", "bank" } } });
+        await Api.CreateComplexFormComponent(ComplexFormComponent.FromEntries(_complexFormEntry, bank1));
+        (await Api.GetEntry(_complexFormEntryId))!.Components.Should().ContainSingle()
+            .Which.ComponentHomographNumber.Should().Be(0, "a lone entry has no homographs");
+
+        await Api.CreateEntry(new() { Id = Guid.NewGuid(), LexemeForm = { { "en", "bank" } } });
+
+        (await Api.GetEntry(_complexFormEntryId))!.Components.Should().ContainSingle()
+            .Which.ComponentHomographNumber.Should().Be(1, "adding a homograph promotes the referenced entry to 1");
+    }
+
+    [Fact]
+    public async Task ComplexFormComponentHeadwords_FollowTheEntryWhenAHomographIsDeleted()
+    {
+        var bank1 = await Api.CreateEntry(new() { Id = Guid.NewGuid(), LexemeForm = { { "en", "bank" } } });
+        var bank2 = await Api.CreateEntry(new() { Id = Guid.NewGuid(), LexemeForm = { { "en", "bank" } } });
+        await Api.CreateComplexFormComponent(ComplexFormComponent.FromEntries(_complexFormEntry, bank1));
+        (await Api.GetEntry(_complexFormEntryId))!.Components.Should().ContainSingle()
+            .Which.ComponentHomographNumber.Should().Be(1);
+
+        await Api.DeleteEntry(bank2.Id);
+
+        var expected = (await Api.GetEntry(bank1.Id))!.HomographNumber;
+        expected.Should().Be(ExpectedHomographNumberAfterHomographDeleted);
+        (await Api.GetEntry(_complexFormEntryId))!.Components.Should().ContainSingle()
+            .Which.ComponentHomographNumber.Should().Be(expected);
+    }
+
+    // FwData demotes a lone remaining homograph to 0; the CRDT never renumbers existing entries
+    protected virtual int ExpectedHomographNumberAfterHomographDeleted => 0;
+
+    private static Dictionary<WritingSystemId, string> En(string headword) => new() { ["en"] = headword };
 
     [Fact]
     public async Task RemoveComplexFormComponent_Works()
@@ -157,8 +247,8 @@ public abstract class ComplexFormComponentTestsBase : MiniLcmTestBase
         component.ComplexFormEntryId.Should().Be(_complexFormEntryId);
         component.ComponentEntryId.Should().Be(_componentEntryId);
         component.ComponentSenseId.Should().Be(_componentSenseId1);
-        component.ComplexFormHeadword.Should().Be("complex form");
-        component.ComponentHeadword.Should().Be("component");
+        component.ComplexFormHeadword.Values.Should().BeEquivalentTo(En("complex form"));
+        component.ComponentHeadword.Values.Should().BeEquivalentTo(En("component"));
     }
 
     [Fact]
