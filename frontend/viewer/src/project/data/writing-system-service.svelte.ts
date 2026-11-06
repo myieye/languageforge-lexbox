@@ -167,13 +167,42 @@ export class WritingSystemService {
 
   /** {@link viewBestHeadword} plus the writing system the headword came from, so a fallback can be labelled. */
   viewBestHeadwordIn(entry: ReadonlyDeep<IEntry>, view: View, wsId?: string): {ws: IWritingSystem, value: string} | undefined {
-    const viewWs = this.viewVernacularNoAudio(view);
-    const preferred = wsId ? this.getWritingSystem(wsId, 'vernacular') : viewWs[0];
-    const candidates = [...(preferred ? [preferred] : []), ...viewWs, ...this.vernacularNoAudio];
-    return firstTruthy(candidates, ws => {
+    return firstTruthy(this.#headwordCandidates(view, wsId), ws => {
       const value = this.headword(entry, ws.wsId);
       return value ? {ws, value} : undefined;
     });
+  }
+
+  /**
+   * {@link viewBestHeadword} for headwords already computed per writing system, e.g. on a complex form link.
+   * Falls back to any value, since the keys may not be current writing systems (legacy data is keyed `default`).
+   */
+  viewBestHeadwordOf(headwords: ReadonlyDeep<IMultiString>, view: View, wsId?: string): string {
+    return firstTruthy(this.#headwordCandidates(view, wsId), ws => headwords[ws.wsId])
+      || firstTruthy(Object.values(headwords), value => value)
+      || '';
+  }
+
+  /** {@link viewBestHeadwordOf} with the homograph number as a subscript, for display only. Empty without a headword. */
+  viewBestHeadwordOfWithHomograph(headwords: ReadonlyDeep<IMultiString>, homographNumber: number, view: View): string {
+    const headword = this.viewBestHeadwordOf(headwords, view);
+    return headword && headword + homographSubscript(homographNumber);
+  }
+
+  /** The entry's headword in every text vernacular that has one, as stored on complex form links. */
+  headwords(entry: ReadonlyDeep<IEntry>): IMultiString {
+    const headwords: IMultiString = {};
+    for (const ws of this.vernacularNoAudio) {
+      const value = this.headword(entry, ws.wsId);
+      if (value) headwords[ws.wsId] = value;
+    }
+    return headwords;
+  }
+
+  #headwordCandidates(view: View, wsId?: string): IWritingSystem[] {
+    const viewWs = this.viewVernacularNoAudio(view);
+    const preferred = wsId ? this.getWritingSystem(wsId, 'vernacular') : viewWs[0];
+    return [...(preferred ? [preferred] : []), ...viewWs, ...this.vernacularNoAudio];
   }
 
   #decorated(entry: ReadonlyDeep<IEntry>, ws: string): string | undefined {

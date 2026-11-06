@@ -81,7 +81,7 @@ public class LcmCrdtDbContext(
 
     private class MultiStringDbConverter() : ValueConverter<MultiString, string>(
         mul => JsonSerializer.Serialize(mul, (JsonSerializerOptions?)null),
-        json => JsonSerializer.Deserialize<MultiString>(json, (JsonSerializerOptions?)null) ?? new());
+        json => MultiString.FromJson(json));
     private class RichStringDbConverter() : ValueConverter<RichString?, string?>(
         richString => richString == null ? null : JsonSerializer.Serialize(richString, (JsonSerializerOptions?)null),
         json => Deserialize(json))

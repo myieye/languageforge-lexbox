@@ -168,11 +168,17 @@ namespace LcmCrdt.Migrations
                     b.Property<string>("ComplexFormHeadword")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("ComplexFormHomographNumber")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid>("ComponentEntryId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ComponentHeadword")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("ComponentHomographNumber")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid?>("ComponentSenseId")
                         .HasColumnType("TEXT")

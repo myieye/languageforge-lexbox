@@ -27,6 +27,11 @@ public class MultiString: IDictionary
         Values = new MultiStringDict(values);
     }
 
+    public static MultiString FromJson(string json)
+    {
+        return JsonSerializer.Deserialize<MultiString>(json, (JsonSerializerOptions?)null) ?? new();
+    }
+
     public virtual MultiString Copy()
     {
         return new(Values);
@@ -147,6 +152,14 @@ public class MultiString: IDictionary
 
 public static class MultiStringExtensions
 {
+    /// <summary>
+    /// The first non-empty value by writing system code: stable whatever order the values were added in.
+    /// </summary>
+    public static string? FirstValueByCode(this MultiString ms)
+    {
+        return ms.Values.OrderBy(kv => kv.Key.Code).Select(kv => kv.Value).FirstOrDefault(v => !string.IsNullOrEmpty(v));
+    }
+
     public static bool SearchValue(this MultiString ms, string value)
     {
         return ms.Values.Values.Any(v => v.Contains(value));

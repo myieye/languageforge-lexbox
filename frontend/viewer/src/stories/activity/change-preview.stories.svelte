@@ -56,9 +56,11 @@
   const link: IComplexFormComponent = {
     id: 'cfc',
     complexFormEntryId: longHeadword.id,
-    complexFormHeadword: 'nyumba-ya-kale',
+    complexFormHeadword: {seh: 'nyumba-ya-kale'},
+    complexFormHomographNumber: 2,
     componentEntryId: other.id,
-    componentHeadword: 'dance',
+    componentHeadword: {seh: 'dance'},
+    componentHomographNumber: 0,
   };
 
   const secondSense: ISense = {...sense, id: 'second-sense', gloss: {en: 'dance'}, partOfSpeechId: partsOfSpeech[0].id};

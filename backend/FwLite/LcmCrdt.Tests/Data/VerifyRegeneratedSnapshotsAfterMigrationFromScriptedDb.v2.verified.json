@@ -10,9 +10,16 @@
         "MaybeId": "Guid_2",
         "Order": 1,
         "ComplexFormEntryId": "Guid_3",
-        "ComplexFormHeadword": "Orange",
+        "ComplexFormHeadword": {
+          "en": "Orange"
+        },
+        "ComplexFormHomographNumber": 0,
         "ComponentEntryId": "Guid_4",
-        "ComponentHeadword": "de"
+        "ComponentHeadword": {
+          "en": "Apple",
+          "de": "de"
+        },
+        "ComponentHomographNumber": 0
       }
     },
     "References": [

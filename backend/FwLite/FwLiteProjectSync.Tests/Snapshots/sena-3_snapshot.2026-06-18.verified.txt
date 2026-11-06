@@ -1651,10 +1651,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "47d2f97f-b376-4241-8312-620392869cfd",
-          "ComplexFormHeadword": "ubaba",
+          "ComplexFormHeadword": {
+            "default": "ubaba"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "0d587ca3-12aa-467c-8d99-8ec13f6707b1",
           "ComponentSenseId": null,
-          "ComponentHeadword": "baba"
+          "ComponentHeadword": {
+            "default": "baba"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -4349,10 +4355,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "bb81d563-d40e-4f90-bdeb-794a8d532c47",
-          "ComplexFormHeadword": "bodzi-bodzi",
+          "ComplexFormHeadword": {
+            "default": "bodzi-bodzi"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "d333f64f-d388-431f-bb2b-7dd9b7f3fe3c",
           "ComponentSenseId": null,
-          "ComponentHeadword": "bodzi"
+          "ComponentHeadword": {
+            "default": "bodzi"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -4485,10 +4497,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "bb81d563-d40e-4f90-bdeb-794a8d532c47",
-          "ComplexFormHeadword": "bodzi-bodzi",
+          "ComplexFormHeadword": {
+            "default": "bodzi-bodzi"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "d333f64f-d388-431f-bb2b-7dd9b7f3fe3c",
           "ComponentSenseId": null,
-          "ComponentHeadword": "bodzi"
+          "ComponentHeadword": {
+            "default": "bodzi"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -5538,10 +5556,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "e8aa296a-46f4-49d9-87e8-36427d36e0da",
-          "ComplexFormHeadword": "kubulukira",
+          "ComplexFormHeadword": {
+            "default": "kubulukira"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "1a4cadd7-be61-4725-ba0c-320cf823b4de",
           "ComponentSenseId": null,
-          "ComponentHeadword": "bulukira"
+          "ComponentHeadword": {
+            "default": "bulukira"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -6034,10 +6058,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "c0c59e49-3bff-4249-b5d0-c94e0d46c9c3",
-          "ComplexFormHeadword": "kubverana",
+          "ComplexFormHeadword": {
+            "default": "kubverana"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "b23c2763-86ea-4bdf-aa14-836ede9cb57e",
           "ComponentSenseId": null,
-          "ComponentHeadword": "bva"
+          "ComponentHeadword": {
+            "default": "bva"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -7673,10 +7703,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "fb8194ed-fb58-4a0e-8938-c476367dbbf4",
-          "ComplexFormHeadword": "mambwera-mbwera",
+          "ComplexFormHeadword": {
+            "default": "mambwera-mbwera"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "4cd4ae6b-f67c-478a-86c8-b2be8932d44d",
           "ComponentSenseId": null,
-          "ComponentHeadword": "bwera"
+          "ComponentHeadword": {
+            "default": "bwera"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -9382,10 +9418,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "a9475722-6f16-4a9d-ac3e-a038942e7e50",
-          "ComplexFormHeadword": "uceni",
+          "ComplexFormHeadword": {
+            "default": "uceni"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "72a67175-6d5f-4966-b5b2-f7163e776984",
           "ComponentSenseId": null,
-          "ComponentHeadword": "cen"
+          "ComponentHeadword": {
+            "default": "cen"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -12795,10 +12837,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "bb24d954-9701-4f52-b807-0c395e9d4a17",
-          "ComplexFormHeadword": "cimaso-maso",
+          "ComplexFormHeadword": {
+            "default": "cimaso-maso"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "0fadc7bf-eb1b-4e4f-b4bf-7315bcd94c19",
           "ComponentSenseId": null,
-          "ComponentHeadword": "diso"
+          "ComponentHeadword": {
+            "default": "diso"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -14350,10 +14398,16 @@
           "Order": 2,
           "DeletedAt": null,
           "ComplexFormEntryId": "9edcf8f9-b1fa-4eac-94d3-9d9140a3722b",
-          "ComplexFormHeadword": "mwana-cinthu",
+          "ComplexFormHeadword": {
+            "default": "mwana-cinthu"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "42f420d8-0d3a-4e67-ad79-a4694b6b5d78",
           "ComponentSenseId": null,
-          "ComponentHeadword": "cinthu"
+          "ComponentHeadword": {
+            "default": "cinthu"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -18488,10 +18542,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "bb24d954-9701-4f52-b807-0c395e9d4a17",
-          "ComplexFormHeadword": "cimaso-maso",
+          "ComplexFormHeadword": {
+            "default": "cimaso-maso"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "0fadc7bf-eb1b-4e4f-b4bf-7315bcd94c19",
           "ComponentSenseId": null,
-          "ComponentHeadword": "diso"
+          "ComponentHeadword": {
+            "default": "diso"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -20457,10 +20517,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "a4833ca4-bcc3-44db-a525-c88993150c07",
-          "ComplexFormHeadword": "kudza",
+          "ComplexFormHeadword": {
+            "default": "kudza"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "af8c4882-d0f9-44ae-9bc8-6f0073e2b859",
           "ComponentSenseId": null,
-          "ComponentHeadword": "dza"
+          "ComponentHeadword": {
+            "default": "dza"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -23681,10 +23747,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "7725611a-fd3d-4009-89b9-caf81ab31e85",
-          "ComplexFormHeadword": "kuenda-na-kuenda",
+          "ComplexFormHeadword": {
+            "default": "kuenda-na-kuenda"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "2bde7e2c-9ddc-4de0-b416-c24c0710c2fa",
           "ComponentSenseId": null,
-          "ComponentHeadword": "enda"
+          "ComponentHeadword": {
+            "default": "enda"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -25871,10 +25943,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "de894a93-add4-4b37-b79b-beed925550f9",
-          "ComplexFormHeadword": "funana",
+          "ComplexFormHeadword": {
+            "default": "funana"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "1602c98f-9f25-41d3-a9d0-c6ff6a15269b",
           "ComponentSenseId": null,
-          "ComponentHeadword": "funa"
+          "ComponentHeadword": {
+            "default": "funa"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -25952,10 +26030,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "de894a93-add4-4b37-b79b-beed925550f9",
-          "ComplexFormHeadword": "funana",
+          "ComplexFormHeadword": {
+            "default": "funana"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "1602c98f-9f25-41d3-a9d0-c6ff6a15269b",
           "ComponentSenseId": null,
-          "ComponentHeadword": "funa"
+          "ComponentHeadword": {
+            "default": "funa"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -33968,10 +34052,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "f2f26ea2-a5d1-46d7-b720-f24a95267f1e",
-          "ComplexFormHeadword": "kati-na-kati",
+          "ComplexFormHeadword": {
+            "default": "kati-na-kati"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "1412748b-d8af-435a-a081-32089eb6d5d1",
           "ComponentSenseId": null,
-          "ComponentHeadword": "kati"
+          "ComponentHeadword": {
+            "default": "kati"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -34030,10 +34120,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "f2f26ea2-a5d1-46d7-b720-f24a95267f1e",
-          "ComplexFormHeadword": "kati-na-kati",
+          "ComplexFormHeadword": {
+            "default": "kati-na-kati"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "1412748b-d8af-435a-a081-32089eb6d5d1",
           "ComponentSenseId": null,
-          "ComponentHeadword": "kati"
+          "ComponentHeadword": {
+            "default": "kati"
+          },
+          "ComponentHomographNumber": 0
         },
         {
           "Id": "de3091a6-abfe-4ab7-b1d6-1c2cdfec39c1",
@@ -34041,10 +34137,16 @@
           "Order": 2,
           "DeletedAt": null,
           "ComplexFormEntryId": "f2f26ea2-a5d1-46d7-b720-f24a95267f1e",
-          "ComplexFormHeadword": "kati-na-kati",
+          "ComplexFormHeadword": {
+            "default": "kati-na-kati"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "a9e28647-c541-4278-a2b1-6f924c2c5aa7",
           "ComponentSenseId": null,
-          "ComponentHeadword": "na"
+          "ComponentHeadword": {
+            "default": "na"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -39337,10 +39439,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "e8aa296a-46f4-49d9-87e8-36427d36e0da",
-          "ComplexFormHeadword": "kubulukira",
+          "ComplexFormHeadword": {
+            "default": "kubulukira"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "1a4cadd7-be61-4725-ba0c-320cf823b4de",
           "ComponentSenseId": null,
-          "ComponentHeadword": "bulukira"
+          "ComponentHeadword": {
+            "default": "bulukira"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -39524,10 +39632,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "c0c59e49-3bff-4249-b5d0-c94e0d46c9c3",
-          "ComplexFormHeadword": "kubverana",
+          "ComplexFormHeadword": {
+            "default": "kubverana"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "b23c2763-86ea-4bdf-aa14-836ede9cb57e",
           "ComponentSenseId": null,
-          "ComponentHeadword": "bva"
+          "ComponentHeadword": {
+            "default": "bva"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -39759,10 +39873,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "a4833ca4-bcc3-44db-a525-c88993150c07",
-          "ComplexFormHeadword": "kudza",
+          "ComplexFormHeadword": {
+            "default": "kudza"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "af8c4882-d0f9-44ae-9bc8-6f0073e2b859",
           "ComponentSenseId": null,
-          "ComponentHeadword": "dza"
+          "ComponentHeadword": {
+            "default": "dza"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -39932,10 +40052,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "7725611a-fd3d-4009-89b9-caf81ab31e85",
-          "ComplexFormHeadword": "kuenda-na-kuenda",
+          "ComplexFormHeadword": {
+            "default": "kuenda-na-kuenda"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "2bde7e2c-9ddc-4de0-b416-c24c0710c2fa",
           "ComponentSenseId": null,
-          "ComponentHeadword": "enda"
+          "ComponentHeadword": {
+            "default": "enda"
+          },
+          "ComponentHomographNumber": 0
         },
         {
           "Id": "c6b6d826-32ca-4bad-8faa-f2c6354de085",
@@ -39943,10 +40069,16 @@
           "Order": 2,
           "DeletedAt": null,
           "ComplexFormEntryId": "7725611a-fd3d-4009-89b9-caf81ab31e85",
-          "ComplexFormHeadword": "kuenda-na-kuenda",
+          "ComplexFormHeadword": {
+            "default": "kuenda-na-kuenda"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "a9e28647-c541-4278-a2b1-6f924c2c5aa7",
           "ComponentSenseId": null,
-          "ComponentHeadword": "na"
+          "ComponentHeadword": {
+            "default": "na"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -45061,10 +45193,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "a6be04db-1a6b-4e6d-8743-1d8cdb5b2bfc",
-          "ComplexFormHeadword": "longana",
+          "ComplexFormHeadword": {
+            "default": "longana"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "069db5da-52da-42b1-a39f-c8e4554f6362",
           "ComponentSenseId": null,
-          "ComponentHeadword": "longa"
+          "ComponentHeadword": {
+            "default": "longa"
+          },
+          "ComponentHomographNumber": 0
         },
         {
           "Id": "8cbc8e55-fb1a-4cb0-a670-3928d20af8b1",
@@ -45072,10 +45210,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "a0e66091-c1bd-4188-8119-0d5a88afbe78",
-          "ComplexFormHeadword": "malongero",
+          "ComplexFormHeadword": {
+            "default": "malongero"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "069db5da-52da-42b1-a39f-c8e4554f6362",
           "ComponentSenseId": null,
-          "ComponentHeadword": "longa"
+          "ComponentHeadword": {
+            "default": "longa"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -45153,10 +45297,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "a6be04db-1a6b-4e6d-8743-1d8cdb5b2bfc",
-          "ComplexFormHeadword": "longana",
+          "ComplexFormHeadword": {
+            "default": "longana"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "069db5da-52da-42b1-a39f-c8e4554f6362",
           "ComponentSenseId": null,
-          "ComponentHeadword": "longa"
+          "ComponentHeadword": {
+            "default": "longa"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -46373,10 +46523,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "790f529d-28ed-4a50-af49-27de75aecc4f",
-          "ComplexFormHeadword": "ubale",
+          "ComplexFormHeadword": {
+            "default": "ubale"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "71ec314c-0446-4350-8d6f-b4fa657e21c2",
           "ComponentSenseId": null,
-          "ComponentHeadword": "m\u0027bale"
+          "ComponentHeadword": {
+            "default": "m\u0027bale"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -49194,10 +49350,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "a0e66091-c1bd-4188-8119-0d5a88afbe78",
-          "ComplexFormHeadword": "malongero",
+          "ComplexFormHeadword": {
+            "default": "malongero"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "069db5da-52da-42b1-a39f-c8e4554f6362",
           "ComponentSenseId": null,
-          "ComponentHeadword": "longa"
+          "ComponentHeadword": {
+            "default": "longa"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -49443,10 +49605,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "fb8194ed-fb58-4a0e-8938-c476367dbbf4",
-          "ComplexFormHeadword": "mambwera-mbwera",
+          "ComplexFormHeadword": {
+            "default": "mambwera-mbwera"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "4cd4ae6b-f67c-478a-86c8-b2be8932d44d",
           "ComponentSenseId": null,
-          "ComponentHeadword": "bwera"
+          "ComponentHeadword": {
+            "default": "bwera"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -62828,10 +62996,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "9edcf8f9-b1fa-4eac-94d3-9d9140a3722b",
-          "ComplexFormHeadword": "mwana-cinthu",
+          "ComplexFormHeadword": {
+            "default": "mwana-cinthu"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "894541b5-b3b7-4f2f-ba4a-cfb62143ce24",
           "ComponentSenseId": null,
-          "ComponentHeadword": "mwana"
+          "ComponentHeadword": {
+            "default": "mwana"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -63017,10 +63191,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "9edcf8f9-b1fa-4eac-94d3-9d9140a3722b",
-          "ComplexFormHeadword": "mwana-cinthu",
+          "ComplexFormHeadword": {
+            "default": "mwana-cinthu"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "894541b5-b3b7-4f2f-ba4a-cfb62143ce24",
           "ComponentSenseId": null,
-          "ComponentHeadword": "mwana"
+          "ComponentHeadword": {
+            "default": "mwana"
+          },
+          "ComponentHomographNumber": 0
         },
         {
           "Id": "f481e391-7ddc-4248-bb9c-a7b6d29c1edf",
@@ -63028,10 +63208,16 @@
           "Order": 2,
           "DeletedAt": null,
           "ComplexFormEntryId": "9edcf8f9-b1fa-4eac-94d3-9d9140a3722b",
-          "ComplexFormHeadword": "mwana-cinthu",
+          "ComplexFormHeadword": {
+            "default": "mwana-cinthu"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "42f420d8-0d3a-4e67-ad79-a4694b6b5d78",
           "ComponentSenseId": null,
-          "ComponentHeadword": "cinthu"
+          "ComponentHeadword": {
+            "default": "cinthu"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -65125,10 +65311,16 @@
           "Order": 2,
           "DeletedAt": null,
           "ComplexFormEntryId": "f2f26ea2-a5d1-46d7-b720-f24a95267f1e",
-          "ComplexFormHeadword": "kati-na-kati",
+          "ComplexFormHeadword": {
+            "default": "kati-na-kati"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "a9e28647-c541-4278-a2b1-6f924c2c5aa7",
           "ComponentSenseId": null,
-          "ComponentHeadword": "na"
+          "ComponentHeadword": {
+            "default": "na"
+          },
+          "ComponentHomographNumber": 0
         },
         {
           "Id": "c6b6d826-32ca-4bad-8faa-f2c6354de085",
@@ -65136,10 +65328,16 @@
           "Order": 2,
           "DeletedAt": null,
           "ComplexFormEntryId": "7725611a-fd3d-4009-89b9-caf81ab31e85",
-          "ComplexFormHeadword": "kuenda-na-kuenda",
+          "ComplexFormHeadword": {
+            "default": "kuenda-na-kuenda"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "a9e28647-c541-4278-a2b1-6f924c2c5aa7",
           "ComponentSenseId": null,
-          "ComponentHeadword": "na"
+          "ComponentHeadword": {
+            "default": "na"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -104189,10 +104387,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "c58eb65c-df77-46cb-8d29-a2ec14b0cb38",
-          "ComplexFormHeadword": "toma-toma",
+          "ComplexFormHeadword": {
+            "default": "toma-toma"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "4fb571f2-247e-429e-977d-dbb82ab22399",
           "ComponentSenseId": null,
-          "ComponentHeadword": "toma"
+          "ComponentHeadword": {
+            "default": "toma"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -104280,10 +104484,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "c58eb65c-df77-46cb-8d29-a2ec14b0cb38",
-          "ComplexFormHeadword": "toma-toma",
+          "ComplexFormHeadword": {
+            "default": "toma-toma"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "4fb571f2-247e-429e-977d-dbb82ab22399",
           "ComponentSenseId": null,
-          "ComponentHeadword": "toma"
+          "ComponentHeadword": {
+            "default": "toma"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -107061,10 +107271,16 @@
           "Order": 2,
           "DeletedAt": null,
           "ComplexFormEntryId": "47d2f97f-b376-4241-8312-620392869cfd",
-          "ComplexFormHeadword": "ubaba",
+          "ComplexFormHeadword": {
+            "default": "ubaba"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "f1c350fe-ebc2-41f0-9e5d-4e06bb47ccce",
           "ComponentSenseId": null,
-          "ComponentHeadword": "u"
+          "ComponentHeadword": {
+            "default": "u"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexFormTypes": [],
@@ -107481,10 +107697,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "47d2f97f-b376-4241-8312-620392869cfd",
-          "ComplexFormHeadword": "ubaba",
+          "ComplexFormHeadword": {
+            "default": "ubaba"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "0d587ca3-12aa-467c-8d99-8ec13f6707b1",
           "ComponentSenseId": null,
-          "ComponentHeadword": "baba"
+          "ComponentHeadword": {
+            "default": "baba"
+          },
+          "ComponentHomographNumber": 0
         },
         {
           "Id": "094f020b-704b-4a56-911b-48f6428ae0be",
@@ -107492,10 +107714,16 @@
           "Order": 2,
           "DeletedAt": null,
           "ComplexFormEntryId": "47d2f97f-b376-4241-8312-620392869cfd",
-          "ComplexFormHeadword": "ubaba",
+          "ComplexFormHeadword": {
+            "default": "ubaba"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "f1c350fe-ebc2-41f0-9e5d-4e06bb47ccce",
           "ComponentSenseId": null,
-          "ComponentHeadword": "u"
+          "ComponentHeadword": {
+            "default": "u"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -107581,10 +107809,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "790f529d-28ed-4a50-af49-27de75aecc4f",
-          "ComplexFormHeadword": "ubale",
+          "ComplexFormHeadword": {
+            "default": "ubale"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "71ec314c-0446-4350-8d6f-b4fa657e21c2",
           "ComponentSenseId": null,
-          "ComponentHeadword": "m\u0027bale"
+          "ComponentHeadword": {
+            "default": "m\u0027bale"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],
@@ -108038,10 +108272,16 @@
           "Order": 1,
           "DeletedAt": null,
           "ComplexFormEntryId": "a9475722-6f16-4a9d-ac3e-a038942e7e50",
-          "ComplexFormHeadword": "uceni",
+          "ComplexFormHeadword": {
+            "default": "uceni"
+          },
+          "ComplexFormHomographNumber": 0,
           "ComponentEntryId": "72a67175-6d5f-4966-b5b2-f7163e776984",
           "ComponentSenseId": null,
-          "ComponentHeadword": "cen"
+          "ComponentHeadword": {
+            "default": "cen"
+          },
+          "ComponentHomographNumber": 0
         }
       ],
       "ComplexForms": [],

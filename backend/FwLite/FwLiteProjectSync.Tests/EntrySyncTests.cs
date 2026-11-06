@@ -7,6 +7,7 @@ using MiniLcm.Models;
 using MiniLcm.SyncHelpers;
 using MiniLcm.Tests;
 using MiniLcm.Tests.AutoFakerHelpers;
+using MiniLcm.Tests.Helpers;
 using Soenneker.Utils.AutoBogus;
 
 namespace FwLiteProjectSync.Tests;
@@ -142,8 +143,8 @@ public class CrdtEntrySyncTests(ExtraWritingSystemsSyncFixture fixture) : EntryS
         var after = before.Copy();
         after.Components =
         [
-            new ComplexFormComponent { ComplexFormEntryId = before.Id, ComponentEntryId = componentB.Id, ComponentHeadword = "b" },
-            new ComplexFormComponent { ComplexFormEntryId = before.Id, ComponentEntryId = componentA.Id, ComponentHeadword = "a" },
+            new ComplexFormComponent { ComplexFormEntryId = before.Id, ComponentEntryId = componentB.Id, ComponentHeadword = { { "en", "b" } } },
+            new ComplexFormComponent { ComplexFormEntryId = before.Id, ComponentEntryId = componentA.Id, ComponentHeadword = { { "en", "a" } } },
         ];
 
         await EntrySync.SyncFull(before, after, Api);
@@ -319,7 +320,7 @@ public abstract class EntrySyncTestsBase(ExtraWritingSystemsSyncFixture fixture)
                 .Select(createdCfc =>
                 {
                     var copy = createdCfc.Copy();
-                    copy.ComponentHeadword = after.Headword();
+                    copy.ComponentHeadword = after.Headwords();
                     return copy;
                 }),
                 // keep new
@@ -335,7 +336,7 @@ public abstract class EntrySyncTestsBase(ExtraWritingSystemsSyncFixture fixture)
                 .Select(createdCfc =>
                 {
                     var copy = createdCfc.Copy();
-                    copy.ComplexFormHeadword = after.Headword();
+                    copy.ComplexFormHeadword = after.Headwords();
                     return copy;
                 }),
                 // keep new
@@ -384,7 +385,8 @@ public abstract class EntrySyncTestsBase(ExtraWritingSystemsSyncFixture fixture)
             // ComplexFormComponentTestsBase (see ComplexFormComponentHeadwords_UpdateWhenReferencedEntriesChange).
             options = options
                 .For(e => e.Components).Exclude(c => c.ComplexFormHeadword)
-                .For(e => e.ComplexForms).Exclude(c => c.ComponentHeadword);
+                .For(e => e.ComplexForms).Exclude(c => c.ComponentHeadword)
+                .ExcludingLinkHomographNumbers();
             if (currentApiType == ApiType.FwData)
             {
                 // does not support changing MorphType yet (see UpdateEntryProxy.MorphType)
@@ -445,15 +447,16 @@ public abstract class EntrySyncTestsBase(ExtraWritingSystemsSyncFixture fixture)
                 new ComplexFormComponent()
                 {
                     ComponentEntryId = component1.Id,
-                    ComponentHeadword = component1.Headword(),
+                    ComponentHeadword = component1.Headwords(),
                     ComplexFormEntryId = complexFormId,
-                    ComplexFormHeadword = "complex form"
+                    ComplexFormHeadword = { { "en", "complex form" } }
                 }
             ]
         });
         var complexFormAfter = complexForm.Copy();
         complexFormAfter.Components[0].ComponentEntryId = component2.Id;
-        complexFormAfter.Components[0].ComponentHeadword = component2.Headword();
+        complexFormAfter.Components[0].ComponentHeadword = component2.Headwords();
+        complexFormAfter.Components[0].ComponentHomographNumber = component2.HomographNumber;
 
         await EntrySync.SyncFull(complexForm, complexFormAfter, Api);
 
@@ -478,15 +481,16 @@ public abstract class EntrySyncTestsBase(ExtraWritingSystemsSyncFixture fixture)
                 new ComplexFormComponent()
                 {
                     ComponentEntryId = componentId,
-                    ComponentHeadword = "component",
+                    ComponentHeadword = { { "en", "component" } },
                     ComplexFormEntryId = complexForm1.Id,
-                    ComplexFormHeadword = complexForm1.Headword()
+                    ComplexFormHeadword = complexForm1.Headwords()
                 }
             ]
         });
         var componentAter = component.Copy();
         componentAter.ComplexForms[0].ComplexFormEntryId = complexForm2.Id;
-        componentAter.ComplexForms[0].ComplexFormHeadword = complexForm2.Headword();
+        componentAter.ComplexForms[0].ComplexFormHeadword = complexForm2.Headwords();
+        componentAter.ComplexForms[0].ComplexFormHomographNumber = complexForm2.HomographNumber;
 
         await EntrySync.SyncFull(component, componentAter, Api);
 
@@ -563,11 +567,12 @@ public abstract class EntrySyncTestsBase(ExtraWritingSystemsSyncFixture fixture)
     {
         // arrange
         // - before
-        var existingEntryBefore = await Api.CreateEntry(new() { LexemeForm = { { "en", "existing-component" } } });
+        // unique forms, so other tests' entries in a shared project don't make these homographs
+        var existingEntryBefore = await Api.CreateEntry(new() { LexemeForm = { { "en", "referenced-component" } } });
 
         // - after
         var existingEntryAfter = existingEntryBefore.Copy();
-        var newEntry = new Entry() { Id = Guid.NewGuid(), LexemeForm = { { "en", "complex-form" } } };
+        var newEntry = new Entry() { Id = Guid.NewGuid(), LexemeForm = { { "en", "referencing-complex-form" } } };
         var newComplexFormComponent = ComplexFormComponent.FromEntries(newEntry, existingEntryAfter);
         existingEntryAfter.ComplexForms.Add(newComplexFormComponent);
         newEntry.Components.Add(newComplexFormComponent);
@@ -810,17 +815,17 @@ public abstract class EntrySyncTestsBase(ExtraWritingSystemsSyncFixture fixture)
                 new ComplexFormComponent()
                 {
                     ComponentEntryId = componentA.Id,
-                    ComponentHeadword = componentA.Headword(),
+                    ComponentHeadword = componentA.Headwords(),
                     ComplexFormEntryId = complexFormId,
-                    ComplexFormHeadword = "complex form",
+                    ComplexFormHeadword = { { "en", "complex form" } },
                     Order = 1
                 },
                 new ComplexFormComponent()
                 {
                     ComponentEntryId = componentB.Id,
-                    ComponentHeadword = componentB.Headword(),
+                    ComponentHeadword = componentB.Headwords(),
                     ComplexFormEntryId = complexFormId,
-                    ComplexFormHeadword = "complex form",
+                    ComplexFormHeadword = { { "en", "complex form" } },
                     Order = 2
                 }
             ]
@@ -839,7 +844,7 @@ public abstract class EntrySyncTestsBase(ExtraWritingSystemsSyncFixture fixture)
         var actual = await Api.GetEntry(complexFormId);
         actual.Should().NotBeNull();
         actual.Components.Should().HaveCount(2);
-        actual.Components[0].ComponentHeadword.Should().Be("componentB");
-        actual.Components[1].ComponentHeadword.Should().Be("componentA");
+        actual.Components[0].ComponentHeadword["en"].Should().Be("componentB");
+        actual.Components[1].ComponentHeadword["en"].Should().Be("componentA");
     }
 }

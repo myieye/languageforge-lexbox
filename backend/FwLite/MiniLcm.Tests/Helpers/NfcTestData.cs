@@ -179,8 +179,8 @@ public static class NfcTestData
             ComplexFormEntryId = Guid.NewGuid(),
             ComponentEntryId = Guid.NewGuid(),
             ComponentSenseId = Guid.NewGuid(),
-            ComplexFormHeadword = Nfc,
-            ComponentHeadword = Nfc
+            ComplexFormHeadword = { { "en", Nfc } },
+            ComponentHeadword = { { "en", Nfc } }
         };
     }
 
