@@ -716,6 +716,7 @@ msgstr "Can use the internet"
 #: src/lib/troubleshoot/TroubleshootDialog.svelte
 #: src/lib/troubleshoot/TroubleshootDialog.svelte
 #: src/lib/views/custom/CustomViewForm.svelte
+#: src/project/sync/UploadToLexboxDialog.svelte
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -754,6 +755,10 @@ msgstr "Changes can also be the result of fields being added to new versions of 
 #: src/project/sync/FwClassicSyncView.svelte
 msgid "Changing the same field twice, for example, can result in two commits but only one change that needs to be applied to FieldWorks Classic. Commits can also consist of multiple changes."
 msgstr "Changing the same field twice, for example, can result in two commits but only one change that needs to be applied to FieldWorks Classic. Commits can also consist of multiple changes."
+
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Checking {0}..."
+msgstr "Checking {0}..."
 
 #. Relevant view: Classic
 #. Lite view equivalent: "Checking for similar words…"
@@ -1035,6 +1040,10 @@ msgstr "Create Entry"
 #: src/home/HomeView.svelte
 msgid "Create Example Project"
 msgstr "Create Example Project"
+
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Create the project on Lexbox"
+msgstr "Create the project on Lexbox"
 
 #. Submit button in the create custom view dialog.
 #: src/lib/views/custom/CreateCustomViewDialog.svelte
@@ -2302,6 +2311,10 @@ msgstr "Local and remote"
 msgid "Local only"
 msgstr "Local only"
 
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Log in to Lexbox first."
+msgstr "Log in to Lexbox first."
+
 #. Button label in the sync panel when the user is not logged in. Initiates authentication with the server.
 #: src/project/sync/FwClassicSyncView.svelte
 #: src/project/sync/FwLiteSyncView.svelte
@@ -2805,6 +2818,7 @@ msgstr "Not in this project. Try one on your data, then add it or make it your o
 
 #. Status text in the project sidebar indicating the user is not authenticated with the sync server.
 #: src/project/ProjectSidebar.svelte
+#: src/project/sync/UploadToLexboxDialog.svelte
 msgid "Not logged in"
 msgstr "Not logged in"
 
@@ -3216,6 +3230,10 @@ msgstr "Project {0} not found on {1}"
 #: src/home/Server.svelte
 msgid "Project {0} on {1} is not yet set up for FieldWorks Lite"
 msgstr "Project {0} on {1} is not yet set up for FieldWorks Lite"
+
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Project ID"
+msgstr "Project ID"
 
 #: src/lib/plugins/studio/panels/NewPluginAiPanel.svelte
 msgid "Prompt options"
@@ -3747,6 +3765,10 @@ msgstr "senses"
 msgid "Sentence"
 msgstr "Sentence"
 
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Server"
+msgstr "Server"
+
 #. Activity-log line. {0} = field label; used when the new value is an audio recording (an audio marker chip follows instead of a text value). Compare "Set {0} to", which shows a text value chip.
 #: src/lib/activity/ChangeSummary.svelte
 msgid "Set {0}"
@@ -4100,6 +4122,10 @@ msgstr "The number of FieldWorks Lite commits will not necessarily match the num
 msgid "The plugin “{0}” is asking to make this change to your dictionary:"
 msgstr "The plugin “{0}” is asking to make this change to your dictionary:"
 
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "The project exists on {0}. Ready to upload."
+msgstr "The project exists on {0}. Ready to upload."
+
 #: src/lib/plugins/studio/panels/ChangeAiPanel.svelte
 msgid "The prompt includes the API guide, this project's setup and this plugin's current code. Attach the file in any AI chat."
 msgstr "The prompt includes the API guide, this project's setup and this plugin's current code. Attach the file in any AI chat."
@@ -4121,6 +4147,10 @@ msgstr "The version before it didn't. If you didn't ask for this, have the AI ta
 #: src/lib/plugins/studio/InternetPromptDialog.svelte
 msgid "The version before it worked offline. Online, a plugin can send this project's data to any website."
 msgstr "The version before it worked offline. Online, a plugin can send this project's data to any website."
+
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "There is no project with this ID on {0} yet. Create it, then come back here and upload."
+msgstr "There is no project with this ID on {0} yet. Create it, then come back here and upload."
 
 #. Error message when changes are pending upload
 #: src/lib/activity/ActivityItem.svelte
@@ -4505,6 +4535,10 @@ msgstr "Updated picture"
 msgid "Updates"
 msgstr "Updates"
 
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Upload"
+msgstr "Upload"
+
 #: src/lib/plugins/studio/panels/SourcePanel.svelte
 msgid "Upload file"
 msgstr "Upload file"
@@ -4512,6 +4546,14 @@ msgstr "Upload file"
 #: src/lib/media-manager/MediaManagerView.svelte
 msgid "Upload pending"
 msgstr "Upload pending"
+
+#: src/project/sync/UploadToLexboxDialog.svelte
+msgid "Upload to Lexbox"
+msgstr "Upload to Lexbox"
+
+#: src/project/sync/FwLiteSyncView.svelte
+msgid "Upload to Lexbox..."
+msgstr "Upload to Lexbox..."
 
 #: src/lib/media-manager/MediaFileDetail.svelte
 msgid "Uploaded"
