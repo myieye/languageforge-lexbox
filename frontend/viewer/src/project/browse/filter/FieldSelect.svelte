@@ -1,13 +1,5 @@
-<script lang="ts" module>
-  import type {WritingSystemSelection} from '$project/data';
-
-  export type SelectedField = {
-    id: string;
-    ws: WritingSystemSelection;
-  }
-</script>
-
 <script lang="ts">
+  import type {SelectedField} from './filter-types';
   import * as Select from '$lib/components/ui/select';
   import {untrack} from 'svelte';
   import {t} from 'svelte-i18n-lingui';
