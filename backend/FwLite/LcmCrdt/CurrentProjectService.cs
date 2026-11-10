@@ -74,12 +74,41 @@ public class CurrentProjectService(
     {
         using var activity = LcmCrdtActivitySource.Value.StartActivity();
         activity?.SetTag("app.project_code", project.Name);
-        if (_project != null && project != _project)
-            throw new InvalidOperationException($"Cannot setup project context for '{project.Name}' when already in context of project '{_project.Name}'");
-        _project = project;
+        SetProject(project);
         //migrate will only execute once with a static which tracks if we've already migrated
         await MigrateDb();
         return await RefreshProjectData();
+    }
+
+    /// <summary>
+    /// Setup the project context for reading or writing <see cref="ProjectData"/> only, and run <paramref name="exec"/> in it.
+    /// Runs the EF migrations but not the model version replay, which can take minutes, so <paramref name="exec"/> may not use
+    /// anything else in the db.
+    /// </summary>
+    /// <returns>false without running <paramref name="exec"/> while the replay runs, since it holds the db's write lock</returns>
+    public async Task<bool> TryExecOnProjectData(CrdtProject project, Func<Task> exec)
+    {
+        SetProject(project);
+        await MigrateSchema();
+        var replayLock = ReplayLock(project);
+        if (!await replayLock.WaitAsync(0)) return false;
+        try
+        {
+            await RefreshProjectData();
+            await exec();
+            return true;
+        }
+        finally
+        {
+            replayLock.Release();
+        }
+    }
+
+    private void SetProject(CrdtProject project)
+    {
+        if (_project != null && project != _project)
+            throw new InvalidOperationException($"Cannot setup project context for '{project.Name}' when already in context of project '{_project.Name}'");
+        _project = project;
     }
 
     public async ValueTask<ProjectData> SetupProjectContext(string projectCode)
@@ -92,13 +121,17 @@ public class CurrentProjectService(
         return Project.Data = await GetProjectData(true);
     }
 
+    private static readonly ConcurrentDictionary<string, Lazy<Task>> SchemaMigrationTasks = [];
     private static readonly ConcurrentDictionary<string, Lazy<Task>> MigrationTasks = [];
-    private Task MigrateDb()
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> ReplayLocks = [];
+    private static SemaphoreSlim ReplayLock(CrdtProject project) => ReplayLocks.GetOrAdd(project.DbPath, _ => new SemaphoreSlim(1, 1));
+
+    private Task MigrateSchema()
     {
         //ensure we only execute migrations once, this avoids race conditions, as well as doing duplicate work on startup
         //design based on https://andrewlock.net/making-getoradd-on-concurrentdictionary-thread-safe-using-lazy/
 #pragma warning disable VSTHRD011
-        return MigrationTasks.GetOrAdd(Project.DbPath, _ => new Lazy<Task>(Execute)).Value;
+        return SchemaMigrationTasks.GetOrAdd(Project.DbPath, _ => new Lazy<Task>(Execute)).Value;
 #pragma warning restore VSTHRD011
         async Task Execute()
         {
@@ -106,6 +139,28 @@ public class CurrentProjectService(
             {
                 await using var dbContext = await DbContextFactory.CreateDbContextAsync();
                 await dbContext.Database.MigrateAsync();
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Failed to migrate database schema for project '{Project}'", Project.Name);
+                throw;
+            }
+        }
+    }
+
+    private Task MigrateDb()
+    {
+#pragma warning disable VSTHRD011
+        return MigrationTasks.GetOrAdd(Project.DbPath, _ => new Lazy<Task>(Execute)).Value;
+#pragma warning restore VSTHRD011
+        async Task Execute()
+        {
+            await MigrateSchema();
+            var replayLock = ReplayLock(Project);
+            await replayLock.WaitAsync();
+            try
+            {
+                await using var dbContext = await DbContextFactory.CreateDbContextAsync();
                 await ReconcileModelVersions();
 
                 if (EntrySearchServiceFactory is not null)
@@ -118,6 +173,10 @@ public class CurrentProjectService(
             {
                 logger.LogError(e, "Failed to migrate database for project '{Project}'", Project.Name);
                 throw;
+            }
+            finally
+            {
+                replayLock.Release();
             }
         }
 
