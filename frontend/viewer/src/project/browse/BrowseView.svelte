@@ -13,7 +13,7 @@
   import {BrowseParam} from '$lib/utils/search-params';
   import {pt} from '$lib/views/view-text';
   import {useViewService} from '$lib/views/view-service.svelte';
-  import {SortField, type IPartOfSpeech, type IPublication, type ISemanticDomain} from '$lib/dotnet-types';
+  import {SortField} from '$lib/dotnet-types';
   import SortMenu from './sort/SortMenu.svelte';
   import SortWritingSystemMenu from './sort/SortWritingSystemMenu.svelte';
   import type {SortConfig} from './sort/options';
@@ -26,6 +26,7 @@
   import {QueryParamStateBool} from '$lib/utils/url.svelte';
   import {watch} from 'runed';
   import {useWritingSystemService} from '$project/data';
+  import {useBrowseState} from './browse-state.svelte';
 
   const projectContext = useProjectContext();
   const viewService = useViewService();
@@ -33,14 +34,10 @@
   const dialogsService = useDialogsService();
   const features = useFeatures();
   const entryListViewMode = useProjectStorage().entryListViewMode;
+  const browseState = useBrowseState();
 
   let selectedId = $state('');
-  let search = $state('');
   let gridifyFilter = $state<string>();
-  let publication = $state<IPublication>();
-  let semanticDomain = $state<ISemanticDomain>();
-  let partOfSpeech = $state<IPartOfSpeech>();
-  let unreadComments = $state(false);
   // Same history strategy as the master-detail open state: on mobile the comments take
   // half the screen, so back should close them rather than leave the view. Nothing else
   // pushes for them now that the panel is a pane rather than a drawer.
@@ -50,24 +47,23 @@
     replaceOnDefaultValue: IsMobile.value,
   }, false);
   let sort = $state<SortConfig>();
-  // Writing system to sort/display by, chosen separately from the sort field/direction.
-  // Undefined = the current view's first vernacular.
-  let sortWs = $state<string>();
-  // The user's pick is kept, but only applies while the current view shows that writing system.
+  // The user's sortWs pick is kept, but only applies while the current view shows that writing system.
   const effectiveSortWs = $derived.by(() => {
     const viewWritingSystems = writingSystemService.viewVernacularNoAudio(viewService.currentView);
-    return viewWritingSystems.find(ws => ws.wsId === sortWs)?.wsId ?? viewWritingSystems[0]?.wsId;
+    return viewWritingSystems.find(ws => ws.wsId === browseState.sortWs)?.wsId ?? viewWritingSystems[0]?.wsId;
   });
   const sortWithWs = $derived<SortConfig | undefined>(sort ? {...sort, writingSystem: effectiveSortWs} : undefined);
   const entryMode: EntryListViewMode = $derived(entryListViewMode.current === 'preview' ? 'preview' : 'simple');
 
   // Turning the filter on means the comments are what the user came for, so open the
-  // sidebar once. Deliberately only on the transition, so closing it stays closed.
-  watch(() => unreadComments, (filterOn, wasOn) => {
+  // sidebar once. Deliberately only on the transition (and not when the view remounts with the
+  // filter already on), so closing it stays closed.
+  watch(() => browseState.unreadComments, (filterOn, wasOn) => {
     if (filterOn && !wasOn) commentsOpen.current = true;
-  });
+  }, {lazy: true});
 
   async function newEntry() {
+    const {publication, semanticDomain, partOfSpeech} = browseState;
     const entry = await dialogsService.createNewEntry(undefined, {
       publishIn: publication ? [publication] : [],
     }, {
@@ -101,13 +97,13 @@
     {#snippet master({selectedId: masterSelectedId, select})}
       <div class="flex flex-col h-full p-2 md:p-4 md:pr-0">
         <div class="md:mr-3">
-          <SearchFilter bind:search bind:gridifyFilter bind:publication bind:semanticDomain bind:partOfSpeech bind:unreadComments />
+          <SearchFilter bind:gridifyFilter />
           <div class="my-2 flex items-center gap-2">
-            <SortMenu bind:value={sort}
-              autoSelector={() => search ? SortField.SearchRelevance : SortField.Headword} />
-            <SortWritingSystemMenu bind:value={() => effectiveSortWs, (v) => sortWs = v} />
+            <SortMenu bind:value={sort} bind:choice={browseState.sortChoice}
+              autoSelector={() => browseState.search ? SortField.SearchRelevance : SortField.Headword} />
+            <SortWritingSystemMenu bind:value={() => effectiveSortWs, (v) => browseState.sortWs = v} />
             {#if features.comments}
-              <UnreadCommentBadge bind:unreadComments/>
+              <UnreadCommentBadge bind:unreadComments={browseState.unreadComments}/>
             {/if}
             <div class="ms-auto">
               <EntryListViewOptions bind:entryMode={() => entryMode, (v) => void entryListViewMode.set(v)} />
@@ -115,13 +111,13 @@
           </div>
         </div>
         <EntriesList bind:this={entriesList}
-                     {search}
+                     search={browseState.search}
                      selectedEntryId={masterSelectedId}
                      sort={sortWithWs}
                      {gridifyFilter}
-                     {publication}
-                     {partOfSpeech}
-                     {semanticDomain}
+                     publication={browseState.publication}
+                     partOfSpeech={browseState.partOfSpeech}
+                     semanticDomain={browseState.semanticDomain}
                      onSelectEntry={(e) => select(e?.id ?? '')}
                      previewDictionary={entryMode === 'preview'}/>
       </div>

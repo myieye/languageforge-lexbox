@@ -18,3 +18,5 @@ export interface SortConfig {
    */
   writingSystem?: string;
 }
+
+export type SortChoice = Pick<SortConfig, 'field' | 'dir'>;

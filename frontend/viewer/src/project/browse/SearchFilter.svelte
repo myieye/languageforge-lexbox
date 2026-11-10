@@ -9,15 +9,14 @@
   import {formatNumber} from '$lib/components/ui/format';
   import ViewT from '$lib/views/ViewT.svelte';
   import {Input} from '$lib/components/ui/input';
-  import OpFilter, {type Op} from './filter/OpFilter.svelte';
+  import OpFilter from './filter/OpFilter.svelte';
   import WsSelect from './filter/WsSelect.svelte';
-  import FieldSelect, {type SelectedField} from './filter/FieldSelect.svelte';
-  import MissingSelect, {type MissingOption} from './filter/MissingSelect.svelte';
+  import FieldSelect from './filter/FieldSelect.svelte';
+  import MissingSelect from './filter/MissingSelect.svelte';
   import SemanticDomainSelect from './filter/SemanticDomainSelect.svelte';
   import PartOfSpeechSelect from './filter/PartOfSpeechSelect.svelte';
   import PublicationSelect from './filter/PublicationSelect.svelte';
   import Label from '$lib/components/ui/label/label.svelte';
-  import type {ISemanticDomain, IPartOfSpeech, IPublication} from '$lib/dotnet-types';
   import {MorphTypeKind} from '$lib/dotnet-types';
   import {Switch} from '$lib/components/ui/switch';
   import ResponsivePopup from '$lib/components/responsive-popup/responsive-popup.svelte';
@@ -25,38 +24,26 @@
   import {Button, XButton} from '$lib/components/ui/button';
   import Hotkey from '$lib/components/hotkey/hotkey.svelte';
   import {useFeatures} from '$lib/services/feature-service';
+  import {useBrowseState} from './browse-state.svelte';
 
   const features = useFeatures();
   const stats = useProjectStats();
   const viewService = useViewService();
   const wsService = useWritingSystemService();
+  const browseState = useBrowseState();
 
   let {
-    search = $bindable(),
     gridifyFilter = $bindable(undefined),
-    semanticDomain = $bindable(),
-    partOfSpeech = $bindable(),
-    publication = $bindable(),
-    unreadComments = $bindable(false),
   }: {
-    search: string;
     gridifyFilter?: string;
-    semanticDomain?: ISemanticDomain;
-    partOfSpeech?: IPartOfSpeech;
-    publication?: IPublication;
-    unreadComments?: boolean;
   } = $props();
 
   let inputRef = $state<HTMLInputElement | null>(null);
-  let missingField = $state<MissingOption | null>(null);
-  let selectedField = $state<SelectedField | null>(null);
-  let selectedWs = $state<string[]>(wsService.vernacularNoAudio.map(ws => ws.wsId));
-  let fieldFilterValue = $state('');
-  let filterOp = $state<Op>('contains')
-  let includeSubDomains = $state(false);
   let userFilterActive = $state(false);
-  let hasComments = $state(false);
-  let openComments = $state(false);
+  const fieldWritingSystems = $derived(browseState.selectedField
+    ? wsService.pickWritingSystems(browseState.selectedField.ws).map(ws => ws.wsId)
+    : []);
+  const selectedWs = $derived(browseState.selectedWs?.filter(ws => fieldWritingSystems.includes(ws)) ?? fieldWritingSystems);
 
   function focusSearch() {
     inputRef?.focus();
@@ -71,6 +58,8 @@
   ]);
 
   $effect(() => {
+    const {missingField, selectedField, fieldFilterValue, filterOp, semanticDomain, includeSubDomains,
+      partOfSpeech, publication, hasComments, unreadComments, openComments} = browseState;
     let newFilter: string[] = [];
     switch (missingField?.id) {
       case 'examples': newFilter.push('Senses.ExampleSentences=null'); break;
@@ -81,7 +70,7 @@
       case 'publication': newFilter.push('PublishIn=null'); break;
     }
 
-    if (selectedField && fieldFilterValue && selectedWs?.length > 0) {
+    if (selectedField && fieldFilterValue && selectedWs.length > 0) {
       let op: string;
       switch (filterOp) {
         case 'starts-with': op = '^'; break;
@@ -140,25 +129,7 @@
     return v.replace(/([(),|\\]|\/i)/g, '\\$1');
   }
 
-  const canReset = $derived(userFilterActive || !!search || fieldFilterValue !== '');
-
-  function resetFilters() {
-    search = '';
-    missingField = null;
-    // null tells FieldSelect to fall back to its default field; WsSelect then reacts to the
-    // wsType change and repopulates selectedWs with the full writing-system set.
-    selectedField = null;
-    selectedWs = wsService.vernacularNoAudio.map(ws => ws.wsId);
-    fieldFilterValue = '';
-    filterOp = 'contains';
-    includeSubDomains = false;
-    semanticDomain = undefined;
-    partOfSpeech = undefined;
-    publication = undefined;
-    hasComments = false;
-    unreadComments = false;
-    openComments = false;
-  }
+  const canReset = $derived(userFilterActive || !!browseState.search || browseState.fieldFilterValue !== '');
 
   let filtersExpanded = $state(false);
 </script>
@@ -179,10 +150,10 @@
 
 <div class="flex items-center gap-0.5">
   <Sidebar.Trigger icon="i-mdi-menu" class="aspect-square p-0" />
-  <ComposableInput bind:value={search} bind:inputRef inputProps={{ 'aria-label': $t`Filter` }} {placeholder} autofocus class="px-1 items-center overflow-x-hidden h-12 md:h-10">
+  <ComposableInput bind:value={browseState.search} bind:inputRef inputProps={{ 'aria-label': $t`Filter` }} {placeholder} autofocus class="px-1 items-center overflow-x-hidden h-12 md:h-10">
     {#snippet after()}
-      {#if search}
-        <XButton onclick={() => search = ''} class="bg-transparent"/>
+      {#if browseState.search}
+        <XButton onclick={() => browseState.search = ''} class="bg-transparent"/>
       {/if}
       <ResponsivePopup
         bind:open={filtersExpanded}
@@ -193,7 +164,7 @@
         }}
       >
         {#snippet titleActions()}
-          <Button variant="ghost" size="sm" icon="i-mdi-filter-remove-outline" onclick={resetFilters} disabled={!canReset}>
+          <Button variant="ghost" size="sm" icon="i-mdi-filter-remove-outline" onclick={() => browseState.resetFilters()} disabled={!canReset}>
             {$t`Reset`}
           </Button>
         {/snippet}
@@ -209,14 +180,14 @@
             <div class="flex flex-col gap-2 items-stretch">
               <div class="flex flex-row gap-2 flex-1">
                 <!-- Field Picker -->
-                <FieldSelect bind:value={selectedField} />
+                <FieldSelect bind:value={browseState.selectedField} />
                 <!-- Writing System Picker -->
-                <WsSelect bind:value={selectedWs} wsType={selectedField?.ws} />
+                <WsSelect bind:value={() => selectedWs, (v) => browseState.selectedWs = v} wsType={browseState.selectedField?.ws} />
               </div>
               <div class="flex flex-row gap-2 flex-1">
-                <OpFilter bind:value={filterOp} />
+                <OpFilter bind:value={browseState.filterOp} />
                 <Input
-                  bind:value={fieldFilterValue}
+                  bind:value={browseState.fieldFilterValue}
                   placeholder={$t`Filter for...`}
                   class="flex-1"
                 />
@@ -225,31 +196,31 @@
           </div>
           <div class="flex flex-col">
             <Label class="p-2">{$t`Semantic domain`}</Label>
-            <SemanticDomainSelect bind:value={semanticDomain} />
+            <SemanticDomainSelect bind:value={browseState.semanticDomain} />
             <Switch
               class="mt-1.5"
-              disabled={!semanticDomain}
-              bind:checked={includeSubDomains}
+              disabled={!browseState.semanticDomain}
+              bind:checked={browseState.includeSubDomains}
               label={$t`Include subdomains`}
             />
           </div>
           <div class="flex flex-col">
             <Label class="p-2">{pt($t`Grammatical info.`, $t`Part of speech`, viewService.currentView)}</Label>
-            <PartOfSpeechSelect bind:value={partOfSpeech} />
+            <PartOfSpeechSelect bind:value={browseState.partOfSpeech} />
           </div>
           <div class="flex flex-col">
             <Label class="p-2">{$t`Publication`}</Label>
-            <PublicationSelect bind:value={publication} />
+            <PublicationSelect bind:value={browseState.publication} />
           </div>
           <div class="flex flex-col">
             <Label class="p-2">{$t`Incomplete entries`}</Label>
-            <MissingSelect bind:value={missingField} />
+            <MissingSelect bind:value={browseState.missingField} />
           </div>
           {#if features.comments}
             <div class="flex flex-col">
-              <Switch bind:checked={hasComments} label={$t`Has comments`} />
-              <Switch class="mt-1.5" bind:checked={unreadComments} label={$t`Has unread comments`} />
-              <Switch class="mt-1.5" bind:checked={openComments} label={$t`Has unresolved comments`} />
+              <Switch bind:checked={browseState.hasComments} label={$t`Has comments`} />
+              <Switch class="mt-1.5" bind:checked={browseState.unreadComments} label={$t`Has unread comments`} />
+              <Switch class="mt-1.5" bind:checked={browseState.openComments} label={$t`Has unresolved comments`} />
             </div>
           {/if}
         </div>
