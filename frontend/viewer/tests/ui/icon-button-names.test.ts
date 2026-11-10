@@ -40,6 +40,7 @@ test('icon-only entry editor buttons have accessible names', async ({page}) => {
   }
   await expect(page.getByRole('button', {name: 'Delete Example 1', exact: true})).toHaveCount(2);
   await expect(page.getByRole('button', {name: 'View options', exact: true})).toHaveCount(2);
+  await expect(page.getByRole('button', {name: 'More options', exact: true})).toBeVisible();
   await expect(page.getByRole('button', {name: 'Play audio (Word: seh)', exact: true})).toBeVisible();
   await expect(page.getByRole('button', {name: 'Audio options (Word: seh)', exact: true})).toBeVisible();
 });
