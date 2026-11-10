@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {t} from 'svelte-i18n-lingui';
   import {IsMobile} from '$lib/hooks/is-mobile.svelte';
   import * as Popover from '$lib/components/ui/popover';
   import * as Drawer from '$lib/components/ui/drawer';
@@ -56,7 +57,10 @@
   <Drawer.Root bind:open>
     <Drawer.Trigger child={trigger} />
     <Drawer.Content {...contentProps}>
-      <Drawer.Close class={buttonVariants({variant: 'ghost', size: 'icon', class: 'absolute top-4 right-4 z-10'})}>
+      <Drawer.Close
+        class={buttonVariants({variant: 'ghost', size: 'icon', class: 'absolute top-4 right-4 z-10'})}
+        aria-label={$t`Close`}
+      >
         <Icon icon="i-mdi-close" />
       </Drawer.Close>
       {#if titleActions}

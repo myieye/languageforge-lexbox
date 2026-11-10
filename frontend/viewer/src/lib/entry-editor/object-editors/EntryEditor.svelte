@@ -181,12 +181,14 @@
 
     {#if showSenses}
       {#each entry.senses as sense, i (sense.id)}
+        {@const senseNumber = i + 1}
         <Editor.SubGrid class={cn(sense.id === highlighted?.entity.id && 'highlight')}>
           <div id="sense{i + 1}"></div> <!-- shouldn't be in the sticky header -->
 
           <ObjectHeader type="sense" index={i + 1} class={cn(modalMode || 'sticky',
             'top-0 bg-background z-1 w-[calc(100%+2px)] pr-0.5 animate-fade-out animation-scroll')}>
             <EntityListItemActions {i}
+                subject={pt($t`Sense ${senseNumber}`, $t`Meaning ${senseNumber}`, viewService.currentView)}
                 items={entry.senses}
                 getDisplayName={(sense) => writingSystemService.firstDefOrGlossVal(sense)}
                 {readonly}
@@ -199,10 +201,12 @@
           {#if showExamples && sense.exampleSentences.length}
             <Editor.SubGrid class="border-l border-dashed pl-4 mt-4 space-y-4 rounded-lg">
               {#each sense.exampleSentences as example, j (example.id)}
+                {@const exampleNumber = j + 1}
                 <Editor.SubGrid class={cn(example.id === highlighted?.entity.id && 'highlight')}>
                   <div id="example{i + 1}-{j + 1}"></div> <!-- shouldn't be in the sticky header -->
                   <ObjectHeader type="example" index={j + 1}>
                     <EntityListItemActions i={j} {readonly}
+                                           subject={$t`Example ${exampleNumber}`}
                                            items={sense.exampleSentences}
                                            getDisplayName={example => writingSystemService.firstSentenceOrTranslationVal(example)}
                                            onmove={(newIndex) => moveExample(sense, example, newIndex)}

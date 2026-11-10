@@ -111,6 +111,7 @@
         onclick={() => (playing ? audioApi?.pause() : audioApi?.play())}
         disabled={!audioApi}
         size="icon"
+        title={playing ? $t`Pause` : $t`Play`}
       />
     </div>
   {/if}

@@ -43,6 +43,7 @@
     direction?: 'horizontal' | 'vertical';
     getDisplayName: (item: T) => string | undefined;
     onchange?: (value: T[], fromIndex: number, toIndex: number) => void;
+    label?: string;
     children?: Snippet<[{first: boolean; last: boolean}]>;
   };
 
@@ -51,6 +52,7 @@
     items = $bindable(),
     getDisplayName,
     onchange,
+    label,
     children,
     direction = 'horizontal',
   }: ReordererProps<T> = $props();
@@ -95,7 +97,7 @@
     {@render children({first, last})}
   {:else}
     <DropdownMenu.Root>
-      <ReordererTrigger />
+      <ReordererTrigger title={label} />
       <DropdownMenu.Content>
         <ReordererItemList />
       </DropdownMenu.Content>

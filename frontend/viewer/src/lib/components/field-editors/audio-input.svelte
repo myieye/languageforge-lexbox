@@ -294,6 +294,10 @@
   let dialogTitle = $derived(
     fieldProps?.label && wsLabel ? `${fieldProps.label}: ${wsLabel}` : fieldProps?.label || wsLabel,
   );
+  let playLabel = $derived.by(() => {
+    if (playIcon === 'i-mdi-pause') return dialogTitle ? $t`Pause audio (${dialogTitle})` : $t`Pause audio`;
+    return dialogTitle ? $t`Play audio (${dialogTitle})` : $t`Play audio`;
+  });
   let subject = useSubjectContext();
 </script>
 
@@ -331,9 +335,10 @@
     <div class="flex space-x-3 items-center">
       {#if loading}
         <!--for some reason using the same button for loading, play and pause doesn't work and pause is never shown-->
-        <Button loading size="icon-sm"></Button>
+        <Button loading size="icon-sm" title={dialogTitle ? $t`Loading audio (${dialogTitle})` : $t`Loading audio`}
+        ></Button>
       {:else}
-        <Button onclick={togglePlay} icon={playIcon} size="icon-sm"></Button>
+        <Button onclick={togglePlay} icon={playIcon} size="icon-sm" title={playLabel}></Button>
       {/if}
       {#if audioRuned}
         <Slider
@@ -367,7 +372,13 @@
         <ResponsiveMenu.Root>
           <ResponsiveMenu.Trigger>
             {#snippet child({props})}
-              <Button variant="secondary" icon="i-mdi-dots-vertical" size="icon-sm" {...props} />
+              <Button
+                variant="secondary"
+                icon="i-mdi-dots-vertical"
+                size="icon-sm"
+                title={dialogTitle ? $t`Audio options (${dialogTitle})` : $t`Audio options`}
+                {...props}
+              />
             {/snippet}
           </ResponsiveMenu.Trigger>
           <ResponsiveMenu.Content>

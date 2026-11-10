@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {t} from 'svelte-i18n-lingui';
   import {Icon} from '$lib/components/ui/icon';
   import {IsMobile} from '$lib/hooks/is-mobile.svelte';
   import {buttonVariants} from '$lib/components/ui/button/button.svelte';
@@ -23,6 +24,8 @@
 
   const triggerVariant = $derived(buttonVariants({variant: 'ghost', size}));
   const state = useResponsiveMenuTrigger();
+  // a title key, even undefined, would override the one a custom child sets
+  const defaultProps = $derived(children || rest.child ? {} : {title: $t`More options`});
 </script>
 
 {#snippet standardTriggerContent()}
@@ -38,11 +41,11 @@
     {@render triggerContent()}
   </ContextMenuTrigger>
 {:else if !IsMobile.value}
-  <DropdownMenuTrigger class={cn(rest.child || triggerVariant, className)} {...rest} bind:ref>
+  <DropdownMenuTrigger class={cn(rest.child || triggerVariant, className)} {...defaultProps} {...rest} bind:ref>
     {@render triggerContent()}
   </DropdownMenuTrigger>
 {:else}
-  <DrawerTrigger class={cn(rest.child || triggerVariant, className)} {...rest} bind:ref>
+  <DrawerTrigger class={cn(rest.child || triggerVariant, className)} {...defaultProps} {...rest} bind:ref>
     {@render triggerContent()}
   </DrawerTrigger>
 {/if}
