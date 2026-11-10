@@ -579,6 +579,14 @@ msgstr "Audio"
 msgid "Audio file not included in Send & Receive"
 msgstr "Audio file not included in Send & Receive"
 
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Audio options"
+msgstr "Audio options"
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Audio options ({0})"
+msgstr "Audio options ({0})"
+
 #. Noun for a media resource that is an audio recording, e.g. "Added audio recording" in the activity log
 #: src/lib/activity/ChangeSummary.svelte
 msgid "audio recording"
@@ -808,6 +816,9 @@ msgstr "Cleared {0}"
 
 #. Button to close popup
 #: src/lib/components/field-editors/multi-select.svelte
+#: src/lib/components/responsive-dialog/responsive-dialog.svelte
+#: src/lib/components/responsive-menu/responsive-menu-content.svelte
+#: src/lib/components/responsive-popup/responsive-popup.svelte
 #: src/lib/components/ui/button/x-button.svelte
 #: src/lib/entry-editor/EditEntryDialog.svelte
 #: src/lib/entry-editor/duplicate-check/DuplicateSummaryPill.svelte
@@ -1135,6 +1146,7 @@ msgstr "Delete"
 #. Dialog title with item name
 #: src/lib/entry-editor/DeleteDialog.svelte
 #: src/lib/entry-editor/DeleteDialog.svelte
+#: src/lib/entry-editor/EntityListItemActions.svelte
 msgid "Delete {0}"
 msgstr "Delete {0}"
 
@@ -1575,6 +1587,10 @@ msgstr "example"
 #: src/lib/views/entity-config.ts
 msgid "Example"
 msgstr "Example"
+
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Example {0}"
+msgstr "Example {0}"
 
 #. Field label in the activity change-preview diff for a custom view: which example-sentence fields it shows.
 #: src/lib/entry-editor/diff-view/diff-fields.ts
@@ -2028,6 +2044,10 @@ msgstr "Has unresolved comments"
 msgid "Headword"
 msgstr "Headword"
 
+#: src/lib/entry-editor/FieldHelpIcon.svelte
+msgid "Help"
+msgstr "Help"
+
 #: src/project/ProjectSidebar.svelte
 msgid "Help & More"
 msgstr "Help & More"
@@ -2051,6 +2071,10 @@ msgstr "history"
 #: src/project/browse/EntryMenu.svelte
 msgid "History"
 msgstr "History"
+
+#: src/lib/entry-editor/EntityListItemActions.svelte
+msgid "History of {0}"
+msgstr "History of {0}"
 
 #. Instructions show above audio record button.
 #. The '#' character will be replace with a line break.
@@ -2261,6 +2285,14 @@ msgstr "Loaded file"
 msgid "Loading activity"
 msgstr "Loading activity"
 
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Loading audio"
+msgstr "Loading audio"
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Loading audio ({0})"
+msgstr "Loading audio ({0})"
+
 #: src/lib/entry-editor/comments/CommentPanel.svelte
 msgid "Loading comments..."
 msgstr "Loading comments..."
@@ -2394,6 +2426,10 @@ msgstr "meaning"
 msgid "Meaning"
 msgstr "Meaning"
 
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Meaning {0}"
+msgstr "Meaning {0}"
+
 #. Relevant view: Lite
 #. Classic view equivalent: "senses"
 #. Lowercase plural noun interpolated into activity-log lines (e.g. "Reordered meanings"). Paired with singular "meaning".
@@ -2508,9 +2544,22 @@ msgid "morph types"
 msgstr "morph types"
 
 #. Drag-handle or button tooltip to reorder an item in a list (e.g., senses or examples within an entry).
+#: src/lib/components/reorderer/reorderer-trigger.svelte
 #: src/lib/entry-editor/ItemListItem.svelte
 msgid "Move"
 msgstr "Move"
+
+#: src/lib/entry-editor/EntityListItemActions.svelte
+msgid "Move {0}"
+msgstr "Move {0}"
+
+#: src/lib/components/ui/resizable/resizable-handle.svelte
+msgid "Move divider left"
+msgstr "Move divider left"
+
+#: src/lib/components/ui/resizable/resizable-handle.svelte
+msgid "Move divider right"
+msgstr "Move divider right"
 
 #. Badge or screen-reader marker in the activity change preview: this change only moved the item to another place in its list (e.g. reordered senses)
 #: src/lib/activity/ActivityChangeHeader.svelte
@@ -3019,6 +3068,18 @@ msgstr "Paste the AI's reply"
 msgid "Paste the AI's reply or the plugin's HTML here"
 msgstr "Paste the AI's reply or the plugin's HTML here"
 
+#: src/lib/components/audio/audio-editor.svelte
+msgid "Pause"
+msgstr "Pause"
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Pause audio"
+msgstr "Pause audio"
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Pause audio ({0})"
+msgstr "Pause audio ({0})"
+
 #. Sync status
 #. Status badge: Changes exist locally but haven't been synced yet
 #: src/project/sync/FwLiteSyncView.svelte
@@ -3085,9 +3146,21 @@ msgstr "Pinned"
 msgid "Platform"
 msgstr "Platform"
 
+#: src/lib/components/audio/audio-editor.svelte
+msgid "Play"
+msgstr "Play"
+
 #: src/lib/plugins/PluginsView.svelte
 msgid "Play & learn"
 msgstr "Play & learn"
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Play audio"
+msgstr "Play audio"
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Play audio ({0})"
+msgstr "Play audio ({0})"
 
 #: src/lib/activity/ChangeSummary.svelte
 msgid "plugin"
@@ -3419,6 +3492,14 @@ msgstr "Remove audio"
 msgid "Remove from project"
 msgstr "Remove from project"
 
+#: src/lib/entry-editor/NewEntryDialog.svelte
+msgid "Remove meaning"
+msgstr "Remove meaning"
+
+#: src/lib/entry-editor/NewEntryDialog.svelte
+msgid "Remove sense"
+msgstr "Remove sense"
+
 #. Badge or screen-reader marker in the activity change preview: this change removed the item (e.g. a component link between two entries), or the struck-through text or value
 #: src/lib/activity/ActivityChangeHeader.svelte
 #: src/lib/activity/ActivityView.svelte
@@ -3727,6 +3808,10 @@ msgstr "sense"
 #: src/lib/views/entity-config.ts
 msgid "Sense"
 msgstr "Sense"
+
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Sense {0}"
+msgstr "Sense {0}"
 
 #. Field label in the activity change-preview diff for a custom view: which sense-level fields it shows.
 #: src/lib/entry-editor/diff-view/diff-fields.ts
@@ -4588,6 +4673,8 @@ msgstr "View {0}"
 
 #. Title/tooltip for an icon button that opens the view picker (switch between Classic, Lite, or a custom view).
 #: src/lib/activity/ActivityViewPicker.svelte
+#: src/project/browse/EditorViewOptions.svelte
+#: src/project/browse/EntryListViewOptions.svelte
 msgid "View options"
 msgstr "View options"
 

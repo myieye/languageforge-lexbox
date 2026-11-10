@@ -584,6 +584,14 @@ msgstr "Audio"
 msgid "Audio file not included in Send & Receive"
 msgstr "Le fichier audio n'est pas inclus dans l'envoi/recevoir"
 
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Audio options"
+msgstr ""
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Audio options ({0})"
+msgstr ""
+
 #. Noun for a media resource that is an audio recording, e.g. "Added audio recording" in the activity log
 #: src/lib/activity/ChangeSummary.svelte
 msgid "audio recording"
@@ -813,6 +821,9 @@ msgstr ""
 
 #. Button to close popup
 #: src/lib/components/field-editors/multi-select.svelte
+#: src/lib/components/responsive-dialog/responsive-dialog.svelte
+#: src/lib/components/responsive-menu/responsive-menu-content.svelte
+#: src/lib/components/responsive-popup/responsive-popup.svelte
 #: src/lib/components/ui/button/x-button.svelte
 #: src/lib/entry-editor/EditEntryDialog.svelte
 #: src/lib/entry-editor/duplicate-check/DuplicateSummaryPill.svelte
@@ -1140,6 +1151,7 @@ msgstr "Supprimer"
 #. Dialog title with item name
 #: src/lib/entry-editor/DeleteDialog.svelte
 #: src/lib/entry-editor/DeleteDialog.svelte
+#: src/lib/entry-editor/EntityListItemActions.svelte
 msgid "Delete {0}"
 msgstr "Supprimer {0}"
 
@@ -1580,6 +1592,10 @@ msgstr ""
 #: src/lib/views/entity-config.ts
 msgid "Example"
 msgstr "Exemple"
+
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Example {0}"
+msgstr ""
 
 #. Field label in the activity change-preview diff for a custom view: which example-sentence fields it shows.
 #: src/lib/entry-editor/diff-view/diff-fields.ts
@@ -2033,6 +2049,10 @@ msgstr "A des commentaires non résolus"
 msgid "Headword"
 msgstr "Entrée de dictionnaire"
 
+#: src/lib/entry-editor/FieldHelpIcon.svelte
+msgid "Help"
+msgstr ""
+
 #: src/project/ProjectSidebar.svelte
 msgid "Help & More"
 msgstr "Aide & plus"
@@ -2056,6 +2076,10 @@ msgstr ""
 #: src/project/browse/EntryMenu.svelte
 msgid "History"
 msgstr "L'histoire"
+
+#: src/lib/entry-editor/EntityListItemActions.svelte
+msgid "History of {0}"
+msgstr ""
 
 #. Instructions show above audio record button.
 #. The '#' character will be replace with a line break.
@@ -2266,6 +2290,14 @@ msgstr "Fichier chargé"
 msgid "Loading activity"
 msgstr "Chargement de l'activité"
 
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Loading audio"
+msgstr ""
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Loading audio ({0})"
+msgstr ""
+
 #: src/lib/entry-editor/comments/CommentPanel.svelte
 msgid "Loading comments..."
 msgstr "Chargement des commentaires..."
@@ -2399,6 +2431,10 @@ msgstr ""
 msgid "Meaning"
 msgstr "Signification"
 
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Meaning {0}"
+msgstr ""
+
 #. Relevant view: Lite
 #. Classic view equivalent: "senses"
 #. Lowercase plural noun interpolated into activity-log lines (e.g. "Reordered meanings"). Paired with singular "meaning".
@@ -2513,9 +2549,22 @@ msgid "morph types"
 msgstr ""
 
 #. Drag-handle or button tooltip to reorder an item in a list (e.g., senses or examples within an entry).
+#: src/lib/components/reorderer/reorderer-trigger.svelte
 #: src/lib/entry-editor/ItemListItem.svelte
 msgid "Move"
 msgstr "Déplacer"
+
+#: src/lib/entry-editor/EntityListItemActions.svelte
+msgid "Move {0}"
+msgstr ""
+
+#: src/lib/components/ui/resizable/resizable-handle.svelte
+msgid "Move divider left"
+msgstr ""
+
+#: src/lib/components/ui/resizable/resizable-handle.svelte
+msgid "Move divider right"
+msgstr ""
 
 #. Badge or screen-reader marker in the activity change preview: this change only moved the item to another place in its list (e.g. reordered senses)
 #: src/lib/activity/ActivityChangeHeader.svelte
@@ -3024,6 +3073,18 @@ msgstr ""
 msgid "Paste the AI's reply or the plugin's HTML here"
 msgstr ""
 
+#: src/lib/components/audio/audio-editor.svelte
+msgid "Pause"
+msgstr ""
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Pause audio"
+msgstr ""
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Pause audio ({0})"
+msgstr ""
+
 #. Sync status
 #. Status badge: Changes exist locally but haven't been synced yet
 #: src/project/sync/FwLiteSyncView.svelte
@@ -3090,8 +3151,20 @@ msgstr "Épinglé"
 msgid "Platform"
 msgstr "Plateforme"
 
+#: src/lib/components/audio/audio-editor.svelte
+msgid "Play"
+msgstr ""
+
 #: src/lib/plugins/PluginsView.svelte
 msgid "Play & learn"
+msgstr ""
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Play audio"
+msgstr ""
+
+#: src/lib/components/field-editors/audio-input.svelte
+msgid "Play audio ({0})"
 msgstr ""
 
 #: src/lib/activity/ChangeSummary.svelte
@@ -3424,6 +3497,14 @@ msgstr "Supprimer l'audio"
 msgid "Remove from project"
 msgstr ""
 
+#: src/lib/entry-editor/NewEntryDialog.svelte
+msgid "Remove meaning"
+msgstr ""
+
+#: src/lib/entry-editor/NewEntryDialog.svelte
+msgid "Remove sense"
+msgstr ""
+
 #. Badge or screen-reader marker in the activity change preview: this change removed the item (e.g. a component link between two entries), or the struck-through text or value
 #: src/lib/activity/ActivityChangeHeader.svelte
 #: src/lib/activity/ActivityView.svelte
@@ -3732,6 +3813,10 @@ msgstr ""
 #: src/lib/views/entity-config.ts
 msgid "Sense"
 msgstr "Sens"
+
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Sense {0}"
+msgstr ""
 
 #. Field label in the activity change-preview diff for a custom view: which sense-level fields it shows.
 #: src/lib/entry-editor/diff-view/diff-fields.ts
@@ -4593,6 +4678,8 @@ msgstr ""
 
 #. Title/tooltip for an icon button that opens the view picker (switch between Classic, Lite, or a custom view).
 #: src/lib/activity/ActivityViewPicker.svelte
+#: src/project/browse/EditorViewOptions.svelte
+#: src/project/browse/EntryListViewOptions.svelte
 msgid "View options"
 msgstr ""
 

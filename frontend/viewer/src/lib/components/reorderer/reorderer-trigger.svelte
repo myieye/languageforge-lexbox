@@ -17,8 +17,9 @@
   import {buttonVariants} from '../ui/button';
   import type {IconClass} from '$lib/icon-class';
   import {useReordererTrigger} from './reorderer.svelte';
+  import {t} from 'svelte-i18n-lingui';
 
-  let {child, ...props}: ReordererTriggerProps = $props();
+  let {child, title, ...props}: ReordererTriggerProps = $props();
 
   function pickIcon(direction: 'horizontal' | 'vertical', first = false, last = false): IconClass {
     if (direction === 'horizontal') {
@@ -34,9 +35,13 @@
 </script>
 
 {#if child}
-  {@render child({arrowIcon, props})}
+  {@render child({arrowIcon, props: {title, ...props}})}
 {:else}
-  <DropdownMenu.Trigger class={buttonVariants({variant: 'secondary', size: 'icon'})} {...props}>
+  <DropdownMenu.Trigger
+    class={buttonVariants({variant: 'secondary', size: 'icon'})}
+    title={title ?? $t`Move`}
+    {...props}
+  >
     <Icon icon={arrowIcon} />
   </DropdownMenu.Trigger>
 {/if}

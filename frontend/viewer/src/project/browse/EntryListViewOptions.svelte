@@ -21,7 +21,7 @@
 
 <ResponsivePopup bind:open>
   {#snippet trigger({props})}
-    <Button {...props} size="icon-xs" variant="ghost" icon="i-mdi-layers" />
+    <Button {...props} size="icon-xs" variant="ghost" icon="i-mdi-layers" title={$t`View options`} />
   {/snippet}
   <div class="space-y-3 md:space-y-4">
 

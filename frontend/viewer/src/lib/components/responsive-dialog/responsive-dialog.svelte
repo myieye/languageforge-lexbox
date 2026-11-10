@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {t} from 'svelte-i18n-lingui';
   import {IsMobile} from '$lib/hooks/is-mobile.svelte';
   import * as Dialog from '$lib/components/ui/dialog';
   import * as Drawer from '$lib/components/ui/drawer';
@@ -34,7 +35,10 @@
   <Drawer.Root bind:open {...rest}>
     {#if trigger}<Drawer.Trigger child={trigger} />{/if}
     <Drawer.Content {...contentProps} class={cn(contentProps?.class, 'max-w-none')}>
-      <Drawer.Close class={buttonVariants({variant: 'ghost', size: 'icon', class: 'absolute top-4 right-4 z-10'})}>
+      <Drawer.Close
+        class={buttonVariants({variant: 'ghost', size: 'icon', class: 'absolute top-4 right-4 z-10'})}
+        aria-label={$t`Close`}
+      >
         <Icon icon="i-mdi-close" />
       </Drawer.Close>
       <div class="mx-auto w-full p-4 overflow-auto overscroll-contain">

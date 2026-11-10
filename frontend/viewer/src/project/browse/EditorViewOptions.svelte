@@ -14,7 +14,7 @@
 </script>
 <ResponsivePopup bind:open>
   {#snippet trigger({props})}
-    <Button {...props} size="icon" variant="ghost" icon="i-mdi-layers" />
+    <Button {...props} size="icon" variant="ghost" icon="i-mdi-layers" title={$t`View options`} />
   {/snippet}
   <div class="space-y-2 md:space-y-4">
     <h3 class="font-normal max-md:mb-1">{$t`Dictionary Preview`}</h3>

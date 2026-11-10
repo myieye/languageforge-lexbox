@@ -208,7 +208,7 @@
             {#if sense}
               <Editor.SubGrid>
                 <ObjectHeader type="sense">
-                  <Button onclick={() => sense = undefined} size="icon" variant="secondary" icon="i-mdi-trash-can" />
+                  <Button onclick={() => sense = undefined} size="icon" variant="secondary" icon="i-mdi-trash-can" title={pt($t`Remove sense`, $t`Remove meaning`, viewService.currentView)} />
                 </ObjectHeader>
                 <SenseEditorPrimitive bind:sense
                   partOfSpeechDescription={partOfSpeechIsFromTemplate ? fromActiveFilter : undefined}

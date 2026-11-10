@@ -11,6 +11,7 @@
   import {type IconClass} from '$lib/icon-class';
   import {onMount, tick} from 'svelte';
   import {DEFAULT_DEBOUNCE_TIME} from '$lib/utils/time';
+  import {t} from 'svelte-i18n-lingui';
 
   let {
     ref = $bindable(null),
@@ -96,18 +97,19 @@
       class="flex gap-1 items-center justify-center z-10 min-w-3 overflow-hidden transition-all delay-100 hover:delay-300 duration-0"
       class:hover:min-w-max={showResizers}
     >
-      {@render paneResizer(leftResizerOnClick, 'i-mdi-chevron-left')}
+      {@render paneResizer(leftResizerOnClick, 'i-mdi-chevron-left', $t`Move divider left`)}
       <div class="bg-border z-10 flex h-4 w-3 items-center justify-center rounded-sm border">
         <Icon icon="i-mdi-drag-vertical" class="size-2.5" />
       </div>
-      {@render paneResizer(rightResizerOnClick, 'i-mdi-chevron-right')}
+      {@render paneResizer(rightResizerOnClick, 'i-mdi-chevron-right', $t`Move divider right`)}
     </div>
 
-    {#snippet paneResizer(onclick: OnClickHandler, icon: IconClass)}
+    {#snippet paneResizer(onclick: OnClickHandler, icon: IconClass, title: string)}
       <Button
         class={cn('aspect-square p-0 rounded-full bg-accent/50', onclick || 'invisible')}
         size="xs"
         {icon}
+        {title}
         variant="ghost"
         {onclick}
       ></Button>
