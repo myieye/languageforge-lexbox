@@ -125,6 +125,7 @@
                      {semanticDomain}
                      onSelectEntry={(e) => select(e?.id ?? '')}
                      onOpenSelectedEntry={() => entryView?.focusEditor()}
+                     followFocus={!IsMobile.value}
                      previewDictionary={entryMode === 'preview'}/>
       </div>
     {/snippet}

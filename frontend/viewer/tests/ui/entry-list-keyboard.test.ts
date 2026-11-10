@@ -66,4 +66,44 @@ test.describe('Entry list keyboard navigation', () => {
     await row(page, 2).click();
     await expect(await projectPage.entryView.getLexemeInput()).toBeFocused();
   });
+
+  test('fast key repeat keeps focus and selection together', async ({page}) => {
+    await focusRowWithKeyboard(page, projectPage, 0);
+    for (let i = 0; i < 30; i++) await page.keyboard.press('ArrowDown');
+
+    await expect(row(page, 30)).toBeFocused();
+    await expect(row(page, 30)).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('a jump still loading does not take focus back after the user clicks elsewhere', async ({page}) => {
+    await focusRowWithKeyboard(page, projectPage, 0);
+    await page.keyboard.press('End');
+    await projectPage.entriesList.searchInput.click();
+
+    const last = (await projectPage.api.countEntries()) - 1;
+    await expect(row(page, last)).toBeAttached();
+    await page.waitForTimeout(500);
+    await expect(projectPage.entriesList.searchInput).toBeFocused();
+  });
+
+  test.describe('mobile', () => {
+    test.use({viewport: {width: 375, height: 812}});
+
+    test('arrows only move focus, and Enter opens the entry, also one opened before', async ({page}) => {
+      await page.evaluate(() => window.__PLAYWRIGHT_UTILS__.setHasHardwareKeyboard(true));
+      await focusRowWithKeyboard(page, projectPage, 0);
+      await page.keyboard.press('ArrowDown');
+      await expect(row(page, 1)).toBeFocused();
+      expect(page.url()).not.toContain('entryOpen');
+
+      await page.keyboard.press('Enter');
+      await expect(page).toHaveURL(/entryOpen=true/);
+      await page.goBack();
+      await expect(page).not.toHaveURL(/entryOpen=true/);
+
+      await focusRowWithKeyboard(page, projectPage, 1);
+      await page.keyboard.press('Enter');
+      await expect(page).toHaveURL(/entryOpen=true/);
+    });
+  });
 });

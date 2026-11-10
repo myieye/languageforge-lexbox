@@ -22,7 +22,6 @@
   import {onDestroy, untrack} from 'svelte';
   import {useViewService} from '$lib/views/view-service.svelte';
   import {pt} from '$lib/views/view-text';
-  import {IsMobile} from '$lib/hooks/is-mobile.svelte';
 
   let {
     search = '',
@@ -33,6 +32,7 @@
     sort,
     onSelectEntry,
     onOpenSelectedEntry,
+    followFocus = false,
     gridifyFilter = undefined,
     previewDictionary = false,
     disableNewEntry = false,
@@ -47,6 +47,8 @@
     onSelectEntry: (entry?: IEntry) => void;
     /** Enter on the already-selected row, e.g. to move focus into the editor */
     onOpenSelectedEntry?: () => void;
+    /** Arrow keys also select; otherwise they only move focus and Enter opens the row */
+    followFocus?: boolean;
     gridifyFilter?: string;
     previewDictionary?: boolean,
     disableNewEntry?: boolean,
@@ -191,18 +193,24 @@
 
   let listElem = $state<HTMLElement>();
 
-  // Rows far from the viewport only render a few frames after scrolling to them
-  async function waitForRow(index: number): Promise<HTMLElement | undefined> {
-    for (let frame = 0; frame < 60; frame++) {
-      const row = listElem?.querySelector<HTMLElement>(`[data-entry-index="${index}"]`);
-      if (row) return row;
-      await new Promise(requestAnimationFrame);
-    }
-    return undefined;
-  }
-
   // While a key is held, rows arrive before the previous one is focused; count from the newest
   let pendingIndex: number | undefined;
+
+  // A far jump unmounts the focused row, which drops focus to body
+  function focusInList(): boolean {
+    const active = document.activeElement;
+    return active === document.body || !!listElem?.contains(active);
+  }
+
+  async function focusRow(index: number): Promise<void> {
+    for (let frame = 0; frame < 60 && pendingIndex === index && focusInList(); frame++) {
+      const row = listElem?.querySelector<HTMLElement>(`[data-entry-index="${index}"]`);
+      // virtua keeps unmeasured rows visibility:hidden, and those can't take focus
+      row?.focus({preventScroll: true});
+      if (row && document.activeElement === row) return;
+      await new Promise(requestAnimationFrame);
+    }
+  }
 
   async function onListKeydown(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
@@ -210,7 +218,7 @@
     if (!entryLoader || !vList || !totalCount) return;
     const row = (event.target as HTMLElement).closest<HTMLElement>('[data-entry-index]');
     if (!row) return;
-    if (event.key === 'Enter' && row.ariaSelected === 'true' && onOpenSelectedEntry) {
+    if (event.key === 'Enter' && followFocus && row.ariaSelected === 'true' && onOpenSelectedEntry) {
       event.preventDefault();
       onOpenSelectedEntry();
       return;
@@ -232,12 +240,13 @@
     vList.scrollToIndex(target, {align: 'nearest'});
     const entry = await entryLoader.getOrLoadEntryByIndex(target);
     if (pendingIndex !== target) return;
-    // On mobile selecting opens the entry full screen, so only move focus there; Enter opens it
-    if (entry && !IsMobile.value) onSelectEntry(entry);
-    const targetRow = entry && await waitForRow(target);
-    if (pendingIndex !== target) return;
-    targetRow?.focus({preventScroll: true});
-    pendingIndex = undefined;
+    if (!entry || !focusInList()) {
+      pendingIndex = undefined;
+      return;
+    }
+    if (followFocus) onSelectEntry(entry);
+    await focusRow(target);
+    if (pendingIndex === target) pendingIndex = undefined;
   }
 </script>
 
