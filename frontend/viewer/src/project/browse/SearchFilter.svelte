@@ -38,6 +38,7 @@
     partOfSpeech = $bindable(),
     publication = $bindable(),
     unreadComments = $bindable(false),
+    userFilterActive = $bindable(false),
   }: {
     search: string;
     gridifyFilter?: string;
@@ -45,6 +46,7 @@
     partOfSpeech?: IPartOfSpeech;
     publication?: IPublication;
     unreadComments?: boolean;
+    userFilterActive?: boolean;
   } = $props();
 
   let inputRef = $state<HTMLInputElement | null>(null);
@@ -54,7 +56,6 @@
   let fieldFilterValue = $state('');
   let filterOp = $state<Op>('contains')
   let includeSubDomains = $state(false);
-  let userFilterActive = $state(false);
   let hasComments = $state(false);
   let openComments = $state(false);
 
@@ -144,6 +145,10 @@
 
   function resetFilters() {
     search = '';
+    clearFilters();
+  }
+
+  export function clearFilters() {
     missingField = null;
     // null tells FieldSelect to fall back to its default field; WsSelect then reacts to the
     // wsType change and repopulates selectedWs with the full writing-system set.

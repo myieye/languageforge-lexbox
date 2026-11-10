@@ -800,6 +800,10 @@ msgstr "Classic FieldWorks Projects"
 msgid "clear"
 msgstr "clear"
 
+#: src/project/browse/EntriesList.svelte
+msgid "Clear filters"
+msgstr "Clear filters"
+
 #. Activity-log line. {0} = field label (e.g. "Gloss", "Definition"). Means the field's value was erased.
 #: src/lib/activity/ChangeSummary.svelte
 #: src/lib/activity/ChangeSummary.svelte
@@ -1867,6 +1871,14 @@ msgstr "Filter..."
 #: src/project/browse/SearchFilter.svelte
 msgid "Filters"
 msgstr "Filters"
+
+#: src/project/browse/EntriesList.svelte
+msgid "Filters might be hiding some entries"
+msgstr "Filters might be hiding some entries"
+
+#: src/project/browse/EntriesList.svelte
+msgid "Filters might be hiding some words"
+msgstr "Filters might be hiding some words"
 
 #. Relevant view: Classic
 #. Lite view equivalent: "Find word..."
@@ -4297,6 +4309,7 @@ msgstr "Try {0}"
 
 #: src/lib/entry-editor/field-editors/PictureImage.svelte
 #: src/lib/layout/ViewErrorBoundary.svelte
+#: src/project/browse/EntriesList.svelte
 msgid "Try again"
 msgstr "Try again"
 

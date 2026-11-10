@@ -27,7 +27,7 @@
   const label = $derived($plural(unreadCount, {one: '# unread comment', other: '# unread comments'}));
 </script>
 
-{#if unreadCount > 0}
+{#if unreadCount > 0 || unreadComments}
   <Tooltip.Root>
     <Tooltip.Trigger>
       {#snippet child({props})}

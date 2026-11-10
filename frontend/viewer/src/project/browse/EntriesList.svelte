@@ -35,6 +35,8 @@
     previewDictionary = false,
     disableNewEntry = false,
     entryCount = $bindable(null),
+    userFilterActive = false,
+    onClearFilters,
   }: {
     search?: string;
     selectedEntryId?: string;
@@ -47,6 +49,8 @@
     previewDictionary?: boolean,
     disableNewEntry?: boolean,
     entryCount?: number | null,
+    userFilterActive?: boolean,
+    onClearFilters?: () => void,
   } = $props();
   const projectContext = useProjectContext();
   const miniLcmApi = $derived(projectContext.maybeApi);
@@ -216,15 +220,31 @@
 
 <div class="flex-1 h-full" role="table">
   {#if entryLoader?.error}
-    <div class="flex items-center justify-center h-full text-muted-foreground gap-2">
-      <Icon icon="i-mdi-alert-circle-outline" />
-      <p>{$t`Failed to load entries`}</p>
+    <div class="flex flex-col items-center justify-center h-full gap-4 px-4">
+      <div class="flex items-center gap-2 text-muted-foreground">
+        <Icon icon="i-mdi-alert-circle-outline" />
+        <p>{$t`Failed to load entries`}</p>
+      </div>
+      <Button variant="outline" icon="i-mdi-refresh" loading={loading.current} onclick={() => entryLoader?.reset()}>
+        {$t`Try again`}
+      </Button>
     </div>
   {:else}
     <div class="h-full">
       {#if entryLoader?.totalCount === 0}
         <div class="flex flex-col items-center justify-center h-full gap-4 px-4">
           <p class="text-muted-foreground">{pt($t`No entries found`, $t`No words found`, viewService.currentView)}</p>
+
+          {#if userFilterActive && onClearFilters}
+            <div class="flex flex-col items-center gap-2 text-center">
+              <p class="text-sm text-muted-foreground">
+                {pt($t`Filters might be hiding some entries`, $t`Filters might be hiding some words`, viewService.currentView)}
+              </p>
+              <Button variant="outline" icon="i-mdi-filter-remove-outline" onclick={onClearFilters}>
+                {$t`Clear filters`}
+              </Button>
+            </div>
+          {/if}
 
           {#if canCreateFromSearch}
             {@render newEntryFromSearchRow('max-w-md')}
