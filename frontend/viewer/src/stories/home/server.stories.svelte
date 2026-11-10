@@ -71,6 +71,7 @@
       <Router>
         <Server {status} {projects} localProjects={projects}/>
         <Server {status} projects={[]} localProjects={[]} loading/>
+        <Server status={{...status, loggedIn: true}} projects={[]} localProjects={[]} unreachable/>
       </Router>
     {/snippet}
   </Story>

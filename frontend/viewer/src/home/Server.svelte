@@ -13,6 +13,7 @@
   import {transitionContext} from './transitions';
   import ListItem from '$lib/components/ListItem.svelte';
   import {navigate} from 'svelte-routing';
+  import {online} from 'svelte/reactivity/window';
 
   const [send, receive] = transitionContext.getOr([function(){return {}}, function(){return {}}]);
 
@@ -24,6 +25,7 @@
     localProjects: IProjectModel[];
     loading?: boolean;
     canDownloadByCode?: boolean;
+    unreachable?: boolean;
     refreshProjects?: () => void;
     refreshAll?: () => void;
   }
@@ -34,6 +36,7 @@
     localProjects,
     loading = false,
     canDownloadByCode,
+    unreachable = false,
     refreshProjects = () => {
     },
     refreshAll = () => {
@@ -138,6 +141,14 @@
     <!--override the defaults from App.svelte-->
     <!-- eslint-disable-next-line @typescript-eslint/naming-convention -->
     <ProjectListItem icon="i-mdi-cloud" skeleton/>
+  {:else if unreachable}
+    <div class="flex flex-col items-center justify-center gap-2 p-4 rounded border text-center">
+      <Icon icon="i-mdi-cloud-off-outline" class="size-6 text-muted-foreground"/>
+      <p>{$t`Can't reach ${server?.displayName ?? ''}. Check your internet connection.`}</p>
+      <Button variant="secondary" icon="i-mdi-refresh" onclick={() => refreshProjects()}>
+        {$t`Retry`}
+      </Button>
+    </div>
   {:else if !undownloadedProjects.length && !canDownloadByCode}
     <div class="flex flex-col items-center justify-center md:rounded p-4 rounded border">
       {#if status.loggedIn}
@@ -147,6 +158,11 @@
           <Icon icon="i-mdi-open-in-new" class="size-4"/>
         </Button>
       {:else}
+        {#if online.current === false}
+          <p class="mb-2 text-center text-muted-foreground">
+            {$t`You appear to be offline. Connect to the internet to log in.`}
+          </p>
+        {/if}
         <LoginButton {status} statusChange={() => refreshAll()}/>
       {/if}
     </div>

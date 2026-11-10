@@ -41,7 +41,7 @@ public record ProjectModel(
         };
 }
 
-public record ServerProjects(LexboxServer Server, ProjectModel[] Projects, bool CanDownloadByCode);
+public record ServerProjects(LexboxServer Server, ProjectModel[] Projects, bool CanDownloadByCode, bool Unreachable);
 public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
     CrdtProjectsService crdtProjectsService,
     IEnumerable<IProjectProvider> projectProviders,
@@ -70,6 +70,12 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
         if (forceRefresh)
             lexboxProjectService.InvalidateProjectsCache(server);
         var lexboxProjects = await lexboxProjectService.GetLexboxProjects(server);
+        if (lexboxProjects is null)
+        {
+            // Signed in but the list failed to load: most likely offline, not logged out
+            var unreachable = await oAuthClientFactory.GetClient(server).IsSignedIn();
+            return new(server, [], false, unreachable);
+        }
         var user = await lexboxProjectService.GetLexboxUser(server);
         // Can migrate a project's db and replay its whole history, so keep it off the UI thread
         await Task.Run(async () => await UpdateProjectServerInfo(lexboxProjects.Projects, user));
@@ -83,7 +89,7 @@ public class CombinedProjectsService(LexboxProjectService lexboxProjectService,
                 server,
                 p.Id))
             .ToArray();
-        return new(server, projectModels, lexboxProjects.CanDownloadByCode);
+        return new(server, projectModels, lexboxProjects.CanDownloadByCode, Unreachable: false);
     }
 
     private async Task UpdateProjectServerInfo(FieldWorksLiteProject[] lexboxProjects, LexboxUser? lexboxUser)
