@@ -223,7 +223,7 @@ export class WritingSystemService {
 
   firstDefOrGlossVal(sense: ISense | undefined): string {
     if (!sense) return '';
-    return this.first(sense.definition, this.analysis) || this.first(sense.gloss, this.analysis) || '';
+    return this.first(sense.definition, this.analysisNoAudio) || this.first(sense.gloss, this.analysisNoAudio) || '';
   }
 
   /** Like {@link firstDefOrGlossVal}, but prefers the view's analysis writing systems. */
@@ -246,13 +246,13 @@ export class WritingSystemService {
 
   firstSentenceOrTranslationVal(example: IExampleSentence | undefined): string {
     if (!example) return '';
-    return this.first(example.sentence, this.vernacular) || this.firstTranslationVal(example);
+    return this.first(example.sentence, this.vernacularNoAudio) || this.firstTranslationVal(example);
   }
 
   firstTranslationVal(example: IExampleSentence | undefined): string {
     if (!example) return '';
     for (const translation of example.translations) {
-      const text = this.first(translation.text, this.analysis);
+      const text = this.first(translation.text, this.analysisNoAudio);
       if (text) return text;
     }
     return '';

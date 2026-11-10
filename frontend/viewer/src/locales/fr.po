@@ -549,6 +549,7 @@ msgid "Apply changes"
 msgstr ""
 
 #. Confirmation prompt
+#. {0} is the item, sometimes followed by a colon and its name (e.g. "Sense 2" or "Sense: a small round fruit")
 #: src/lib/entry-editor/DeleteDialog.svelte
 msgid "Are you sure you want to delete {0}?"
 msgstr "Êtes-vous sûr de vouloir supprimer {0}?"
@@ -1581,6 +1582,11 @@ msgstr ""
 msgid "Example"
 msgstr "Exemple"
 
+#. Names an empty example sentence in the delete dialog ("Delete Example 1"). {0} is the example number, as shown in the example header.
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Example {0}"
+msgstr ""
+
 #. Field label in the activity change-preview diff for a custom view: which example-sentence fields it shows.
 #: src/lib/entry-editor/diff-view/diff-fields.ts
 msgid "Example fields"
@@ -2398,6 +2404,13 @@ msgstr ""
 #: src/lib/views/entity-config.ts
 msgid "Meaning"
 msgstr "Signification"
+
+#. Relevant view: Lite
+#. Classic view equivalent: "Sense {0}"
+#. Names an unnamed meaning in the delete dialog ("Delete Meaning 2"). {0} is the meaning number, as shown in the meaning header.
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Meaning {0}"
+msgstr ""
 
 #. Relevant view: Lite
 #. Classic view equivalent: "senses"
@@ -3732,6 +3745,13 @@ msgstr ""
 #: src/lib/views/entity-config.ts
 msgid "Sense"
 msgstr "Sens"
+
+#. Relevant view: Classic
+#. Lite view equivalent: "Meaning {0}"
+#. Names an unnamed sense in the delete dialog ("Delete Sense 2"). {0} is the sense number, as shown in the sense header.
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Sense {0}"
+msgstr ""
 
 #. Field label in the activity change-preview diff for a custom view: which sense-level fields it shows.
 #: src/lib/entry-editor/diff-view/diff-fields.ts
