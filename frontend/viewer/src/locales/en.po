@@ -698,6 +698,14 @@ msgstr "Can change your dictionary — it will ask you first"
 msgid "Can use the internet"
 msgstr "Can use the internet"
 
+#: src/home/Server.svelte
+msgid "Can't reach {0} right now. Try again later."
+msgstr "Can't reach {0} right now. Try again later."
+
+#: src/home/Server.svelte
+msgid "Can't reach {0}. Check your internet connection."
+msgstr "Can't reach {0}. Check your internet connection."
+
 #. Button to close dialog without saving
 #. Appears in dialog footer; discards any pending edits
 #. Synonyms across UI: "Don't delete" (Delete dialog), "Close" (About dialog)
@@ -3526,6 +3534,10 @@ msgstr "Restart"
 msgid "Restore"
 msgstr "Restore"
 
+#: src/home/Server.svelte
+msgid "Retry"
+msgstr "Retry"
+
 #. Button option
 #: src/project/tasks/DoneView.svelte
 msgid "Review"
@@ -4737,6 +4749,10 @@ msgstr "Yes"
 #: src/lib/auth/LoginButton.svelte
 msgid "You appear to be offline. Can you connect to {0}?"
 msgstr "You appear to be offline. Can you connect to {0}?"
+
+#: src/home/Server.svelte
+msgid "You appear to be offline. Connect to the internet to log in."
+msgstr "You appear to be offline. Connect to the internet to log in."
 
 #. Status message when no updates are available
 #: src/lib/updates/UpdateDialogContent.svelte

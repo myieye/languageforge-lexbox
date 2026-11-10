@@ -197,6 +197,16 @@ public class OAuthClient
     }
 
     /// <summary>
+    /// The signed-in account's name without acquiring a token, so it's available offline.
+    /// </summary>
+    public async ValueTask<string?> GetCachedAccountName()
+    {
+        await ConfigureCache();
+        var accounts = await _application.GetAccountsAsync();
+        return accounts.FirstOrDefault()?.Username;
+    }
+
+    /// <summary>
     /// Gets a usable authentication result, silently refreshing when the cached token is missing or near
     /// expiry. Returns null when none can be produced — in one of two cases the caller may want to tell apart:
     /// - no usable login. A fresh interactive sign-in is required

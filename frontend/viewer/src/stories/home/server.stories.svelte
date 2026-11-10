@@ -1,13 +1,29 @@
 <script module lang="ts">
   import {defineMeta} from '@storybook/addon-svelte-csf';
+  import {setupServiceProvider} from '$lib/services/service-provider';
   import Server from '../../home/Server.svelte';
 
   const {Story} = defineMeta({});
+  setupServiceProvider();
 </script>
 <script lang="ts">
+  import {DotnetService, LoginResult} from '$lib/dotnet-types';
   import type {IProjectModel, IServerStatus} from '$lib/dotnet-types';
   import {ProjectRole} from '$lib/dotnet-types/generated-types/LexCore/Entities/ProjectRole';
   import {Router} from 'svelte-routing';
+  import {onDestroy} from 'svelte';
+
+  if (!window.lexbox.ServiceProvider.tryGetService(DotnetService.AuthService)) {
+    window.lexbox.ServiceProvider.setService(DotnetService.AuthService, {
+      servers: () => Promise.resolve([]),
+      signInWebView: () => Promise.resolve(LoginResult.Success),
+      useSystemWebView: () => Promise.resolve(true),
+      logout: () => Promise.resolve(),
+    });
+    onDestroy(() => {
+      window.lexbox.ServiceProvider.removeService(DotnetService.AuthService);
+    });
+  }
 
   const status: IServerStatus = {
     server: {
@@ -71,6 +87,8 @@
       <Router>
         <Server {status} {projects} localProjects={projects}/>
         <Server {status} projects={[]} localProjects={[]} loading/>
+        <Server {status} projects={[]} localProjects={[]}/>
+        <Server status={{...status, loggedIn: true}} projects={[]} localProjects={[]} unreachable/>
       </Router>
     {/snippet}
   </Story>

@@ -76,24 +76,29 @@ public class LexboxProjectService : IDisposable
         }
     };
 
-    public async Task<ListProjectsResult> GetLexboxProjects(LexboxServer server)
+    /// <returns>null when the list couldn't be loaded (logged out, offline or a server error). Failures aren't cached.</returns>
+    public async Task<ListProjectsResult?> GetLexboxProjects(LexboxServer server)
     {
-        return await cache.GetOrCreateAsync(ProjectListCacheKey(server),
-            async entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
-                var httpClient = await clientFactory.GetClient(server).CreateHttpClient();
-                if (httpClient is null) return new([], false);
-                try
-                {
-                    return await httpClient.GetFromJsonAsync<ListProjectsResult>("api/crdt/listProjectsV2", ListProjectsJsonOptions) ?? new([], false);
-                }
-                catch (Exception e)
-                {
-                    logger.LogError(e, "Error getting lexbox projects");
-                    return new([], false);
-                }
-            }) ?? new([], false);
+        var key = ProjectListCacheKey(server);
+        if (cache.TryGetValue(key, out ListProjectsResult? cached)) return cached;
+        var result = await FetchLexboxProjects(server);
+        if (result is not null) cache.Set(key, result, TimeSpan.FromMinutes(5));
+        return result;
+    }
+
+    internal virtual async Task<ListProjectsResult?> FetchLexboxProjects(LexboxServer server)
+    {
+        var httpClient = await clientFactory.GetClient(server).CreateHttpClient();
+        if (httpClient is null) return null;
+        try
+        {
+            return await httpClient.GetFromJsonAsync<ListProjectsResult>("api/crdt/listProjectsV2", ListProjectsJsonOptions);
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error getting lexbox projects");
+            return null;
+        }
     }
 
     public async Task<LexboxUser?> GetLexboxUser(LexboxServer server)

@@ -143,9 +143,9 @@ public class SyncService(
         try
         {
             if (refreshServerProjects) lexboxProjectService.InvalidateProjectsCache(server);
-            var serverProject = (await lexboxProjectService.GetLexboxProjects(server)).Projects
+            var serverProject = (await lexboxProjectService.GetLexboxProjects(server))?.Projects
                 .FirstOrDefault(p => p.Id == project.Id);
-            // Not listed: either the fetch failed (an empty list) or the user lost access. Keep the current role,
+            // Not listed: either the fetch failed or the user lost access. Keep the current role,
             // downgrading on a failed fetch would lock users out whenever the list can't be loaded.
             if (serverProject is null) return;
             var role = serverProject.Role.ToUserProjectRole();
