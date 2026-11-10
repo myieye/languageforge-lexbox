@@ -79,6 +79,7 @@
   }
 
   let entriesList: EntriesList | undefined = $state();
+  let entryView: EntryView | undefined = $state();
 
   async function onClose() {
     // Selected id is preserved by MasterDetailView so we can scroll back to it.
@@ -123,13 +124,14 @@
                      {partOfSpeech}
                      {semanticDomain}
                      onSelectEntry={(e) => select(e?.id ?? '')}
+                     onOpenSelectedEntry={() => entryView?.focusEditor()}
                      previewDictionary={entryMode === 'preview'}/>
       </div>
     {/snippet}
     {#snippet detail({selectedId: detailSelectedId, close, showClose})}
       {#if projectContext.maybeApi}
         <div class="md:p-4 md:pl-4 h-full">
-          <EntryView
+          <EntryView bind:this={entryView}
             entryId={detailSelectedId}
             onClose={close}
             {showClose}

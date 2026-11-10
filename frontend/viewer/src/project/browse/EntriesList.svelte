@@ -19,7 +19,7 @@
   import {useProjectContext} from '$project/project-context.svelte';
   import Delayed from '$lib/components/Delayed.svelte';
   import {EntryLoaderService} from '$lib/services/entry-loader-service.svelte';
-  import {onDestroy, tick, untrack} from 'svelte';
+  import {onDestroy, untrack} from 'svelte';
   import {useViewService} from '$lib/views/view-service.svelte';
   import {pt} from '$lib/views/view-text';
   import {IsMobile} from '$lib/hooks/is-mobile.svelte';
@@ -32,6 +32,7 @@
     semanticDomain = undefined,
     sort,
     onSelectEntry,
+    onOpenSelectedEntry,
     gridifyFilter = undefined,
     previewDictionary = false,
     disableNewEntry = false,
@@ -44,6 +45,8 @@
     semanticDomain?: ISemanticDomain;
     sort?: SortConfig;
     onSelectEntry: (entry?: IEntry) => void;
+    /** Enter on the already-selected row, e.g. to move focus into the editor */
+    onOpenSelectedEntry?: () => void;
     gridifyFilter?: string;
     previewDictionary?: boolean,
     disableNewEntry?: boolean,
@@ -188,9 +191,18 @@
 
   let listElem = $state<HTMLElement>();
 
-  function rowElem(index: number): HTMLElement | null | undefined {
-    return listElem?.querySelector<HTMLElement>(`[data-entry-index="${index}"]`);
+  // Rows far from the viewport only render a few frames after scrolling to them
+  async function waitForRow(index: number): Promise<HTMLElement | undefined> {
+    for (let frame = 0; frame < 60; frame++) {
+      const row = listElem?.querySelector<HTMLElement>(`[data-entry-index="${index}"]`);
+      if (row) return row;
+      await new Promise(requestAnimationFrame);
+    }
+    return undefined;
   }
+
+  // While a key is held, rows arrive before the previous one is focused; count from the newest
+  let pendingIndex: number | undefined;
 
   async function onListKeydown(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
@@ -198,7 +210,12 @@
     if (!entryLoader || !vList || !totalCount) return;
     const row = (event.target as HTMLElement).closest<HTMLElement>('[data-entry-index]');
     if (!row) return;
-    const current = Number(row.dataset.entryIndex);
+    if (event.key === 'Enter' && row.ariaSelected === 'true' && onOpenSelectedEntry) {
+      event.preventDefault();
+      onOpenSelectedEntry();
+      return;
+    }
+    const current = pendingIndex ?? Number(row.dataset.entryIndex);
     let target: number;
     switch (event.key) {
       case 'ArrowDown': target = current + 1; break;
@@ -211,13 +228,16 @@
     target = Math.max(0, Math.min(totalCount - 1, target));
     if (target === current) return;
 
+    pendingIndex = target;
     vList.scrollToIndex(target, {align: 'nearest'});
     const entry = await entryLoader.getOrLoadEntryByIndex(target);
-    if (!entry) return;
+    if (pendingIndex !== target) return;
     // On mobile selecting opens the entry full screen, so only move focus there; Enter opens it
-    if (!IsMobile.value) onSelectEntry(entry);
-    await tick();
-    rowElem(target)?.focus({preventScroll: true});
+    if (entry && !IsMobile.value) onSelectEntry(entry);
+    const targetRow = entry && await waitForRow(target);
+    if (pendingIndex !== target) return;
+    targetRow?.focus({preventScroll: true});
+    pendingIndex = undefined;
   }
 </script>
 
