@@ -31,6 +31,8 @@
     semanticDomain = undefined,
     sort,
     onSelectEntry,
+    onOpenSelectedEntry,
+    followFocus = false,
     gridifyFilter = undefined,
     previewDictionary = false,
     disableNewEntry = false,
@@ -43,6 +45,10 @@
     semanticDomain?: ISemanticDomain;
     sort?: SortConfig;
     onSelectEntry: (entry?: IEntry) => void;
+    /** Enter on the already-selected row, e.g. to move focus into the editor */
+    onOpenSelectedEntry?: () => void;
+    /** Arrow keys also select; otherwise they only move focus and Enter opens the row */
+    followFocus?: boolean;
     gridifyFilter?: string;
     previewDictionary?: boolean,
     disableNewEntry?: boolean,
@@ -185,6 +191,63 @@
     return nextEntry;
   }
 
+  let listElem = $state<HTMLElement>();
+
+  // While a key is held, rows arrive before the previous one is focused; count from the newest
+  let pendingIndex: number | undefined;
+
+  // A far jump unmounts the focused row, which drops focus to body
+  function focusInList(): boolean {
+    const active = document.activeElement;
+    return active === document.body || !!listElem?.contains(active);
+  }
+
+  async function focusRow(index: number): Promise<void> {
+    for (let frame = 0; frame < 60 && pendingIndex === index && focusInList(); frame++) {
+      const row = listElem?.querySelector<HTMLElement>(`[data-entry-index="${index}"]`);
+      // virtua keeps unmeasured rows visibility:hidden, and those can't take focus
+      row?.focus({preventScroll: true});
+      if (row && document.activeElement === row) return;
+      await new Promise(requestAnimationFrame);
+    }
+  }
+
+  async function onListKeydown(event: KeyboardEvent) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const totalCount = entryLoader?.totalCount;
+    if (!entryLoader || !vList || !totalCount) return;
+    const row = (event.target as HTMLElement).closest<HTMLElement>('[data-entry-index]');
+    if (!row) return;
+    if (event.key === 'Enter' && followFocus && row.ariaSelected === 'true' && onOpenSelectedEntry) {
+      event.preventDefault();
+      onOpenSelectedEntry();
+      return;
+    }
+    const current = pendingIndex ?? Number(row.dataset.entryIndex);
+    let target: number;
+    switch (event.key) {
+      case 'ArrowDown': target = current + 1; break;
+      case 'ArrowUp': target = current - 1; break;
+      case 'Home': target = 0; break;
+      case 'End': target = totalCount - 1; break;
+      default: return;
+    }
+    event.preventDefault();
+    target = Math.max(0, Math.min(totalCount - 1, target));
+    if (target === current) return;
+
+    pendingIndex = target;
+    vList.scrollToIndex(target, {align: 'nearest'});
+    const entry = await entryLoader.getOrLoadEntryByIndex(target);
+    if (pendingIndex !== target) return;
+    if (!entry || !focusInList()) {
+      pendingIndex = undefined;
+      return;
+    }
+    if (followFocus) onSelectEntry(entry);
+    await focusRow(target);
+    if (pendingIndex === target) pendingIndex = undefined;
+  }
 </script>
 
 {#snippet newEntryFromSearchRow(className: string = '')}
@@ -214,7 +277,8 @@
   {/if}
 </FabContainer>
 
-<div class="flex-1 h-full" role="table">
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<div class="flex-1 h-full" role="table" bind:this={listElem} onkeydown={(e) => void onListKeydown(e)}>
   {#if entryLoader?.error}
     <div class="flex items-center justify-center h-full text-muted-foreground gap-2">
       <Icon icon="i-mdi-alert-circle-outline" />
@@ -253,6 +317,7 @@
                   {@const entry = state.current}
                   <EntryMenu {entry} contextMenu>
                     <EntryRow {entry}
+                              data-entry-index={row.index}
                               class="mb-2"
                               selected={selectedEntryId === entry.id}
                               onclick={() => onSelectEntry(entry)}
