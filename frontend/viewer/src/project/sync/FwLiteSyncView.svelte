@@ -59,10 +59,13 @@
   let remoteToLocalCount = $derived(status.current?.pendingCommits?.remote);
   let localToRemoteCount = $derived(status.current?.pendingCommits?.local);
   let lastLocalSyncDate = $derived(status.current?.latestSyncedCommitDate ? new Date(status.current.latestSyncedCommitDate) : undefined);
-  const serverName = $derived(server?.displayName ?? serverId ?? 'unknown');
-  const serverProjectUrl = $derived(`${server?.authority}/project/${encodeURIComponent(projectCode ?? '')}`);
+  const serverName = $derived(server?.displayName ?? serverId ?? $t`Unknown server`);
+  const serverProjectUrl = $derived(server?.authority && projectCode
+    ? `${server.authority}/project/${encodeURIComponent(projectCode)}`
+    : undefined);
   const heading = $derived($t`Sync your changes with other FieldWorks Lite users`);
   const cloudIcon = $derived(syncStatus === SyncStatus.Offline ? 'i-mdi-cloud-off-outline' : 'i-mdi-cloud-outline');
+  const canRetry = $derived(!!server && (syncStatus === SyncStatus.Offline || syncStatus === SyncStatus.UnknownError));
 
   async function sync() {
     const result = await service.triggerCrdtSync();
@@ -86,6 +89,24 @@
     });
   }
 </script>
+
+{#snippet syncButton(label: string)}
+  <Button
+    variant="outline"
+    class="border-primary text-primary hover:text-primary"
+    loading={syncing === 'lite'}
+    disabled={syncing === 'classic'}
+    onclick={onSyncClick}
+    icon="i-mdi-sync"
+    iconProps={{ class: 'size-5' }}>
+    {#if syncing === 'lite'}
+      {$t`Syncing...`}
+    {:else}
+      {label}
+    {/if}
+  </Button>
+{/snippet}
+
 <p class="mb-6 text-lg text-center">
   {#if explainFieldWorksSync}
     <Popover.Root>
@@ -114,10 +135,17 @@
 <div in:fade class="grid grid-rows-[auto] grid-cols-[1fr_auto_1fr] gap-y-4 gap-x-8">
   <!-- Status local to remote -->
   <div class="col-span-full text-center border rounded pb-0.5">
-    <Button class="flex-col h-auto gap-0 text-foreground hover:text-primary text-base" variant="link" href={serverProjectUrl} target="_blank" rel="noopener">
-      <Icon icon={cloudIcon}  class="size-10 -mb-0.5" />
-      <span class="underline">{serverName}</span>
-    </Button>
+    {#if serverProjectUrl}
+      <Button class="flex-col h-auto gap-0 text-foreground hover:text-primary text-base" variant="link" href={serverProjectUrl} target="_blank" rel="noopener">
+        <Icon icon={cloudIcon}  class="size-10 -mb-0.5" />
+        <span class="underline">{serverName}</span>
+      </Button>
+    {:else}
+      <div class="flex flex-col items-center py-2">
+        <Icon icon={cloudIcon} class="size-10 -mb-0.5" />
+        <span>{serverName}</span>
+      </div>
+    {/if}
   </div>
   <!--  arrows and sync counts -->
   <div class="col-span-full text-center grid justify-center items-center"
@@ -135,22 +163,12 @@
           {:else}
             <span>{$t`Pending`}</span>
           {/if}
-          <Button
-            variant="outline"
-            class="border-primary text-primary hover:text-primary"
-            loading={syncing === 'lite'}
-            disabled={syncing === 'classic'}
-            onclick={onSyncClick}
-            icon="i-mdi-sync"
-            iconProps={{ class: 'size-5' }}>
-            {#if syncing === 'lite'}
-              {$t`Syncing...`}
-            {:else}
-              {$t`Auto syncing`}
-            {/if}
-          </Button>
+          {@render syncButton($t`Auto syncing`)}
         {:else if syncStatus === SyncStatus.Offline}
           <span>{$t`Offline`}</span>
+          {#if canRetry}
+            {@render syncButton($t`Try again`)}
+          {/if}
         {:else if syncStatus === SyncStatus.NotLoggedIn && server}
           <LoginButton
             text={$t`Login`}
@@ -164,6 +182,7 @@
           {/if}
         {:else}
           <div class="text-destructive">{$t`Error getting sync status.`}</div>
+          {@render syncButton($t`Try again`)}
         {/if}
         </div>
         <SyncArrow dir="up" tailLength={40} size={1.5} class={cn('-translate-y-px', Number(localToRemoteCount) && 'text-primary')}/>
@@ -178,5 +197,14 @@
   <div class="text-center col-span-full border rounded py-2">
     <Icon icon="i-mdi-cellphone" class="size-10! md:i-mdi-monitor"/>
     <p>{$t`Local`}</p>
+    {#if canRetry}
+      <p class="text-sm text-muted-foreground px-2">
+        {#if syncStatus === SyncStatus.Offline}
+          {$t`Your changes are safe on this device and will sync when you're back online.`}
+        {:else}
+          {$t`Your changes are safe on this device.`}
+        {/if}
+      </p>
+    {/if}
   </div>
 </div>

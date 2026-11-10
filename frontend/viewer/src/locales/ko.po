@@ -4302,6 +4302,8 @@ msgstr ""
 
 #: src/lib/entry-editor/field-editors/PictureImage.svelte
 #: src/lib/layout/ViewErrorBoundary.svelte
+#: src/project/sync/FwLiteSyncView.svelte
+#: src/project/sync/FwLiteSyncView.svelte
 msgid "Try again"
 msgstr "다시 시도"
 
@@ -4424,6 +4426,7 @@ msgid "Unknown error downloading {0}"
 msgstr "알 수 없는 오류 다운로드 중 {0}"
 
 #. Error placeholder
+#: src/project/sync/FwLiteSyncView.svelte
 #: src/project/sync/FwLiteSyncView.svelte
 msgid "Unknown server"
 msgstr "알 수 없는 서버"
@@ -4783,6 +4786,14 @@ msgstr ""
 #: src/project/dashboard/DashboardView.svelte
 msgid "You've passed every milestone. What an achievement!"
 msgstr "모든 이정표를 하나하나 달성하셨군요. 정말 대단한 성과입니다!"
+
+#: src/project/sync/FwLiteSyncView.svelte
+msgid "Your changes are safe on this device and will sync when you're back online."
+msgstr ""
+
+#: src/project/sync/FwLiteSyncView.svelte
+msgid "Your changes are safe on this device."
+msgstr ""
 
 #: src/lib/plugins/studio/LeaveDialog.svelte
 msgid "Your changes to this plugin will be lost."

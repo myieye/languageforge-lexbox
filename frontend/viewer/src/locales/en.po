@@ -4297,6 +4297,8 @@ msgstr "Try {0}"
 
 #: src/lib/entry-editor/field-editors/PictureImage.svelte
 #: src/lib/layout/ViewErrorBoundary.svelte
+#: src/project/sync/FwLiteSyncView.svelte
+#: src/project/sync/FwLiteSyncView.svelte
 msgid "Try again"
 msgstr "Try again"
 
@@ -4419,6 +4421,7 @@ msgid "Unknown error downloading {0}"
 msgstr "Unknown error downloading {0}"
 
 #. Error placeholder
+#: src/project/sync/FwLiteSyncView.svelte
 #: src/project/sync/FwLiteSyncView.svelte
 msgid "Unknown server"
 msgstr "Unknown server"
@@ -4778,6 +4781,14 @@ msgstr "You're offline and this plugin's file isn't on this device yet. Connect 
 #: src/project/dashboard/DashboardView.svelte
 msgid "You've passed every milestone. What an achievement!"
 msgstr "You've passed every milestone. What an achievement!"
+
+#: src/project/sync/FwLiteSyncView.svelte
+msgid "Your changes are safe on this device and will sync when you're back online."
+msgstr "Your changes are safe on this device and will sync when you're back online."
+
+#: src/project/sync/FwLiteSyncView.svelte
+msgid "Your changes are safe on this device."
+msgstr "Your changes are safe on this device."
 
 #: src/lib/plugins/studio/LeaveDialog.svelte
 msgid "Your changes to this plugin will be lost."

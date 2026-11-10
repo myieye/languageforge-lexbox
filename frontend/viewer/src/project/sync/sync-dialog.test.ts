@@ -4,6 +4,8 @@ import type {ISyncServiceJsInvokable} from '$lib/dotnet-types/generated-types/Fw
 import {SyncJobStatusEnum} from '$lib/dotnet-types';
 import type {IProjectSyncStatus} from '$lib/dotnet-types/generated-types/LexCore/Sync/IProjectSyncStatus';
 import {ProjectSyncStatusEnum} from '$lib/dotnet-types/generated-types/LexCore/Sync/ProjectSyncStatusEnum';
+import {SyncStatus} from '$lib/dotnet-types/generated-types/LexCore/Sync/SyncStatus';
+import type {ILexboxServer} from '$lib/dotnet-types';
 
 vi.stubGlobal('matchMedia', (query: string) => ({
   matches: false, media: query, onchange: null,
@@ -20,7 +22,7 @@ function fakeSyncService() {
     countPendingCrdtCommits: vi.fn(() => Promise.resolve({local: 3, remote: 4})),
     getLatestSyncedCommitDate: vi.fn(() => Promise.resolve(undefined)),
     executeSync: vi.fn(() => Promise.resolve({isSynced: true, missingFromLocal: [], missingFromRemote: []})),
-    getCurrentServer: vi.fn(() => Promise.resolve({id: 'test-server', displayName: 'Lexbox', authority: 'https://test-server.com'})),
+    getCurrentServer: vi.fn((): Promise<ILexboxServer | undefined> => Promise.resolve({id: 'test-server', displayName: 'Lexbox', authority: 'https://test-server.com'})),
   } satisfies ISyncServiceJsInvokable;
 }
 
@@ -39,13 +41,14 @@ describe('SyncDialog', () => {
     document.body.innerHTML = '';
   });
 
-  async function openDialog(syncService: ISyncServiceJsInvokable, fieldWorksSync = true) {
+  async function openDialog(syncService: ISyncServiceJsInvokable, fieldWorksSync = true,
+    host: {syncStatus?: SyncStatus, server?: ILexboxServer | null} = {}) {
     const supportedFeatures = vi.fn(() => Promise.resolve({sync: true, write: true, fieldWorksSync}));
     // Imported after the stubs above: the dialog reads matchMedia when its module loads
     const syncDialogHost = (await import('./test/SyncDialogHost.svelte')).default;
     const target = document.createElement('div');
     document.body.appendChild(target);
-    app = mount(syncDialogHost, {target, props: {syncService, supportedFeatures}});
+    app = mount(syncDialogHost, {target, props: {syncService, supportedFeatures, ...host}});
     flushSync();
     (app as {open: () => void}).open();
     flushSync();
@@ -131,5 +134,31 @@ describe('SyncDialog', () => {
 
     getButton(/Sync your changes with other FieldWorks Lite users/).click();
     await vi.waitFor(() => expect(document.body.textContent).toContain('when someone with permission syncs them'));
+  }, 60_000);
+
+  it.each([SyncStatus.Offline, SyncStatus.UnknownError])('offers to try again when %s', async (syncStatus) => {
+    const syncService = fakeSyncService();
+    syncService.executeSync.mockImplementation(() => Promise.resolve({isSynced: false, missingFromLocal: [], missingFromRemote: []}));
+    await openDialog(syncService, true, {syncStatus});
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Your changes are safe on this device'));
+
+    getButton(/Try again/).click();
+    await vi.waitFor(() => expect(syncService.executeSync).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(getButton(/Try again/).disabled).toBe(false));
+  }, 60_000);
+
+  it('links to the project on the server', async () => {
+    await openDialog(fakeSyncService());
+    await vi.waitFor(() => expect(document.querySelector('a[href="https://test-server.com/project/test-project"]')).toBeTruthy());
+  }, 60_000);
+
+  it('shows an unknown server without a link or a retry', async () => {
+    const syncService = fakeSyncService();
+    syncService.getCurrentServer.mockImplementation(() => Promise.resolve(undefined));
+    await openDialog(syncService, true, {syncStatus: SyncStatus.NoServer, server: null});
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Unknown server'));
+    expect(document.querySelector('a[href*="/project/"]')).toBeNull();
+    expect(document.body.textContent).not.toContain('Try again');
+    expect(document.body.textContent).not.toContain('Your changes are safe on this device');
   }, 60_000);
 });

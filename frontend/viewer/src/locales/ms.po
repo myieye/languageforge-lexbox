@@ -4302,6 +4302,8 @@ msgstr ""
 
 #: src/lib/entry-editor/field-editors/PictureImage.svelte
 #: src/lib/layout/ViewErrorBoundary.svelte
+#: src/project/sync/FwLiteSyncView.svelte
+#: src/project/sync/FwLiteSyncView.svelte
 msgid "Try again"
 msgstr "Cuba lagi"
 
@@ -4424,6 +4426,7 @@ msgid "Unknown error downloading {0}"
 msgstr "Ralat tidak diketahui semasa memuat turun {0}"
 
 #. Error placeholder
+#: src/project/sync/FwLiteSyncView.svelte
 #: src/project/sync/FwLiteSyncView.svelte
 msgid "Unknown server"
 msgstr "Pelayan tidak diketahui"
@@ -4783,6 +4786,14 @@ msgstr ""
 #: src/project/dashboard/DashboardView.svelte
 msgid "You've passed every milestone. What an achievement!"
 msgstr "Anda telah mencapai setiap pencapaian penting. Betapa hebatnya pencapaian ini!"
+
+#: src/project/sync/FwLiteSyncView.svelte
+msgid "Your changes are safe on this device and will sync when you're back online."
+msgstr ""
+
+#: src/project/sync/FwLiteSyncView.svelte
+msgid "Your changes are safe on this device."
+msgstr ""
 
 #: src/lib/plugins/studio/LeaveDialog.svelte
 msgid "Your changes to this plugin will be lost."

@@ -40,7 +40,12 @@ when the last sync worked. Each row is one step in the diagram:
           </li>
           <li>
             <strong>Offline</strong>: no connection. Your changes are safe on your device and go
-            out the next time the app is open and online.
+            out the next time the app is open and online. Press{' '}
+            <span className="app-chip app-chip--button">Try again</span> once you're connected.
+          </li>
+          <li>
+            <strong>Error getting sync status</strong>: something else went wrong. Your changes are
+            still safe on your device. Press <span className="app-chip app-chip--button">Try again</span>.
           </li>
           <li>A <strong>Login</strong> button: you were logged out. Log in and your changes go out.</li>
         </ul>
