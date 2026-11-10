@@ -805,6 +805,11 @@ msgstr "Projek FieldWorks Klasik"
 msgid "clear"
 msgstr "padam"
 
+#. Button under an empty Browse list. Turns off all filters but keeps the search text
+#: src/project/browse/EntriesList.svelte
+msgid "Clear filters"
+msgstr ""
+
 #. Activity-log line. {0} = field label (e.g. "Gloss", "Definition"). Means the field's value was erased.
 #: src/lib/activity/ChangeSummary.svelte
 #: src/lib/activity/ChangeSummary.svelte
@@ -1872,6 +1877,20 @@ msgstr "Tapis..."
 #: src/project/browse/SearchFilter.svelte
 msgid "Filters"
 msgstr "Penapis"
+
+#. Relevant view: Classic
+#. Lite view equivalent: "Filters might be hiding some words"
+#. Hint under "No entries found" when the user has filters turned on
+#: src/project/browse/EntriesList.svelte
+msgid "Filters might be hiding some entries"
+msgstr ""
+
+#. Relevant view: Lite
+#. Classic view equivalent: "Filters might be hiding some entries"
+#. Hint under "No words found" when the user has filters turned on
+#: src/project/browse/EntriesList.svelte
+msgid "Filters might be hiding some words"
+msgstr ""
 
 #. Relevant view: Classic
 #. Lite view equivalent: "Find word..."
@@ -4302,6 +4321,7 @@ msgstr ""
 
 #: src/lib/entry-editor/field-editors/PictureImage.svelte
 #: src/lib/layout/ViewErrorBoundary.svelte
+#: src/project/browse/EntriesList.svelte
 msgid "Try again"
 msgstr "Cuba lagi"
 
