@@ -584,10 +584,13 @@ msgstr "Audio"
 msgid "Audio file not included in Send & Receive"
 msgstr "Fail audio tidak termasuk dalam Hantar & Terima"
 
+#. Tooltip and screen-reader name for the menu button next to a field's audio player (replace, remove or save the audio).
 #: src/lib/components/field-editors/audio-input.svelte
 msgid "Audio options"
 msgstr ""
 
+#. Tooltip and screen-reader name for the menu button next to a field's audio player (replace, remove or save the audio).
+#. {0} is the field label and writing system, e.g. "Word: seh"
 #: src/lib/components/field-editors/audio-input.svelte
 msgid "Audio options ({0})"
 msgstr ""
@@ -1148,7 +1151,8 @@ msgstr "Definisi"
 msgid "Delete"
 msgstr "Hapus"
 
-#. Dialog title with item name
+#. Dialog title, or tooltip on a trash-can button, naming the item to delete
+#. {0} is an item name such as "Sense 2", "Example 1" or "Project"
 #: src/lib/entry-editor/DeleteDialog.svelte
 #: src/lib/entry-editor/DeleteDialog.svelte
 #: src/lib/entry-editor/EntityListItemActions.svelte
@@ -1593,6 +1597,7 @@ msgstr ""
 msgid "Example"
 msgstr "Contoh"
 
+#. Names a numbered example sentence of a sense, inserted into button tooltips like "Delete {0}". {0} is the number
 #: src/lib/entry-editor/object-editors/EntryEditor.svelte
 msgid "Example {0}"
 msgstr ""
@@ -2049,6 +2054,7 @@ msgstr "Mempunyai komen yang belum diselesaikan"
 msgid "Headword"
 msgstr "Kata Utama"
 
+#. Tooltip on a small question-mark icon next to a field label; opens that field's help page
 #: src/lib/entry-editor/FieldHelpIcon.svelte
 msgid "Help"
 msgstr ""
@@ -2077,6 +2083,8 @@ msgstr ""
 msgid "History"
 msgstr "Sejarah"
 
+#. Tooltip on a button that opens the change history of one item in the entry editor
+#. {0} is the item, e.g. "Sense 2" or "Example 1"
 #: src/lib/entry-editor/EntityListItemActions.svelte
 msgid "History of {0}"
 msgstr ""
@@ -2290,10 +2298,13 @@ msgstr "Fail dimuat"
 msgid "Loading activity"
 msgstr "Memuatkan aktiviti"
 
+#. Tooltip and screen-reader name for the audio play button while the recording is still loading.
 #: src/lib/components/field-editors/audio-input.svelte
 msgid "Loading audio"
 msgstr ""
 
+#. Tooltip and screen-reader name for the audio play button while the recording is still loading.
+#. {0} is the field label and writing system, e.g. "Word: seh"
 #: src/lib/components/field-editors/audio-input.svelte
 msgid "Loading audio ({0})"
 msgstr ""
@@ -2431,6 +2442,9 @@ msgstr ""
 msgid "Meaning"
 msgstr "Makna"
 
+#. Relevant view: Lite
+#. Classic view equivalent: "Sense {0}"
+#. Names a numbered meaning of a word, inserted into button tooltips like "Delete {0}". {0} is the number
 #: src/lib/entry-editor/object-editors/EntryEditor.svelte
 msgid "Meaning {0}"
 msgstr ""
@@ -2524,8 +2538,9 @@ msgstr "Mod"
 msgid "More"
 msgstr ""
 
-#. Accessible name of the arrow button that opens more actions for an entry in the activity change preview
+#. Tooltip and accessible name of an icon button (arrow or three dots) that opens a menu of more actions, e.g. for an entry
 #: src/lib/activity/EntryActionsButton.svelte
+#: src/lib/components/responsive-menu/responsive-menu-trigger.svelte
 msgid "More options"
 msgstr ""
 
@@ -2554,14 +2569,18 @@ msgstr ""
 msgid "Move"
 msgstr "Gerak"
 
+#. Tooltip on a button that opens a menu to move an item to another position in its list
+#. {0} is the item, e.g. "Sense 2" or "Example 1"
 #: src/lib/entry-editor/EntityListItemActions.svelte
 msgid "Move {0}"
 msgstr ""
 
+#. Tooltip on a small arrow button on the divider between two side-by-side panels: shrinks or hides the left panel
 #: src/lib/components/ui/resizable/resizable-handle.svelte
 msgid "Move divider left"
 msgstr ""
 
+#. Tooltip on a small arrow button on the divider between two side-by-side panels: shrinks or hides the right panel
 #: src/lib/components/ui/resizable/resizable-handle.svelte
 msgid "Move divider right"
 msgstr ""
@@ -3073,14 +3092,18 @@ msgstr ""
 msgid "Paste the AI's reply or the plugin's HTML here"
 msgstr ""
 
+#. Button tooltip in the audio recording dialog: pause the recording
 #: src/lib/components/audio/audio-editor.svelte
 msgid "Pause"
 msgstr ""
 
+#. Tooltip and screen-reader name for the button that pauses a field's audio recording.
 #: src/lib/components/field-editors/audio-input.svelte
 msgid "Pause audio"
 msgstr ""
 
+#. Tooltip and screen-reader name for the button that pauses a field's audio recording.
+#. {0} is the field label and writing system, e.g. "Word: seh"
 #: src/lib/components/field-editors/audio-input.svelte
 msgid "Pause audio ({0})"
 msgstr ""
@@ -3151,6 +3174,7 @@ msgstr "Disemat"
 msgid "Platform"
 msgstr "Platform"
 
+#. Button tooltip in the audio recording dialog: play the recording
 #: src/lib/components/audio/audio-editor.svelte
 msgid "Play"
 msgstr ""
@@ -3159,10 +3183,13 @@ msgstr ""
 msgid "Play & learn"
 msgstr ""
 
+#. Tooltip and screen-reader name for the button that plays a field's audio recording.
 #: src/lib/components/field-editors/audio-input.svelte
 msgid "Play audio"
 msgstr ""
 
+#. Tooltip and screen-reader name for the button that plays a field's audio recording.
+#. {0} is the field label and writing system, e.g. "Word: seh"
 #: src/lib/components/field-editors/audio-input.svelte
 msgid "Play audio ({0})"
 msgstr ""
@@ -3497,10 +3524,16 @@ msgstr "Buang audio"
 msgid "Remove from project"
 msgstr ""
 
+#. Relevant view: Lite
+#. Classic view equivalent: "Remove sense"
+#. Tooltip on a trash-can button in the New Word dialog: removes the meaning from the word being created
 #: src/lib/entry-editor/NewEntryDialog.svelte
 msgid "Remove meaning"
 msgstr ""
 
+#. Relevant view: Classic
+#. Lite view equivalent: "Remove meaning"
+#. Tooltip on a trash-can button in the New Entry dialog: removes the sense from the entry being created
 #: src/lib/entry-editor/NewEntryDialog.svelte
 msgid "Remove sense"
 msgstr ""
@@ -3814,6 +3847,9 @@ msgstr ""
 msgid "Sense"
 msgstr "Makna"
 
+#. Relevant view: Classic
+#. Lite view equivalent: "Meaning {0}"
+#. Names a numbered sense of an entry, inserted into button tooltips like "Delete {0}". {0} is the number
 #: src/lib/entry-editor/object-editors/EntryEditor.svelte
 msgid "Sense {0}"
 msgstr ""
