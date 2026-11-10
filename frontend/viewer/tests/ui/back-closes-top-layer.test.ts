@@ -64,3 +64,25 @@ test.describe('Back closes the top layer (mobile)', () => {
       .toContain(code);
   });
 });
+
+test('back closes the edit dialog in a task review and keeps the review list', async ({page}) => {
+  await page.setViewportSize({width: 390, height: 844});
+  await new DemoProjectPage(page).goto();
+  await page.goto('/testing/project-view/tasks?taskId=entry-no-lexeme-form-seh');
+  await page.getByText('ambuka').first().click();
+  const popup = page.getByRole('dialog');
+  await popup.locator('input:not([type=submit]):visible').first().fill('qbackreview');
+  await popup.getByRole('button', {name: 'Next'}).click();
+  await popup.getByText('Close', {exact: true}).click();
+  await expect(popup).toHaveCount(0);
+  await page.getByRole('button', {name: 'Done'}).click();
+  await expect(page.getByText(/You completed 1/)).toBeVisible();
+  await page.getByRole('button', {name: 'Review'}).click();
+
+  await page.getByText(/qbackreview/).click();
+  const editDialog = page.getByRole('dialog').filter({has: page.getByRole('heading', {name: /Update/})});
+  await expect(editDialog).toBeVisible();
+  await pressBack(page);
+  await expect(editDialog).toHaveCount(0);
+  await expect(page.getByRole('button', {name: 'Finish'})).toBeVisible();
+});
