@@ -704,6 +704,10 @@ msgid "Can use the internet"
 msgstr ""
 
 #: src/home/Server.svelte
+msgid "Can't reach {0} right now. Try again later."
+msgstr ""
+
+#: src/home/Server.svelte
 msgid "Can't reach {0}. Check your internet connection."
 msgstr ""
 

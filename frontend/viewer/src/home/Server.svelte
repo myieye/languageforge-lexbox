@@ -144,7 +144,13 @@
   {:else if unreachable}
     <div class="flex flex-col items-center justify-center gap-2 p-4 rounded border text-center">
       <Icon icon="i-mdi-cloud-off-outline" class="size-6 text-muted-foreground"/>
-      <p>{$t`Can't reach ${server?.displayName ?? ''}. Check your internet connection.`}</p>
+      <p>
+        {#if online.current === false}
+          {$t`Can't reach ${server?.displayName ?? ''}. Check your internet connection.`}
+        {:else}
+          {$t`Can't reach ${server?.displayName ?? ''} right now. Try again later.`}
+        {/if}
+      </p>
       <Button variant="secondary" icon="i-mdi-refresh" onclick={() => refreshProjects()}>
         {$t`Retry`}
       </Button>
