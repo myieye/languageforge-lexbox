@@ -59,12 +59,12 @@
   let remoteToLocalCount = $derived(status.current?.pendingCommits?.remote);
   let localToRemoteCount = $derived(status.current?.pendingCommits?.local);
   let lastLocalSyncDate = $derived(status.current?.latestSyncedCommitDate ? new Date(status.current.latestSyncedCommitDate) : undefined);
-  const serverName = $derived(server?.displayName ?? serverId ?? $t`Unknown server`);
+  const serverName = $derived(server?.displayName ?? serverId);
   const serverProjectUrl = $derived(server?.authority && projectCode
     ? `${server.authority}/project/${encodeURIComponent(projectCode)}`
     : undefined);
   const heading = $derived($t`Sync your changes with other FieldWorks Lite users`);
-  const cloudIcon = $derived(syncStatus === SyncStatus.Offline ? 'i-mdi-cloud-off-outline' : 'i-mdi-cloud-outline');
+  const cloudIcon = $derived(syncStatus === SyncStatus.Offline || !serverName ? 'i-mdi-cloud-off-outline' : 'i-mdi-cloud-outline');
   const canRetry = $derived(!!server && (syncStatus === SyncStatus.Offline || syncStatus === SyncStatus.UnknownError));
 
   async function sync() {
@@ -143,7 +143,7 @@
     {:else}
       <div class="flex flex-col items-center py-2">
         <Icon icon={cloudIcon} class="size-10 -mb-0.5" />
-        <span>{serverName}</span>
+        {#if serverName}<span>{serverName}</span>{/if}
       </div>
     {/if}
   </div>

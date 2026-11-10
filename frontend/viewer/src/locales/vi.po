@@ -4427,7 +4427,6 @@ msgstr "Lỗi không xác định khi tải xuống {0}"
 
 #. Error placeholder
 #: src/project/sync/FwLiteSyncView.svelte
-#: src/project/sync/FwLiteSyncView.svelte
 msgid "Unknown server"
 msgstr "Máy chủ không xác định"
 

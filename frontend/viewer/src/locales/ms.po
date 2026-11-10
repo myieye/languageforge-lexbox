@@ -4427,7 +4427,6 @@ msgstr "Ralat tidak diketahui semasa memuat turun {0}"
 
 #. Error placeholder
 #: src/project/sync/FwLiteSyncView.svelte
-#: src/project/sync/FwLiteSyncView.svelte
 msgid "Unknown server"
 msgstr "Pelayan tidak diketahui"
 

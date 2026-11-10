@@ -4427,7 +4427,6 @@ msgstr "알 수 없는 오류 다운로드 중 {0}"
 
 #. Error placeholder
 #: src/project/sync/FwLiteSyncView.svelte
-#: src/project/sync/FwLiteSyncView.svelte
 msgid "Unknown server"
 msgstr "알 수 없는 서버"
 

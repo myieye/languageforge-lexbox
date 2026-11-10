@@ -152,11 +152,12 @@ describe('SyncDialog', () => {
     await vi.waitFor(() => expect(document.querySelector('a[href="https://test-server.com/project/test-project"]')).toBeTruthy());
   }, 60_000);
 
-  it('shows an unknown server without a link or a retry', async () => {
+  it('shows a project without a server without a link or a retry', async () => {
     const syncService = fakeSyncService();
     syncService.getCurrentServer.mockImplementation(() => Promise.resolve(undefined));
     await openDialog(syncService, true, {syncStatus: SyncStatus.NoServer, server: null});
-    await vi.waitFor(() => expect(document.body.textContent).toContain('Unknown server'));
+    await vi.waitFor(() => expect(document.body.textContent).toContain('No server'));
+    expect(document.body.textContent).not.toContain('Unknown server');
     expect(document.querySelector('a[href*="/project/"]')).toBeNull();
     expect(document.body.textContent).not.toContain('Try again');
     expect(document.body.textContent).not.toContain('Your changes are safe on this device');
