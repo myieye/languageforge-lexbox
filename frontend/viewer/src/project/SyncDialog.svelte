@@ -10,6 +10,7 @@
   import {useFeatures} from '$lib/services/feature-service';
   import {SyncStatus} from '$lib/dotnet-types/generated-types/LexCore/Sync/SyncStatus';
   import {useProjectContext} from '$project/project-context.svelte';
+  import UploadToLexboxDialog from './sync/UploadToLexboxDialog.svelte';
   import {useProjectEventBus} from '$lib/services/event-bus';
   import ResponsiveDialog from '$lib/components/responsive-dialog/responsive-dialog.svelte';
   import * as Tabs from '$lib/components/ui/tabs';
@@ -40,6 +41,7 @@
     if (e.status === SyncStatus.Success) syncCount++;
   });
   const cloudIcon = $derived(syncStatus === SyncStatus.Offline ? 'i-mdi-cloud-off-outline' : 'i-mdi-cloud-outline');
+  let uploadDialog = $state<UploadToLexboxDialog>();
 
   // The dialog's content unmounts on close, so each view loads its own status when it's first shown
   watch(() => openQueryParam.current, (open) => {
@@ -57,6 +59,11 @@
     const result = await service.triggerCrdtSync();
     // The sync event fires before the sync date is saved, so reload again now that the sync is done
     if (result.isSynced) syncCount++;
+  }
+
+  async function onUploaded() {
+    server = await service.getCurrentServer();
+    syncCount++;
   }
 </script>
 
@@ -79,7 +86,8 @@
           bind:syncing
           {syncCount}
           explainFieldWorksSync={!!server && !features.fieldWorksSync}
-          {onLoginStatusChange} />
+          {onLoginStatusChange}
+          onUploadClick={() => uploadDialog?.openDialog()} />
       </IfOnce>
     </Tabs.Content>
     {#if showClassic}
@@ -98,3 +106,11 @@
     {/if}
   </Tabs.Root>
 </ResponsiveDialog>
+{#if projectContext.projectData}
+  <UploadToLexboxDialog
+    bind:this={uploadDialog}
+    projectCode={projectContext.projectData.code}
+    projectId={projectContext.projectData.id}
+    projectName={projectContext.projectData.name}
+    refresh={onUploaded} />
+{/if}

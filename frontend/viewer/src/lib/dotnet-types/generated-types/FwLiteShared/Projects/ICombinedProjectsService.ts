@@ -20,5 +20,6 @@ export interface ICombinedProjectsService
 	createProject(name: string, code: string, vernacularWs: string, analysisWs?: string) : Promise<void>;
 	createDemoProject(name: string) : Promise<void>;
 	deleteProject(code: string) : Promise<void>;
+	uploadCrdtProject(server: ILexboxServer, code: string) : Promise<void>;
 }
 /* eslint-enable */

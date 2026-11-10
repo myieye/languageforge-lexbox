@@ -202,6 +202,9 @@ export class InMemoryDemoApi implements IMiniLcmJsInvokable {
       },
       deleteProject: function (_code: string): Promise<void> {
         return Promise.resolve();
+      },
+      uploadCrdtProject: function (_server, _code): Promise<void> {
+        return Promise.resolve();
       }
     });
     return inMemoryLexboxApi;
