@@ -331,7 +331,7 @@
 {/snippet}
 
 {#if IsMobile.value}
-  <Drawer bind:open dismissible={!dirty}>
+  <Drawer bind:open dismissible={!dirty} onBack={() => (dirty ? submit() : dismiss())}>
     <DrawerTrigger child={trigger} />
     <DrawerContent handle={true} class="overflow-hidden">
       <DrawerHeader class="text-left py-2">

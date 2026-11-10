@@ -32,6 +32,7 @@
   import {cn} from '$lib/utils';
   import {useWritingSystemService} from '$project/data';
   import HomographNumber from '$lib/components/dictionary/HomographNumber.svelte';
+  import {useBackHandler} from '$lib/utils/back-handler.svelte';
 
   const viewService = useViewService();
   const writingSystemService = useWritingSystemService();
@@ -56,6 +57,7 @@
     pick,
     trigger,
   }: Props = $props();
+  useBackHandler({addToStack: () => open, onBack: () => open = false, key: 'entry-or-sense-picker'});
   let onlyEntries = $derived(mode === 'only-entries');
 
   let selectedEntry: IEntry | undefined = $state(undefined);
