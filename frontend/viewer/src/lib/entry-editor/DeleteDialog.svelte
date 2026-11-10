@@ -43,12 +43,19 @@
     open = false;
   }
 
+  const MAX_DESCRIPTION_LENGTH = 80;
+  function truncate(text: string): string {
+    // Code points, not UTF-16 units, so the cut can't split a surrogate pair
+    const chars = Array.from(text.replace(/\s+/g, ' ').trim());
+    return chars.length > MAX_DESCRIPTION_LENGTH ? chars.slice(0, MAX_DESCRIPTION_LENGTH - 1).join('').trimEnd() + '…' : chars.join('');
+  }
+
   export function prompt(promptSubject: string, subjectDescription?: string, options?: DeleteDialogOptions): Promise<boolean> {
     if (requester) throw new Error('already prompting for a delete');
     return new Promise((resolve) => {
       requester = { resolve };
       subject = promptSubject;
-      description = subjectDescription;
+      description = subjectDescription && truncate(subjectDescription);
       details = options?.details;
       dangerous = !!options?.isDangerous;
       confirmed = false;
@@ -65,7 +72,7 @@
     </AlertDialog.Header>
     <AlertDialog.Description>
       <div class="space-y-2">
-        <p>
+        <p class="break-words">
           {$t`Are you sure you want to delete ${subjectWithDescription}?`}
         </p>
         {#if details}

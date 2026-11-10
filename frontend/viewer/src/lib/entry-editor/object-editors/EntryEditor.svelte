@@ -86,7 +86,12 @@
       entry.senses = entry.senses.filter(s => s.id !== sense.id);
       return;
     }
-    if (!await dialogService.promptDelete(pt($t`Sense`, $t`Meaning`, viewService.currentView), writingSystemService.firstGloss(sense))) return;
+    const name = writingSystemService.firstDefOrGlossVal(sense);
+    const n = entry.senses.indexOf(sense) + 1;
+    const confirmed = name
+      ? await dialogService.promptDelete(pt($t`Sense`, $t`Meaning`, viewService.currentView), name)
+      : await dialogService.promptDelete(pt($t`Sense ${n}`, $t`Meaning ${n}`, viewService.currentView));
+    if (!confirmed) return;
     entry.senses = entry.senses.filter(s => s.id !== sense.id);
     ondelete?.({entry, sense});
   }
@@ -104,7 +109,12 @@
       entry = entry; // examples are not updated without this
       return;
     }
-    if (!await dialogService.promptDelete($t`Example sentence`, '#' + (sense.exampleSentences.indexOf(example) + 1))) return;
+    const name = writingSystemService.firstSentenceOrTranslationVal(example);
+    const n = sense.exampleSentences.indexOf(example) + 1;
+    const confirmed = name
+      ? await dialogService.promptDelete($t`Example sentence`, name)
+      : await dialogService.promptDelete($t`Example ${n}`);
+    if (!confirmed) return;
     sense.exampleSentences = sense.exampleSentences.filter(e => e.id !== example.id);
     ondelete?.({entry, sense, example});
     entry = entry; // examples are not updated without this

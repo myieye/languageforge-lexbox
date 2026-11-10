@@ -1581,6 +1581,10 @@ msgstr ""
 msgid "Example"
 msgstr "Mfano"
 
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Example {0}"
+msgstr ""
+
 #. Field label in the activity change-preview diff for a custom view: which example-sentence fields it shows.
 #: src/lib/entry-editor/diff-view/diff-fields.ts
 msgid "Example fields"
@@ -2398,6 +2402,10 @@ msgstr ""
 #: src/lib/views/entity-config.ts
 msgid "Meaning"
 msgstr "Maana"
+
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Meaning {0}"
+msgstr ""
 
 #. Relevant view: Lite
 #. Classic view equivalent: "senses"
@@ -3732,6 +3740,10 @@ msgstr ""
 #: src/lib/views/entity-config.ts
 msgid "Sense"
 msgstr "Kwa maana"
+
+#: src/lib/entry-editor/object-editors/EntryEditor.svelte
+msgid "Sense {0}"
+msgstr ""
 
 #. Field label in the activity change-preview diff for a custom view: which sense-level fields it shows.
 #: src/lib/entry-editor/diff-view/diff-fields.ts

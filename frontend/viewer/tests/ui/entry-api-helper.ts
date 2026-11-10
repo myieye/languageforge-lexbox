@@ -131,6 +131,49 @@ export class EntryApiHelper {
     }, {hw: headword, morphType: MorphTypeKind.Unknown});
   }
 
+  /** Senses take a definition (rich text) and examples a sentence (rich text); anything left out stays empty. */
+  async createEntryWithSenses(headword: string, senses: {definition?: string; examples?: string[]}[]): Promise<{id: string}> {
+    return this.page.evaluate(async ({hw, senses, morphType}) => {
+      const api = window.__PLAYWRIGHT_UTILS__.demoApi;
+      const entryId = crypto.randomUUID();
+      function richText(text: string | undefined, ws: string): Record<string, {spans: {text: string; ws: string}[]}> {
+        return text ? {[ws]: {spans: [{text, ws}]}} : {};
+      }
+      const created = await api.createEntry({
+        id: entryId,
+        lexemeForm: {seh: hw},
+        citationForm: {seh: hw},
+        senses: senses.map(sense => {
+          const senseId = crypto.randomUUID();
+          return {
+            id: senseId,
+            entryId,
+            gloss: {},
+            definition: richText(sense.definition, 'en'),
+            semanticDomains: [],
+            pictures: [],
+            exampleSentences: (sense.examples ?? []).map(sentence => ({
+              id: crypto.randomUUID(),
+              senseId,
+              sentence: richText(sentence, 'seh'),
+              translations: [],
+              reference: {spans: []},
+            })),
+          };
+        }),
+        note: {},
+        literalMeaning: {},
+        morphType,
+        components: [],
+        complexForms: [],
+        complexFormTypes: [],
+        publishIn: [],
+        homographNumber: 0,
+      }, {includeComplexFormsAndComponents: true, autoAddMainPublication: false});
+      return {id: created.id};
+    }, {hw: headword, senses, morphType: MorphTypeKind.Stem});
+  }
+
   async deleteEntry(entryId: string): Promise<void> {
     await this.page.evaluate(async (id) => {
       await window.__PLAYWRIGHT_UTILS__.demoApi.deleteEntry(id);
