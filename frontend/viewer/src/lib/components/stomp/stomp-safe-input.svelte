@@ -3,7 +3,7 @@
   import {Input} from '../ui/input';
   import {StompGuard} from './stomp-guard.svelte';
   import {mergeProps} from 'bits-ui';
-  import {useIdleService} from '$lib/services/idle-service';
+  import {useIdleService} from '$lib/services/idle-service.svelte';
 
   type Props = ComponentProps<typeof Input> & {onchange: () => void};
 
