@@ -9,12 +9,12 @@ test.describe('Delete dialog names what is being deleted', () => {
     await projectPage.goto();
     await projectPage.api.createEntryWithSenses('qdelnames', [
       {definition: 'a small round fruit', examples: [longSentence]},
-      {examples: ['']},
+      {examples: ['', {ws: 'seh-Zxxx-x-audio', text: 'recording.wav'}]},
     ]);
     await projectPage.selectEntryByFilter('qdelnames');
 
     const deleteButtons = page.locator('.i-mdi-trash-can');
-    await expect(deleteButtons).toHaveCount(4);
+    await expect(deleteButtons).toHaveCount(5);
     const dialog = page.getByRole('alertdialog');
 
     async function expectPrompt(buttonIndex: number, text: string | RegExp) {
@@ -29,5 +29,7 @@ test.describe('Delete dialog names what is being deleted', () => {
     await expectPrompt(1, /^Are you sure you want to delete Example sentence: Ndimbalemba tsamba yakulapha [^…]+…\?$/);
     await expectPrompt(2, /^Are you sure you want to delete (Sense|Meaning) 2\?$/);
     await expectPrompt(3, 'Are you sure you want to delete Example 1?');
+    // An audio file reference is not a name
+    await expectPrompt(4, 'Are you sure you want to delete Example 2?');
   });
 });

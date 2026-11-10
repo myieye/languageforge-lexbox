@@ -131,8 +131,8 @@ export class EntryApiHelper {
     }, {hw: headword, morphType: MorphTypeKind.Unknown});
   }
 
-  /** Senses take a definition (rich text) and examples a sentence (rich text); anything left out stays empty. */
-  async createEntryWithSenses(headword: string, senses: {definition?: string; examples?: string[]}[]): Promise<{id: string}> {
+  /** Senses take a definition (rich text) and examples a sentence (rich text, seh unless a ws is given); anything left out stays empty. */
+  async createEntryWithSenses(headword: string, senses: {definition?: string; examples?: (string | {ws: string; text: string})[]}[]): Promise<{id: string}> {
     return this.page.evaluate(async ({hw, senses, morphType}) => {
       const api = window.__PLAYWRIGHT_UTILS__.demoApi;
       const entryId = crypto.randomUUID();
@@ -155,7 +155,7 @@ export class EntryApiHelper {
             exampleSentences: (sense.examples ?? []).map(sentence => ({
               id: crypto.randomUUID(),
               senseId,
-              sentence: richText(sentence, 'seh'),
+              sentence: typeof sentence === 'string' ? richText(sentence, 'seh') : richText(sentence.text, sentence.ws),
               translations: [],
               reference: {spans: []},
             })),
