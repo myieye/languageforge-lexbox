@@ -544,6 +544,7 @@ msgid "Apply changes"
 msgstr "Apply changes"
 
 #. Confirmation prompt
+#. {0} is the item, sometimes followed by a colon and its name (e.g. "Sense 2" or "Sense: a small round fruit")
 #: src/lib/entry-editor/DeleteDialog.svelte
 msgid "Are you sure you want to delete {0}?"
 msgstr "Are you sure you want to delete {0}?"
@@ -1576,6 +1577,7 @@ msgstr "example"
 msgid "Example"
 msgstr "Example"
 
+#. Names an empty example sentence in the delete dialog ("Delete Example 1"). {0} is the example number, as shown in the example header.
 #: src/lib/entry-editor/object-editors/EntryEditor.svelte
 msgid "Example {0}"
 msgstr "Example {0}"
@@ -2398,6 +2400,9 @@ msgstr "meaning"
 msgid "Meaning"
 msgstr "Meaning"
 
+#. Relevant view: Lite
+#. Classic view equivalent: "Sense {0}"
+#. Names an unnamed meaning in the delete dialog ("Delete Meaning 2"). {0} is the meaning number, as shown in the meaning header.
 #: src/lib/entry-editor/object-editors/EntryEditor.svelte
 msgid "Meaning {0}"
 msgstr "Meaning {0}"
@@ -3736,6 +3741,9 @@ msgstr "sense"
 msgid "Sense"
 msgstr "Sense"
 
+#. Relevant view: Classic
+#. Lite view equivalent: "Meaning {0}"
+#. Names an unnamed sense in the delete dialog ("Delete Sense 2"). {0} is the sense number, as shown in the sense header.
 #: src/lib/entry-editor/object-editors/EntryEditor.svelte
 msgid "Sense {0}"
 msgstr "Sense {0}"
