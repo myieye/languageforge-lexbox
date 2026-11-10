@@ -1,6 +1,6 @@
 import {useProjectContext} from '$project/project-context.svelte';
 
-export type SaveEvent = { saving: true } | { saved: true } | { status: 'saved-to-disk' | 'failed-to-save' };
+export type SaveResult = 'none' | 'saved' | 'failed';
 
 const symbol = Symbol.for('fw-lite-save-event-service');
 export function useSaveHandler(): SaveHandler {
@@ -9,19 +9,33 @@ export function useSaveHandler(): SaveHandler {
 }
 
 export class SaveHandler {
-  currentEvent: SaveEvent = $state({ status: 'saved-to-disk'});
-  async handleSave<T>(saveAction: () => Promise<T> ): Promise<T> {
-    this.currentEvent = { saving: true };
-    let threw = false;
+  #inFlight = $state(0);
+  #lastResult = $state<SaveResult>('none');
+  #lastStarted = 0;
+  #lastStartedAtFailure = 0;
+
+  get saving(): boolean {
+    return this.#inFlight > 0;
+  }
+
+  /** A failure sticks until a save that started after it succeeds. */
+  get lastResult(): SaveResult {
+    return this.#lastResult;
+  }
+
+  async handleSave<T>(saveAction: () => Promise<T>): Promise<T> {
+    const id = ++this.#lastStarted;
+    this.#inFlight++;
     try {
-      return await saveAction();
+      const result = await saveAction();
+      if (id > this.#lastStartedAtFailure) this.#lastResult = 'saved';
+      return result;
     } catch (e) {
-      this.currentEvent = { status: 'failed-to-save' };
-      threw = true;
+      this.#lastStartedAtFailure = this.#lastStarted;
+      this.#lastResult = 'failed';
       throw e;
     } finally {
-      if (!threw)
-        this.currentEvent = { saved: true };
+      this.#inFlight--;
     }
   }
 }

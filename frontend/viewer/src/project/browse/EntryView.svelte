@@ -6,6 +6,7 @@
   import {fade} from 'svelte/transition';
   import ViewPicker from './EditorViewOptions.svelte';
   import EntryMenu from './EntryMenu.svelte';
+  import SaveStatus from './SaveStatus.svelte';
   import {ScrollArea} from '$lib/components/ui/scroll-area';
   import {cn} from '$lib/utils';
   import {useWritingSystemService} from '$project/data';
@@ -190,6 +191,7 @@
           {#if bestHeadword}{bestHeadword}<HomographNumber homographNumber={entry.homographNumber} />{:else}{headwordTitle}{/if}
         </h2>
         <div class="flex shrink-0">
+          <SaveStatus />
           {#if features.comments}
             <div class="relative">
               <Button

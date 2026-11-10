@@ -2813,6 +2813,12 @@ msgstr ""
 msgid "Not logged in"
 msgstr "Chưa đăng nhập"
 
+#. Entry save status in the entry header. Means stored on this device only, NOT uploaded/synced to the server.
+#: src/project/browse/SaveStatus.svelte
+#: src/project/browse/SaveStatus.svelte
+msgid "Not saved"
+msgstr ""
+
 #. Badge label on an activity item indicating these local changes have not yet been uploaded to the server.
 #: src/lib/activity/ActivityItem.svelte
 msgid "Not synced"
@@ -3622,12 +3628,24 @@ msgstr ""
 msgid "Save View"
 msgstr "Lưu chế độ xem"
 
+#. Entry save status in the entry header. Means stored on this device only, NOT uploaded/synced to the server.
+#: src/project/browse/SaveStatus.svelte
+#: src/project/browse/SaveStatus.svelte
+msgid "Saved"
+msgstr ""
+
 #: src/lib/plugins/studio/StudioHeader.svelte
 msgid "Saved for the team."
 msgstr ""
 
 #: src/lib/plugins/studio/panels/VersionReview.svelte
 msgid "Saving turns off \"Always allow\" on this device, so the new version asks before its first change."
+msgstr ""
+
+#. Entry save status in the entry header. Means stored on this device only, NOT uploaded/synced to the server.
+#: src/project/browse/SaveStatus.svelte
+#: src/project/browse/SaveStatus.svelte
+msgid "Saving…"
 msgstr ""
 
 #. Search placeholder
@@ -4784,6 +4802,10 @@ msgstr ""
 msgid "You've passed every milestone. What an achievement!"
 msgstr "Bạn đã vượt qua mọi cột mốc. Thật là một thành tựu đáng tự hào!"
 
+#: src/project/browse/SaveStatus.svelte
+msgid "Your changes are saved on this device."
+msgstr ""
+
 #: src/lib/plugins/studio/LeaveDialog.svelte
 msgid "Your changes to this plugin will be lost."
 msgstr ""
@@ -4791,6 +4813,10 @@ msgstr ""
 #: src/project/dashboard/DashboardView.svelte
 msgid "Your dictionary starts here"
 msgstr "Từ điển của bạn bắt đầu từ đây"
+
+#: src/project/browse/SaveStatus.svelte
+msgid "Your last change was not saved. Edit the field again to retry."
+msgstr ""
 
 #: src/lib/plugins/studio/StudioPreview.svelte
 msgid "Your plugin will run here"

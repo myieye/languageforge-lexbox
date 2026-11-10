@@ -2808,6 +2808,12 @@ msgstr "Not in this project. Try one on your data, then add it or make it your o
 msgid "Not logged in"
 msgstr "Not logged in"
 
+#. Entry save status in the entry header. Means stored on this device only, NOT uploaded/synced to the server.
+#: src/project/browse/SaveStatus.svelte
+#: src/project/browse/SaveStatus.svelte
+msgid "Not saved"
+msgstr "Not saved"
+
 #. Badge label on an activity item indicating these local changes have not yet been uploaded to the server.
 #: src/lib/activity/ActivityItem.svelte
 msgid "Not synced"
@@ -3617,6 +3623,12 @@ msgstr "Save for the team"
 msgid "Save View"
 msgstr "Save View"
 
+#. Entry save status in the entry header. Means stored on this device only, NOT uploaded/synced to the server.
+#: src/project/browse/SaveStatus.svelte
+#: src/project/browse/SaveStatus.svelte
+msgid "Saved"
+msgstr "Saved"
+
 #: src/lib/plugins/studio/StudioHeader.svelte
 msgid "Saved for the team."
 msgstr "Saved for the team."
@@ -3624,6 +3636,12 @@ msgstr "Saved for the team."
 #: src/lib/plugins/studio/panels/VersionReview.svelte
 msgid "Saving turns off \"Always allow\" on this device, so the new version asks before its first change."
 msgstr "Saving turns off \"Always allow\" on this device, so the new version asks before its first change."
+
+#. Entry save status in the entry header. Means stored on this device only, NOT uploaded/synced to the server.
+#: src/project/browse/SaveStatus.svelte
+#: src/project/browse/SaveStatus.svelte
+msgid "Saving…"
+msgstr "Saving…"
 
 #. Search placeholder
 #: src/lib/entry-editor/EntryOrSensePicker.svelte
@@ -4779,6 +4797,10 @@ msgstr "You're offline and this plugin's file isn't on this device yet. Connect 
 msgid "You've passed every milestone. What an achievement!"
 msgstr "You've passed every milestone. What an achievement!"
 
+#: src/project/browse/SaveStatus.svelte
+msgid "Your changes are saved on this device."
+msgstr "Your changes are saved on this device."
+
 #: src/lib/plugins/studio/LeaveDialog.svelte
 msgid "Your changes to this plugin will be lost."
 msgstr "Your changes to this plugin will be lost."
@@ -4786,6 +4808,10 @@ msgstr "Your changes to this plugin will be lost."
 #: src/project/dashboard/DashboardView.svelte
 msgid "Your dictionary starts here"
 msgstr "Your dictionary starts here"
+
+#: src/project/browse/SaveStatus.svelte
+msgid "Your last change was not saved. Edit the field again to retry."
+msgstr "Your last change was not saved. Edit the field again to retry."
 
 #: src/lib/plugins/studio/StudioPreview.svelte
 msgid "Your plugin will run here"
