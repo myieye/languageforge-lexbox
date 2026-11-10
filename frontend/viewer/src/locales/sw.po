@@ -4302,6 +4302,8 @@ msgstr ""
 
 #: src/lib/entry-editor/field-editors/PictureImage.svelte
 #: src/lib/layout/ViewErrorBoundary.svelte
+#: src/project/sync/FwLiteSyncView.svelte
+#: src/project/sync/FwLiteSyncView.svelte
 msgid "Try again"
 msgstr "Jaribu tena"
 
@@ -4783,6 +4785,14 @@ msgstr ""
 #: src/project/dashboard/DashboardView.svelte
 msgid "You've passed every milestone. What an achievement!"
 msgstr "Umefikia kila hatua muhimu. Ni mafanikio makubwa!"
+
+#: src/project/sync/FwLiteSyncView.svelte
+msgid "Your changes are safe on this device and will sync when you're back online."
+msgstr ""
+
+#: src/project/sync/FwLiteSyncView.svelte
+msgid "Your changes are safe on this device."
+msgstr ""
 
 #: src/lib/plugins/studio/LeaveDialog.svelte
 msgid "Your changes to this plugin will be lost."

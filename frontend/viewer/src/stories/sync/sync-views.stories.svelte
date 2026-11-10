@@ -70,6 +70,11 @@ const server = {
     <FwLiteSyncView syncStatus={SyncStatus.Offline} {server} serverId="test-server" projectCode="test-project" />
   </FakeSyncService>
 </Story>
+<Story name="FW Lite: Error">
+  <FakeSyncService data={{localStatus: {local: 3}, latestSyncedCommitDate: oneDayAgo.toISOString()}}>
+    <FwLiteSyncView syncStatus={SyncStatus.UnknownError} {server} serverId="test-server" projectCode="test-project" />
+  </FakeSyncService>
+</Story>
 <Story name="FW Lite: Not Logged In">
   <FakeSyncService data={{localStatus: {local: 1}, latestSyncedCommitDate: now.toISOString()}}>
     <FwLiteSyncView syncStatus={SyncStatus.NotLoggedIn} {server} serverId="test-server" projectCode="test-project" />
