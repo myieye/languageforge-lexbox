@@ -19,9 +19,10 @@
   import {useProjectContext} from '$project/project-context.svelte';
   import Delayed from '$lib/components/Delayed.svelte';
   import {EntryLoaderService} from '$lib/services/entry-loader-service.svelte';
-  import {onDestroy, untrack} from 'svelte';
+  import {onDestroy, tick, untrack} from 'svelte';
   import {useViewService} from '$lib/views/view-service.svelte';
   import {pt} from '$lib/views/view-text';
+  import {IsMobile} from '$lib/hooks/is-mobile.svelte';
 
   let {
     search = '',
@@ -185,6 +186,39 @@
     return nextEntry;
   }
 
+  let listElem = $state<HTMLElement>();
+
+  function rowElem(index: number): HTMLElement | null | undefined {
+    return listElem?.querySelector<HTMLElement>(`[data-entry-index="${index}"]`);
+  }
+
+  async function onListKeydown(event: KeyboardEvent) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+    const totalCount = entryLoader?.totalCount;
+    if (!entryLoader || !vList || !totalCount) return;
+    const row = (event.target as HTMLElement).closest<HTMLElement>('[data-entry-index]');
+    if (!row) return;
+    const current = Number(row.dataset.entryIndex);
+    let target: number;
+    switch (event.key) {
+      case 'ArrowDown': target = current + 1; break;
+      case 'ArrowUp': target = current - 1; break;
+      case 'Home': target = 0; break;
+      case 'End': target = totalCount - 1; break;
+      default: return;
+    }
+    event.preventDefault();
+    target = Math.max(0, Math.min(totalCount - 1, target));
+    if (target === current) return;
+
+    vList.scrollToIndex(target, {align: 'nearest'});
+    const entry = await entryLoader.getOrLoadEntryByIndex(target);
+    if (!entry) return;
+    // On mobile selecting opens the entry full screen, so only move focus there; Enter opens it
+    if (!IsMobile.value) onSelectEntry(entry);
+    await tick();
+    rowElem(target)?.focus({preventScroll: true});
+  }
 </script>
 
 {#snippet newEntryFromSearchRow(className: string = '')}
@@ -214,7 +248,8 @@
   {/if}
 </FabContainer>
 
-<div class="flex-1 h-full" role="table">
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<div class="flex-1 h-full" role="table" bind:this={listElem} onkeydown={(e) => void onListKeydown(e)}>
   {#if entryLoader?.error}
     <div class="flex items-center justify-center h-full text-muted-foreground gap-2">
       <Icon icon="i-mdi-alert-circle-outline" />
@@ -253,6 +288,7 @@
                   {@const entry = state.current}
                   <EntryMenu {entry} contextMenu>
                     <EntryRow {entry}
+                              data-entry-index={row.index}
                               class="mb-2"
                               selected={selectedEntryId === entry.id}
                               onclick={() => onSelectEntry(entry)}
