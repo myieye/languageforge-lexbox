@@ -89,7 +89,11 @@ export class QueryParamState {
           //our history change is still in progress, so we don't currently trust the url
           return;
         }
-        this.#current = this.readUrlValue();
+        const value = this.readUrlValue();
+        // Every popstate lands here (e.g. a dialog popping its back-handler entry); re-running dependents
+        // for an unchanged value fires watchers like TaskView's reset-on-taskId.
+        if (value === this.#current) return;
+        this.#current = value;
         update();
       });
       return () => off();
