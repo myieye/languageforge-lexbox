@@ -800,6 +800,7 @@ msgstr "Classic FieldWorks Projects"
 msgid "clear"
 msgstr "clear"
 
+#. Button under an empty Browse list. Turns off all filters but keeps the search text
 #: src/project/browse/EntriesList.svelte
 msgid "Clear filters"
 msgstr "Clear filters"
@@ -1872,10 +1873,16 @@ msgstr "Filter..."
 msgid "Filters"
 msgstr "Filters"
 
+#. Relevant view: Classic
+#. Lite view equivalent: "Filters might be hiding some words"
+#. Hint under "No entries found" when the user has filters turned on
 #: src/project/browse/EntriesList.svelte
 msgid "Filters might be hiding some entries"
 msgstr "Filters might be hiding some entries"
 
+#. Relevant view: Lite
+#. Classic view equivalent: "Filters might be hiding some entries"
+#. Hint under "No words found" when the user has filters turned on
 #: src/project/browse/EntriesList.svelte
 msgid "Filters might be hiding some words"
 msgstr "Filters might be hiding some words"
