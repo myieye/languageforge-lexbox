@@ -50,6 +50,31 @@ test.describe('Save status', () => {
     await expect(page.locator('[data-save-status="saving"]')).toHaveCount(0);
   });
 
+  test('hides the saved state while a typed change is not committed yet', async ({page}) => {
+    const saveStatus = page.locator('[data-save-status]');
+    await editLexemeForm(projectPage, 'x');
+    await expect(saveStatus).toHaveAttribute('data-save-status', 'resting', {timeout: 4000});
+
+    const input = await projectPage.entryView.getLexemeInput();
+    await input.click();
+    await input.press('End');
+    await input.pressSequentially('y');
+    await expect(saveStatus).toHaveCount(0);
+
+    await input.press('Tab');
+    await expect(saveStatus).toHaveAttribute('data-save-status', 'just-saved');
+  });
+
+  test('does not carry the status over to another entry', async ({page}) => {
+    const saveStatus = page.locator('[data-save-status]');
+    await editLexemeForm(projectPage, 'x');
+    await expect(saveStatus).toHaveAttribute('data-save-status', 'just-saved');
+
+    const {headword} = await projectPage.api.getEntryAtIndex(11);
+    await projectPage.selectEntryByFilter(headword);
+    await expect(saveStatus).toHaveCount(0);
+  });
+
   test('shows Saving during a slow save', async ({page}) => {
     await setUpdateEntryMode(page, {delayMs: 2500});
     const saveStatus = page.locator('[data-save-status]');
@@ -57,7 +82,7 @@ test.describe('Save status', () => {
     await editLexemeForm(projectPage, 'x');
 
     await expect(saveStatus).toHaveAttribute('data-save-status', 'saving');
-    await expect(saveStatus).toHaveText('Saving…');
+    await expect(saveStatus).toHaveText('Saving...');
     await expect(saveStatus).toHaveAttribute('data-save-status', 'just-saved', {timeout: 5000});
     await expect(saveStatus).toHaveText('Saved');
   });

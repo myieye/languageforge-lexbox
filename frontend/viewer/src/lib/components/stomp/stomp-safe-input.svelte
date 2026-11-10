@@ -16,7 +16,7 @@
     (newValue) => (value = newValue),
   );
 
-  function onIdle() {
+  function commitIfDirty() {
     if (guard.isDirty) {
       guard.commitAndUnlock();
       onchange();
@@ -24,7 +24,7 @@
   }
 
   $effect(() => {
-    if (idleService.isIdle) untrack(onIdle);
+    if (idleService.isIdle) untrack(commitIfDirty);
   });
 </script>
 
@@ -35,6 +35,8 @@
       onchange: () => {
         guard.commitAndUnlock();
       },
+      // Typing and then undoing it fires no change event, which would leave the guard dirty.
+      onblur: commitIfDirty,
     },
     {onchange},
     rest,

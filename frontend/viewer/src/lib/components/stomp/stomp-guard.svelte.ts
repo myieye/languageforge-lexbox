@@ -1,4 +1,12 @@
 import {watch, type Getter} from 'runed';
+import {SvelteSet} from 'svelte/reactivity';
+
+const dirtyGuards = new SvelteSet<object>();
+
+/** True while the user has typed something that hasn't been committed (and so not saved) yet. */
+export function hasUncommittedEdits(): boolean {
+  return dirtyGuards.size > 0;
+}
 
 export class StompGuard<T> {
   private _dirty = $state(false);
@@ -18,6 +26,7 @@ export class StompGuard<T> {
         this._value = newParentValue;
       }
     });
+    $effect(() => () => dirtyGuards.delete(this));
   }
 
   get value(): T {
@@ -30,6 +39,7 @@ export class StompGuard<T> {
 
   set value(newValue: T) {
     this._dirty = true;
+    dirtyGuards.add(this);
     this._value = newValue;
     this.parentSetter(this._value);
   }
@@ -41,6 +51,7 @@ export class StompGuard<T> {
   commitAndUnlock(): void {
     this.assertMatchesParent();
     this._dirty = false;
+    dirtyGuards.delete(this);
   }
 
   private assertMatchesParent(): void {

@@ -3644,8 +3644,7 @@ msgstr ""
 
 #. Entry save status in the entry header. Means stored on this device only, NOT uploaded/synced to the server.
 #: src/project/browse/SaveStatus.svelte
-#: src/project/browse/SaveStatus.svelte
-msgid "Saving…"
+msgid "Saving..."
 msgstr ""
 
 #. Search placeholder

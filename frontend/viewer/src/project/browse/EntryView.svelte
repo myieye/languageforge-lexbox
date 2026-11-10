@@ -191,7 +191,7 @@
           {#if bestHeadword}{bestHeadword}<HomographNumber homographNumber={entry.homographNumber} />{:else}{headwordTitle}{/if}
         </h2>
         <div class="flex shrink-0">
-          <SaveStatus />
+          {#key entry.id}<SaveStatus />{/key}
           {#if features.comments}
             <div class="relative">
               <Button

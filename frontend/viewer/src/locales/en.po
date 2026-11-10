@@ -3639,9 +3639,8 @@ msgstr "Saving turns off \"Always allow\" on this device, so the new version ask
 
 #. Entry save status in the entry header. Means stored on this device only, NOT uploaded/synced to the server.
 #: src/project/browse/SaveStatus.svelte
-#: src/project/browse/SaveStatus.svelte
-msgid "Saving…"
-msgstr "Saving…"
+msgid "Saving..."
+msgstr "Saving..."
 
 #. Search placeholder
 #: src/lib/entry-editor/EntryOrSensePicker.svelte

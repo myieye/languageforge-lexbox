@@ -1,5 +1,6 @@
 <script lang="ts">
   import {Icon} from '$lib/components/ui/icon';
+  import {hasUncommittedEdits} from '$lib/components/stomp/stomp-guard.svelte';
   import * as Tooltip from '$lib/components/ui/tooltip';
   import {useSaveHandler} from '$lib/services/save-event-service.svelte';
   import {cn} from '$lib/utils';
@@ -15,6 +16,9 @@
   const JUST_SAVED_MS = 2000;
 
   const saveHandler = useSaveHandler();
+  // Keyed on the entry by the parent, so another entry's result never shows here.
+  const baseline = saveHandler.startedCount;
+  const lastResult = $derived(saveHandler.resultSince(baseline));
 
   let savingVisible = $state(false);
   let savingVisibleSince = 0;
@@ -42,7 +46,7 @@
   }, {lazy: true});
 
   function flashSaved() {
-    if (saveHandler.lastResult !== 'saved') return;
+    if (lastResult !== 'saved') return;
     justSaved = true;
     clearTimeout(justSavedTimer);
     justSavedTimer = setTimeout(() => justSaved = false, JUST_SAVED_MS);
@@ -55,22 +59,16 @@
 
   // A retry doesn't hide a failure: only a later successful save does.
   const status = $derived.by(() => {
-    if (saveHandler.lastResult === 'failed') return 'failed';
+    if (lastResult === 'failed') return 'failed';
     if (savingVisible) return 'saving';
+    if (hasUncommittedEdits()) return 'none';
     if (justSaved) return 'just-saved';
-    if (saveHandler.lastResult === 'saved') return 'resting';
+    if (lastResult === 'saved') return 'resting';
     return 'none';
   });
 
-  // Cleared during a fast save so each save gets announced again.
-  const announcement = $derived.by(() => {
-    switch (status) {
-      case 'failed': return $t`Not saved`;
-      case 'saving': return $t`Saving…`;
-      case 'none': return '';
-      default: return saveHandler.saving ? '' : $t`Saved`;
-    }
-  });
+  // Only changes are announced: the first save, a failure and the recovery from it.
+  const announcement = $derived(lastResult === 'failed' ? $t`Not saved` : lastResult === 'saved' ? $t`Saved` : '');
 
   const tooltip = $derived(status === 'failed'
     ? $t`Your last change was not saved. Edit the field again to retry.`
@@ -78,7 +76,10 @@
 </script>
 
 <span role="status" class="sr-only">{announcement}</span>
-{#if status !== 'none'}
+{#if status === 'none'}
+  <!-- Keeps the centered mobile headword from shifting -->
+  <span class="size-9 md:hidden"></span>
+{:else}
   <Tooltip.Root>
     <Tooltip.Trigger>
       <!-- Not focusable: there's nothing to act on, and the status region already announces it. -->
@@ -95,7 +96,7 @@
               {#if status === 'failed'}
                 {$t`Not saved`}
               {:else if status === 'saving'}
-                {$t`Saving…`}
+                {$t`Saving...`}
               {:else}
                 {$t`Saved`}
               {/if}
