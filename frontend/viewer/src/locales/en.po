@@ -918,7 +918,9 @@ msgstr "Collect words"
 msgid "Color"
 msgstr "Color"
 
+#: src/lib/activity/ActivityItemChangePreview.svelte
 #: src/lib/entry-editor/comments/CommentPanel.svelte
+#: src/lib/entry-editor/diff-view/diff-fields.ts
 msgid "Comment"
 msgstr "Comment"
 
@@ -1035,6 +1037,7 @@ msgstr "Contexts"
 msgid "Continue"
 msgstr "Continue"
 
+#: src/lib/activity/ActivityItemChangePreview.svelte
 #: src/lib/entry-editor/comments/CommentPanel.svelte
 msgid "Conversation"
 msgstr "Conversation"
@@ -3696,6 +3699,11 @@ msgstr "Reset"
 msgid "Resolve"
 msgstr "Resolve"
 
+#. Status of a comment conversation in the activity view: someone marked it as done.
+#: src/lib/entry-editor/diff-view/DiffFieldRows.svelte
+msgid "Resolved"
+msgstr "Resolved"
+
 #: src/lib/notifications/NotificationOutlet.svelte
 #: src/lib/updates/UpdateDialogContent.svelte
 msgid "Restart"
@@ -4167,6 +4175,11 @@ msgstr "Start a conversation…"
 #: src/project/browse/filter/OpFilter.svelte
 msgid "Starts with"
 msgstr "Starts with"
+
+#. Field label in the activity view for whether a comment conversation is resolved.
+#: src/lib/entry-editor/diff-view/diff-fields.ts
+msgid "Status"
+msgstr "Status"
 
 #. Title of a loading notification shown when opening a project takes a while.
 #: src/DotnetProjectView.svelte
@@ -4718,6 +4731,11 @@ msgstr "Unless you choose to always allow its changes"
 #: src/lib/entry-editor/comments/CommentThread.svelte
 msgid "Unread"
 msgstr "Unread"
+
+#. Status of a comment conversation in the activity view: still open, not marked as done.
+#: src/lib/entry-editor/diff-view/DiffFieldRows.svelte
+msgid "Unresolved"
+msgstr "Unresolved"
 
 #: src/lib/plugins/studio/StudioHeader.svelte
 msgid "Unsaved changes"
