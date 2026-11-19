@@ -96,6 +96,8 @@ flowchart TD
 
 Job outcomes are `SyncJobResult.Status` (`LexCore/Sync/SyncJobResult.cs`); the `SyncJob*`/`TimedOut*` ones are polling outcomes, and results stay cached 30 s. A Chorus rollback blocks the project (HTTP 423 at the trigger, re-checked in the worker); unblock with `POST /api/fw-lite/sync/unblock?projectId=...` (no UI; admins only). The snapshot is `{project}_snapshot.json`; why it's written after the post-merge Send/Receive and from the Harmony API is in `SyncWorker.ExecuteSync` (`Services/SyncHostedService.cs`).
 
+`CrdtRebuildService` (admin-only `POST /api/fw-lite/sync/rebuild-crdt/{projectId}`) replaces `crdt.sqlite` with a fresh download from Lexbox, outside the merge queue: it blocks the project, then checks for a running merge or sync, in that order. Anything new that touches `crdt.sqlite` must honour the sync block.
+
 ### Key Services
 
 | Service | Purpose | Danger Level |

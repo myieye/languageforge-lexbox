@@ -1478,6 +1478,104 @@ paths:
             text/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+  '/api/fw-lite/sync/rebuild-crdt/{projectId}':
+    post:
+      tags:
+        - Sync
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: ignoreSyncError
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: discardUnsyncedCommits
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: allowDataDifference
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CrdtRebuildReport'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrdtRebuildReport'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CrdtRebuildReport'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: Conflict
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    get:
+      tags:
+        - Sync
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/CrdtRebuildReport'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrdtRebuildReport'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/CrdtRebuildReport'
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+            text/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
   /api/fw-lite/sync/block:
     post:
       tags:
@@ -1748,6 +1846,53 @@ components:
           type: string
           format: date-time
           nullable: true
+    CrdtRebuildReport:
+      required:
+        - status
+        - message
+        - startedAt
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/CrdtRebuildReportStatus'
+        message:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        matchedServerBefore:
+          type: boolean
+          nullable: true
+        matchedServerAfter:
+          type: boolean
+          nullable: true
+        unsyncedCommitIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          nullable: true
+        dataDifferences:
+          type: array
+          items:
+            type: string
+          nullable: true
+        backupPath:
+          type: string
+          nullable: true
+    CrdtRebuildReportStatus:
+      enum:
+        - Running
+        - Rebuilt
+        - SyncFailed
+        - UnsyncedCommits
+        - DataDifference
+        - Failed
     Entry:
       type: object
       properties:

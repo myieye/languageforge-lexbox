@@ -16,6 +16,7 @@ public static class FwHeadlessKernel
 {
     public const string LexboxHttpClientName = "LexboxHttpClient";
     public const string LexboxSyncHttpClientName = "LexboxSyncHttpClient";
+    public const string LexboxDownloadHttpClientName = "LexboxDownloadHttpClient";
     public static IServiceCollection AddFwHeadless(this IServiceCollection services)
     {
         services
@@ -62,6 +63,14 @@ public static class FwHeadlessKernel
             // must be at least twice the attempt timeout
             options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(60);
         });
+        services.AddSingleton<CrdtRebuildService>();
+        // A CRDT rebuild downloads a project's whole history in one response.
+        services.AddLexboxHttpClient(LexboxDownloadHttpClientName, options =>
+        {
+            options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(10);
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(30);
+            options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(20);
+        }).ConfigureHttpClient(client => client.Timeout = Timeout.InfiniteTimeSpan); // the default 100 s would cut the download short
         return services;
     }
 

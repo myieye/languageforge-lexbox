@@ -51,6 +51,7 @@ public class ProjectDeletionServiceTests : IDisposable
             Options.Create(_config),
             _projectLookupService,
             _syncHostedService,
+            new CrdtRebuildService(null!, null!, null!, null!, null!, null!, null!, null!, null!, NullLogger<CrdtRebuildService>.Instance),
             NullLogger<ProjectDeletionService>.Instance);
     }
 

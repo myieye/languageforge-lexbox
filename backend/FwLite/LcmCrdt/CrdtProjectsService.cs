@@ -335,7 +335,7 @@ public partial class CrdtProjectsService(
         }
     }
 
-    private Task EnsureDeleteProject(string sqliteFile, bool suppressException = false)
+    internal Task EnsureDeleteProject(string sqliteFile, bool suppressException = false)
     {
         return Task.Run(async () =>
         {

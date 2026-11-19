@@ -28,7 +28,41 @@ public static class MergeRoutes
         group.MapPost("/block", BlockProject);
         group.MapPost("/unblock", UnblockProject);
         group.MapGet("/block-status", GetBlockStatus);
+        group.MapPost("/rebuild-crdt", RebuildCrdt);
+        group.MapGet("/rebuild-crdt", GetCrdtRebuild);
         return group;
+    }
+
+    // under the ingress's 60 s limit on a response; a longer rebuild is read from the GET route
+    private static readonly TimeSpan RebuildWait = TimeSpan.FromSeconds(45);
+
+    static async Task<Results<Ok<CrdtRebuildReport>, ProblemHttpResult>> RebuildCrdt(
+        CrdtRebuildService rebuildService,
+        Guid projectId,
+        bool ignoreSyncError = false,
+        bool discardUnsyncedCommits = false,
+        bool allowDataDifference = false)
+    {
+        using var activity = FwHeadlessActivitySource.Value.StartActivity();
+        activity?.SetTag("app.project_id", projectId);
+        var (result, problem, rebuild) = await rebuildService.Start(projectId, new(ignoreSyncError, discardUnsyncedCommits, allowDataDifference));
+        if (rebuild is null)
+        {
+            return TypedResults.Problem(problem, statusCode: result == StartCrdtRebuild.ProjectNotFound
+                ? StatusCodes.Status404NotFound
+                : StatusCodes.Status409Conflict);
+        }
+
+        // not cancelled with the request: the rebuild carries on either way
+        await Task.WhenAny(rebuild, Task.Delay(RebuildWait));
+        return TypedResults.Ok(rebuild.IsCompleted ? await rebuild : rebuildService.Report(projectId)!);
+    }
+
+    static Results<Ok<CrdtRebuildReport>, NotFound<string>> GetCrdtRebuild(CrdtRebuildService rebuildService, Guid projectId)
+    {
+        return rebuildService.Report(projectId) is { } report
+            ? TypedResults.Ok(report)
+            : TypedResults.NotFound("No rebuild of this project since FwHeadless started");
     }
 
 
