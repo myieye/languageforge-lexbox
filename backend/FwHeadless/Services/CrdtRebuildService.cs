@@ -58,16 +58,17 @@ public class CrdtRebuildService(
             }
             if (project is null)
                 return NotStarted(StartCrdtRebuild.ProjectNotFound, "The project doesn't exist or its first merge hasn't finished");
-            if (await metadataService.GetSyncBlockedInfoAsync(projectId) is { IsBlocked: true } block)
-                return NotStarted(StartCrdtRebuild.ProjectBusy, $"The project is blocked from syncing. Reason: {block.Reason}");
-
             // Block before looking for a merge or sync: one that starts after the block sees it and stops,
             // one that started before it is found here.
-            await metadataService.BlockFromSyncAsync(projectId, BlockReason);
+            if (!await metadataService.TryBlockFromSyncAsync(projectId, BlockReason))
+            {
+                var block = await metadataService.GetSyncBlockedInfoAsync(projectId);
+                return NotStarted(StartCrdtRebuild.ProjectBusy, $"The project is blocked from syncing. Reason: {block?.Reason}");
+            }
             blocked = true;
             if (mergeService.IsJobQueuedOrRunning(projectId) || syncJobStatusService.SyncStatus(projectId) == SyncJobStatus.Running)
             {
-                await metadataService.UnblockFromSyncAsync(projectId);
+                await metadataService.UnblockFromSyncAsync(projectId, BlockReason);
                 return NotStarted(StartCrdtRebuild.ProjectBusy, "A sync of this project is queued or running, try again once it has finished");
             }
 
@@ -84,7 +85,7 @@ public class CrdtRebuildService(
         }
         catch
         {
-            if (blocked) await metadataService.UnblockFromSyncAsync(projectId);
+            if (blocked) await metadataService.UnblockFromSyncAsync(projectId, BlockReason);
             _running.TryRemove(projectId, out _);
             throw;
         }
@@ -116,7 +117,7 @@ public class CrdtRebuildService(
         try
         {
             // Safe after a failure too: the db is replaced in one SQLite transaction, so it is either the old or the new one.
-            await metadataService.UnblockFromSyncAsync(projectId);
+            await metadataService.UnblockFromSyncAsync(projectId, BlockReason);
         }
         catch (Exception e)
         {

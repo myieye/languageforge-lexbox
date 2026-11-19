@@ -70,7 +70,7 @@ public static class FwHeadlessKernel
             options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(10);
             options.TotalRequestTimeout.Timeout = TimeSpan.FromMinutes(30);
             options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(20);
-        });
+        }).ConfigureHttpClient(client => client.Timeout = Timeout.InfiniteTimeSpan); // the default 100 s would cut the download short
         return services;
     }
 

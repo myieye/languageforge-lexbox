@@ -36,6 +36,32 @@ public class ProjectMetadataService(IOptions<FwHeadlessConfig> config, ILogger<P
         logger.LogInformation("Project {projectId} unblocked from sync", projectId);
     }
 
+    public async Task<bool> TryBlockFromSyncAsync(Guid projectId, string reason)
+    {
+        var blocked = false;
+        await _store.UpdateAsync(projectId, metadata =>
+        {
+            if (metadata.SyncBlocked is { IsBlocked: true }) return;
+            metadata.SyncBlocked = new SyncBlockedInfo { IsBlocked = true, Reason = reason, BlockedAt = DateTime.UtcNow };
+            blocked = true;
+        });
+        if (blocked) logger.LogWarning("Project {projectId} blocked from sync. Reason: {reason}", projectId, reason);
+        return blocked;
+    }
+
+    public async Task<bool> UnblockFromSyncAsync(Guid projectId, string reason)
+    {
+        var unblocked = false;
+        await _store.UpdateAsync(projectId, metadata =>
+        {
+            if (metadata.SyncBlocked is not { IsBlocked: true } block || block.Reason != reason) return;
+            metadata.SyncBlocked = new SyncBlockedInfo { IsBlocked = false };
+            unblocked = true;
+        });
+        if (unblocked) logger.LogInformation("Project {projectId} unblocked from sync", projectId);
+        return unblocked;
+    }
+
     public Task<SyncBlockedInfo?> GetSyncBlockedInfoAsync(Guid projectId)
     {
         return _store.ReadAsync(projectId, metadata => metadata?.SyncBlocked);

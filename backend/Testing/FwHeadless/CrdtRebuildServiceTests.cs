@@ -109,6 +109,19 @@ public class CrdtRebuildServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task ARollbackBlockSetByTheRunningMerge_SurvivesTheRefusedRebuild()
+    {
+        CreateSyncedProject();
+        _mergeService.QueuedOrRunning = true;
+        _mergeService.BlockWhenAsked = "Rollback detected";
+
+        var (result, _, _) = await _rebuildService.Start(_projectId, new());
+
+        result.Should().Be(StartCrdtRebuild.ProjectBusy);
+        (await _metadataService.GetSyncBlockedInfoAsync(_projectId)).Should().BeEquivalentTo(new { IsBlocked = true, Reason = "Rollback detected" });
+    }
+
+    [Fact]
     public async Task AProjectWithoutAFinishedMerge_IsNotFoundAndNotBlocked()
     {
         Directory.CreateDirectory(_config.GetProjectFolder(ProjectCode, _projectId));
@@ -124,10 +137,12 @@ public class CrdtRebuildServiceTests : IDisposable
     {
         public bool QueuedOrRunning { get; set; }
         public List<bool> BlockedWhenAsked { get; } = [];
+        public string? BlockWhenAsked { get; set; }
 
         public override bool IsJobQueuedOrRunning(Guid projectId)
         {
             BlockedWhenAsked.Add(metadataService.GetSyncBlockedInfoAsync(projectId).GetAwaiter().GetResult() is { IsBlocked: true });
+            if (BlockWhenAsked is not null) metadataService.BlockFromSyncAsync(projectId, BlockWhenAsked).GetAwaiter().GetResult();
             return QueuedOrRunning;
         }
     }
