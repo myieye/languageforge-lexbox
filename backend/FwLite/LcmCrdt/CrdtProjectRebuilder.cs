@@ -21,7 +21,7 @@ public enum CrdtRebuildStatus
     DataDifference,
 }
 
-/// <param name="MatchedServerAfter">null when the db wasn't replaced</param>
+/// <param name="MatchedServerAfter">null when the db wasn't replaced, or when it was but couldn't be compared afterwards</param>
 /// <param name="BackupPath">the db as it was before it was replaced</param>
 public record CrdtRebuildResult(
     CrdtRebuildStatus Status,
@@ -91,10 +91,20 @@ public class CrdtProjectRebuilder(
             Replace(project.DbPath, rebuiltPath, backupPath);
             logger.LogInformation("Rebuilt project {Project} from the server, the previous db is at {BackupPath}", project.Name, backupPath);
 
-            var current = await Read(project, withEntities: false);
+            bool? matchedServerAfter = null;
+            try
+            {
+                var current = await Read(project, withEntities: false);
+                matchedServerAfter = SameCommits(current.SyncState, await remote.GetSyncState());
+            }
+            catch (Exception e)
+            {
+                // the db is replaced either way, and the caller needs the backup path
+                logger.LogWarning(e, "Could not compare the rebuilt project {Project} with the server", project.Name);
+            }
             return new(CrdtRebuildStatus.Rebuilt,
                 matchedServerBefore,
-                SameCommits(current.SyncState, await remote.GetSyncState()),
+                matchedServerAfter,
                 unsyncedCommitIds,
                 differences,
                 backupPath);

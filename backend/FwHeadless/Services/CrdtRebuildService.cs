@@ -85,8 +85,14 @@ public class CrdtRebuildService(
         }
         catch
         {
-            if (blocked) await metadataService.UnblockFromSyncAsync(projectId, BlockReason);
-            _running.TryRemove(projectId, out _);
+            try
+            {
+                if (blocked) await metadataService.UnblockFromSyncAsync(projectId, BlockReason);
+            }
+            finally
+            {
+                _running.TryRemove(projectId, out _);
+            }
             throw;
         }
 
@@ -118,6 +124,8 @@ public class CrdtRebuildService(
         {
             // Safe after a failure too: the db is replaced in one SQLite transaction, so it is either the old or the new one.
             await metadataService.UnblockFromSyncAsync(projectId, BlockReason);
+            // syncs requested during the rebuild were skipped because of the block
+            harmonySyncScheduler.RequestSync(projectId);
         }
         catch (Exception e)
         {

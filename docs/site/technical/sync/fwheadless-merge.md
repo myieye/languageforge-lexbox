@@ -101,7 +101,7 @@ button for it.
 syncing, an admin can replace it: `POST /api/fw-lite/sync/rebuild-crdt/{projectId}` runs a Harmony sync,
 downloads the project's commits from Lexbox into a new database and puts that in place of the old one, which
 is kept next to it as `crdt.sqlite.bak-{timestamp}`. Nothing is merged with FieldWorks. The project is blocked
-from syncing while this runs. If FwHeadless restarts mid-rebuild, the block stays until an admin lifts it. The rebuild stops, leaving the copy as it was, if the Harmony sync fails, if the
+from syncing while this runs. If FwHeadless restarts mid-rebuild, the block stays until an admin lifts it. The rebuild stops without replacing the copy (the Harmony sync may already have added Lexbox commits to it) if the Harmony sync fails, if the
 copy has commits Lexbox doesn't, or if the downloaded data differs from the copy's; the report names the
 parameter that gets past each stop. The call waits up to 45 seconds; a longer rebuild is read from
 `GET /api/fw-lite/sync/rebuild-crdt/{projectId}`.
