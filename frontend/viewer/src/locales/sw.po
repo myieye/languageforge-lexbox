@@ -117,7 +117,7 @@ msgstr "{0} (FieldWorks Lite)"
 msgid "{0} (FieldWorks)"
 msgstr "{0} (FieldWorks)"
 
-#: src/lib/activity/ActivityFilter.svelte
+#: src/lib/activity/ChangeTypeFilter.svelte
 msgid "{0} activity types"
 msgstr "{0} aina za shughuli"
 
@@ -320,6 +320,13 @@ msgstr "Akaunti"
 msgid "Activity"
 msgstr "Shughuli"
 
+#. Label of the activity view filter that narrows the list by what kind of change was made.
+#: src/lib/activity/ChangeTypeFilter.svelte
+#: src/lib/activity/ChangeTypeFilter.svelte
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "Activity type"
+msgstr ""
+
 #. Error boundary title shown if the whole Activity view crashes while rendering.
 #: src/lib/activity/ActivityView.svelte
 msgid "Activity view failed"
@@ -488,13 +495,6 @@ msgstr "Zaidi: faili ya mipangilio"
 msgid "All"
 msgstr "Vyote"
 
-#. Filter option in activity view activity-type dropdown — show all kinds of edits.
-#: src/lib/activity/ActivityFilter.svelte
-#: src/lib/activity/ActivityFilter.svelte
-#: src/lib/activity/ActivityFilter.svelte
-msgid "All activity types"
-msgstr "Aina zote za shughuli"
-
 #. Filter option in activity view author dropdown — show commits from every author.
 #: src/lib/activity/ActivityFilter.svelte
 #: src/lib/activity/ActivityFilter.svelte
@@ -615,6 +615,11 @@ msgstr ""
 #: src/project/tasks/TasksView.svelte
 msgid "Audio"
 msgstr "Sauti"
+
+#. Group heading in the activity-type filter: changes to audio recordings and other media files.
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "Audio & media"
+msgstr ""
 
 #. Status message when audio was not synced
 #: src/lib/components/field-editors/audio-input.svelte
@@ -868,6 +873,14 @@ msgstr "Miradi ya FieldWorks Classic"
 msgid "clear"
 msgstr "futa"
 
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "Clear activity type filter"
+msgstr ""
+
+#: src/lib/activity/ActivityView.svelte
+msgid "Clear filters"
+msgstr ""
+
 #. Activity-log line. {0} = field label (e.g. "Gloss", "Definition"). Means the field's value was erased.
 #: src/lib/activity/ChangeSummary.svelte
 #: src/lib/activity/ChangeSummary.svelte
@@ -910,7 +923,9 @@ msgstr ""
 msgid "Color"
 msgstr "Rangi"
 
+#: src/lib/activity/ActivityItemChangePreview.svelte
 #: src/lib/entry-editor/comments/CommentPanel.svelte
+#: src/lib/entry-editor/diff-view/diff-fields.ts
 msgid "Comment"
 msgstr "Maoni"
 
@@ -922,6 +937,7 @@ msgstr "Mtoa maoni"
 msgid "comments"
 msgstr ""
 
+#: src/lib/activity/ChangeTypeFilter.svelte
 #: src/lib/entry-editor/comments/CommentPanel.svelte
 #: src/project/browse/EntryView.svelte
 msgid "Comments"
@@ -1026,6 +1042,7 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
+#: src/lib/activity/ActivityItemChangePreview.svelte
 #: src/lib/entry-editor/comments/CommentPanel.svelte
 msgid "Conversation"
 msgstr "Mazungumzo"
@@ -1548,6 +1565,11 @@ msgstr ""
 msgid "entries"
 msgstr ""
 
+#. Group heading in the activity-type filter: changes to dictionary entries (FieldWorks wording).
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "Entries"
+msgstr ""
+
 #: src/project/tasks/tasks-service.ts
 msgid "Entries missing both Lexeme form and Citation form"
 msgstr "Maingizo yanayokosa fomu ya leksemu na fomu ya rejeleo"
@@ -1694,6 +1716,7 @@ msgstr ""
 msgid "examples"
 msgstr ""
 
+#: src/lib/activity/ChangeTypeFilter.svelte
 #: src/lib/plugins/PluginsView.svelte
 #: src/lib/plugins/studio/StudioHeader.svelte
 msgid "Examples"
@@ -2328,6 +2351,11 @@ msgstr "Mwanga"
 msgid "List mode"
 msgstr "Hali ya orodha"
 
+#. Group heading in the activity-type filter: changes to project lists (parts of speech, semantic domains...) and settings (writing systems, views).
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "Lists & settings"
+msgstr ""
+
 #. Field name shown in advanced/classic view
 #. The literal meaning of the vernacular translated into the analysis language
 #. Contrasts with glosses/definitions in the analysis language
@@ -2516,6 +2544,11 @@ msgstr ""
 #: src/lib/activity/ChangeSummary.svelte
 #: src/lib/activity/ChangeSummary.svelte
 msgid "meanings"
+msgstr ""
+
+#. Group heading in the activity-type filter: changes to meanings (simpler wording for "senses").
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "Meanings"
 msgstr ""
 
 #. Noun for a media resource of non-audio/unknown type, e.g. "Added media file" in the activity log
@@ -2755,10 +2788,6 @@ msgstr ""
 msgid "No activity matches these filters"
 msgstr "Hakuna shughuli inayolingana na vichujio hivi"
 
-#: src/lib/activity/ActivityFilter.svelte
-msgid "No activity types"
-msgstr "Hakuna aina za shughuli"
-
 #: src/project/dashboard/DashboardView.svelte
 msgid "No analysis writing systems configured."
 msgstr "Hakuna mifumo ya uandishi wa uchambuzi iliyowekwa."
@@ -2826,6 +2855,10 @@ msgstr ""
 
 #: src/lib/plugins/studio/panels/VersionReview.svelte
 msgid "No longer uses the internet"
+msgstr ""
+
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "No matching activity types"
 msgstr ""
 
 #: src/lib/media-manager/MediaManagerView.svelte
@@ -3016,6 +3049,12 @@ msgstr "Kumbuka moja ya FieldWorks Classic inaweza kuwa na mabadiliko kwa ingizo
 
 #: src/lib/plugins/studio/InternetPromptDialog.svelte
 msgid "Online, a plugin can send this project's data to any website."
+msgstr ""
+
+#. Short hover button on a filter row: select only this row and clear the others.
+#: src/lib/activity/ChangeTypeFilter.svelte
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "Only"
 msgstr ""
 
 #: src/lib/plugins/studio/InternetPromptDialog.svelte
@@ -3658,6 +3697,7 @@ msgstr ""
 msgid "Requires"
 msgstr ""
 
+#: src/lib/activity/ChangeTypeFilter.svelte
 #: src/project/browse/SearchFilter.svelte
 msgid "Reset"
 msgstr "Weka upya"
@@ -3667,6 +3707,11 @@ msgstr "Weka upya"
 #: src/lib/entry-editor/comments/CommentThread.svelte
 msgid "Resolve"
 msgstr "Tatua"
+
+#. Status of a comment conversation in the activity view: someone marked it as done.
+#: src/lib/entry-editor/diff-view/DiffFieldRows.svelte
+msgid "Resolved"
+msgstr ""
 
 #: src/lib/notifications/NotificationOutlet.svelte
 #: src/lib/updates/UpdateDialogContent.svelte
@@ -3786,6 +3831,10 @@ msgstr ""
 #: src/lib/entry-editor/EntryOrSensePicker.svelte
 msgid "Search # or #"
 msgstr "Tafuta # au #"
+
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "Search activity types"
+msgstr ""
 
 #. Search placeholder
 #: src/project/ProjectDropdown.svelte
@@ -3909,6 +3958,11 @@ msgstr ""
 #: src/lib/activity/ChangeSummary.svelte
 #: src/lib/activity/ChangeSummary.svelte
 msgid "senses"
+msgstr ""
+
+#. Group heading in the activity-type filter: changes to senses (FieldWorks wording).
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "Senses"
 msgstr ""
 
 #. Field label for example text
@@ -4130,6 +4184,11 @@ msgstr "Anza mazungumzo…"
 #: src/project/browse/filter/OpFilter.svelte
 msgid "Starts with"
 msgstr "Inaanza na"
+
+#. Field label in the activity view for whether a comment conversation is resolved.
+#: src/lib/entry-editor/diff-view/diff-fields.ts
+msgid "Status"
+msgstr ""
 
 #. Title of a loading notification shown when opening a project takes a while.
 #: src/DotnetProjectView.svelte
@@ -4682,6 +4741,11 @@ msgstr ""
 msgid "Unread"
 msgstr "Haijasomwa"
 
+#. Status of a comment conversation in the activity view: still open, not marked as done.
+#: src/lib/entry-editor/diff-view/DiffFieldRows.svelte
+msgid "Unresolved"
+msgstr ""
+
 #: src/lib/plugins/studio/StudioHeader.svelte
 msgid "Unsaved changes"
 msgstr ""
@@ -4944,6 +5008,11 @@ msgstr "Neno au maana:"
 #. Lowercase plural noun interpolated into activity-log lines (e.g. "Created 5 words"). Paired with "words" / "entries" terminology across the app.
 #: src/lib/activity/ChangeSummary.svelte
 msgid "words"
+msgstr ""
+
+#. Group heading in the activity-type filter: changes to words (simpler wording for "entries").
+#: src/lib/activity/ChangeTypeFilter.svelte
+msgid "Words"
 msgstr ""
 
 #: src/project/tasks/tasks-service.ts
