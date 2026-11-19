@@ -64,9 +64,7 @@ public class ProjectService(
         try
         {
             await hgService.InitRepo(input.Code);
-            InvalidateProjectOrgIdsCache(projectId);
-            InvalidateProjectConfidentialityCache(projectId);
-            InvalidateProjectCodeCache(input.Code);
+            InvalidateProjectCaches(projectId, input.Code);
             await transaction.CommitAsync();
         }
         catch
@@ -224,10 +222,7 @@ public class ProjectService(
         dbContext.Projects.Remove(project);
         await hgService.DeleteRepoIfExists(project.Code);
         project.UpdateUpdatedDate();
-        // Don't forget to add more Invalidate calls here if we add new caches
-        InvalidateProjectCodeCache(project.Code);
-        InvalidateProjectConfidentialityCache(projectId);
-        InvalidateProjectOrgIdsCache(projectId);
+        InvalidateProjectCaches(projectId, project.Code);
         await dbContext.SaveChangesAsync();
         return project;
     }
@@ -263,6 +258,33 @@ public class ProjectService(
     {
         try { memoryCache.Remove($"ProjectConfidentiality:{projectId}"); }
         catch (Exception) { } // Never allow this to throw
+    }
+
+    public async ValueTask<RetentionPolicy> LookupProjectRetentionPolicy(Guid projectId)
+    {
+        var cacheKey = $"ProjectRetentionPolicy:{projectId}";
+        if (memoryCache.TryGetValue(cacheKey, out RetentionPolicy retentionPolicy)) return retentionPolicy;
+        retentionPolicy = await dbContext.Projects.IgnoreQueryFilters()
+            .Where(p => p.Id == projectId)
+            .Select(p => (RetentionPolicy?)p.RetentionPolicy)
+            .FirstOrDefaultAsync() ?? RetentionPolicy.Unknown;
+        memoryCache.Set(cacheKey, retentionPolicy, TimeSpan.FromHours(1));
+        return retentionPolicy;
+    }
+
+    public void InvalidateProjectRetentionPolicyCache(Guid projectId)
+    {
+        try { memoryCache.Remove($"ProjectRetentionPolicy:{projectId}"); }
+        catch (Exception) { } // Never allow this to throw
+    }
+
+    // Don't forget to add new project caches here
+    private void InvalidateProjectCaches(Guid projectId, string projectCode)
+    {
+        InvalidateProjectCodeCache(projectCode);
+        InvalidateProjectConfidentialityCache(projectId);
+        InvalidateProjectOrgIdsCache(projectId);
+        InvalidateProjectRetentionPolicyCache(projectId);
     }
 
     public async Task UpdateProjectMetadataForCode(string projectCode)
