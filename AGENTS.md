@@ -9,7 +9,7 @@ This is a monorepo containing:
 
 ### Tech Stack
 
-- **Backend**: .NET 10, C#, Entity Framework Core, GraphQL (Hot Chocolate)
+- **Backend**: .NET 11, C#, Entity Framework Core, GraphQL (Hot Chocolate)
 - **Frontend**: SvelteKit, TypeScript
 - **Database**: PostgreSQL
 - **Infrastructure**: Docker, Kubernetes, Tilt
@@ -78,7 +78,7 @@ Do not run `kubectl`, `helm`, `k9s`, port-forwards, or anything else that reads 
 - ✅ **DO run unit tests via the CLI**, filtered to the tests relevant to your changes (e.g. `dotnet test backend/FwLite/FwLiteShared.Tests --filter "FullyQualifiedName~MyTestClass"`). Verify tests you wrote or changed actually pass before handing work back. Never run whole suites just to "see if anything broke".
 - ✅ **`MiniLcm.Tests`, `LcmCrdt.Tests`, `FwDataMiniLcmBridge.Tests` need no infrastructure** — these are the unit/conformance tests for the two `IMiniLcmApi` implementations; run them filtered to your change like any unit test (this is where a `*TestsBase` change should be verified, including its FwData side). The FwData/LCM-backed selections load a real project (a handful of tests = seconds, a whole class = a minute or two), so keep the filter tight; don't reach for the whole class or project.
 - ✅ **FwLite integration tests** (e.g. `FwLiteProjectSync.Tests`) need no infrastructure but are slow. FwData runs **in-process via liblcm** — these tests create real FieldWorks projects with no external setup (e.g. the `ProjectTemplateTests.GenerateTemplate` regen tool). Only FwHeadless's hg/Mercurial sync and the lexbox stack (last bullet) need running infrastructure — *not* FwData itself. Run a **targeted selection** (specific tests, not necessarily whole classes) when you touched critical sync code **and believe the work is finished** — not on every iteration. Slow-suite timings and the `--no-build` loop: `backend/FwLite/AGENTS.md` → Test timings.
-- ✅ **`backend/Testing` contains unit tests too** — only tests marked `Category=Integration|HgIntegration|RequiresDb` (and the `Testing.Browser` namespace) need infrastructure. Its unit tests are fine to run: `task test:unit -- <filter>` excludes those categories for you.
+- ✅ **`backend/Testing` contains unit tests too** — only tests marked `Category=Integration|RequiresDb` (and the `Testing.Browser` namespace) need infrastructure. Its unit tests are fine to run: `task test:unit -- <filter>` excludes those categories for you.
 - ✅ **FwLite viewer Playwright tests MAY be run** — they're cheap: `task test:ui-standalone -- <test-name-filter>` (from `frontend/viewer/`) auto-starts the vite dev server with the in-browser demo project; no lexbox stack. Filter to a file and one browser: `-- sort.test.ts --project=chromium`; details in `frontend/viewer/AGENTS.md`.
 - ❌ **Do NOT run tests that need the lexbox stack** unless the user explicitly asks: LexBox integration tests (`Category=Integration`/`HgIntegration`, `Testing.Browser`) and the lexbox frontend Playwright suite (`frontend/tests`). The local stack is usually down or torn down between sessions and results aren't trustworthy — rely on CI for these.
 - ✅ **Before saying frontend work is done**, run `task verify` (svelte-check, eslint, vitest, i18n extract); after backend model/API/GraphQL changes, `task check-generated` (EF, gql, OpenAPI, TS types drift).
@@ -121,7 +121,7 @@ If you are struggling, explain the difficulty to the user instead of cheating. *
 
 ## Cursor Cloud specific instructions
 
-System deps (.NET 10 SDK, Taskfile/`task`) are baked into the VM snapshot; the startup update script only refreshes pnpm + FwLiteWeb NuGet deps. The generated TS types under `frontend/viewer/src/lib/dotnet-types/generated-types/` are committed, so the viewer runs without a backend build.
+System deps (.NET 11 SDK, Taskfile/`task`) are baked into the VM snapshot; the startup update script only refreshes pnpm + FwLiteWeb NuGet deps. The generated TS types under `frontend/viewer/src/lib/dotnet-types/generated-types/` are committed, so the viewer runs without a backend build.
 
 ### Running FW Lite Web (headless)
 

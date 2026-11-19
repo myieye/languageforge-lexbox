@@ -81,6 +81,7 @@ public class SyncController(
     /// which is what the snapshot is intended to represent.
     /// </param>
     [HttpPost("regenerate-snapshot/{projectId}")]
+    [AdminRequired]
     [RequireScope(LexboxAuthScope.SendAndReceive, exclusive: false)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -113,6 +114,7 @@ public class SyncController(
     }
 
     [HttpPost("block")]
+    [AdminRequired]
     [RequireScope(LexboxAuthScope.SendAndReceive, exclusive: false)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -133,6 +135,7 @@ public class SyncController(
     }
 
     [HttpPost("unblock")]
+    [AdminRequired]
     [RequireScope(LexboxAuthScope.SendAndReceive, exclusive: false)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

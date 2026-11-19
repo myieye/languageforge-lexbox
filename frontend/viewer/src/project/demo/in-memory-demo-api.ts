@@ -91,7 +91,6 @@ export const mockFwLiteConfig: IFwLiteConfig = {
   edition: 0,
   updateCheckCondition: 0,
   updateCheckInterval: 0,
-  updateUrl: ''
 };
 
 export const mockUpdateService: IUpdateService = {
@@ -114,7 +113,7 @@ export const mockUpdateService: IUpdateService = {
 };
 
 const mockJsEventListener: IJsEventListener = {
-  nextEventAsync: () => Promise.resolve(undefined!),
+  nextEventsAsync: () => Promise.resolve([]),
   lastEvent: () => Promise.resolve(undefined)
 };
 
