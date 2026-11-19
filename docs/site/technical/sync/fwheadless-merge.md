@@ -97,5 +97,14 @@ immediately, before *and* after the merge. A blocked project is refused at the t
 checked again when its queued job starts. Only an admin can unblock it (or block a project by hand); there's no
 button for it.
 
+**Rebuilding the CRDT copy.** When FwHeadless's CRDT copy can no longer be brought in line with Lexbox by
+syncing, an admin can replace it: `POST /api/fw-lite/sync/rebuild-crdt/{projectId}` runs a Harmony sync,
+downloads the project's commits from Lexbox into a new database and puts that in place of the old one, which
+is kept next to it as `crdt.sqlite.bak-{timestamp}`. Nothing is merged with FieldWorks. The project is blocked
+from syncing while this runs. The rebuild stops, leaving the copy as it was, if the Harmony sync fails, if the
+copy has commits Lexbox doesn't, or if the downloaded data differs from the copy's; the report names the
+parameter that gets past each stop. The call waits up to 45 seconds; a longer rebuild is read from
+`GET /api/fw-lite/sync/rebuild-crdt/{projectId}`.
+
 Other landmines worth knowing: a stale snapshot makes every subsequent diff wrong; a stale hg lock hangs
 Send/Receive; and a FieldWorks data-model version that doesn't match FwHeadless's risks corrupt data.

@@ -113,6 +113,42 @@ public class SyncController(
         return rebuild;
     }
 
+    /// <summary>
+    /// Replaces FwHeadless's CRDT copy of a project with a fresh download of the project's commits from Lexbox, after
+    /// a Harmony sync. For a copy that syncing can no longer bring in line with Lexbox. The copy it replaces is kept
+    /// next to it. The project is blocked from syncing while this runs.
+    /// Waits up to 45 seconds; a report with status Running means it is still going, read it from the GET route.
+    /// A rebuild that stops short says which parameter gets past the stop.
+    /// </summary>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="ignoreSyncError">Rebuild even if the Harmony sync before it fails.</param>
+    /// <param name="discardUnsyncedCommits">Rebuild even if FwHeadless has commits that Lexbox doesn't. They are lost.</param>
+    /// <param name="allowDataDifference">Rebuild even if the downloaded data differs from the data FwHeadless has.</param>
+    [HttpPost("rebuild-crdt/{projectId}")]
+    [AdminRequired]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<CrdtRebuildReport>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<CrdtRebuildReport>> RebuildCrdt(Guid projectId,
+        [FromQuery] bool ignoreSyncError = false,
+        [FromQuery] bool discardUnsyncedCommits = false,
+        [FromQuery] bool allowDataDifference = false)
+    {
+        return await fwHeadlessClient.RebuildCrdt(projectId, ignoreSyncError, discardUnsyncedCommits, allowDataDifference);
+    }
+
+    /// <summary>
+    /// The report of the project's latest CRDT rebuild since FwHeadless started.
+    /// </summary>
+    [HttpGet("rebuild-crdt/{projectId}")]
+    [AdminRequired]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<CrdtRebuildReport>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<CrdtRebuildReport>> GetCrdtRebuild(Guid projectId)
+    {
+        return await fwHeadlessClient.GetCrdtRebuild(projectId);
+    }
+
     [HttpPost("block")]
     [AdminRequired]
     [RequireScope(LexboxAuthScope.SendAndReceive, exclusive: false)]

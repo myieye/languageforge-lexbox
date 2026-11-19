@@ -119,6 +119,7 @@ public static class LcmCrdtKernel
         services.TryAddSingleton<ILocalAuthorProvider, NoLocalAuthorProvider>();
         services.AddSingleton<CrdtProjectsService>();
         services.AddSingleton<IProjectProvider>(s => s.GetRequiredService<CrdtProjectsService>());
+        services.AddSingleton<CrdtProjectRebuilder>();
 
         services.AddHttpClient();
         services.AddSingleton(provider => new RefitSettings

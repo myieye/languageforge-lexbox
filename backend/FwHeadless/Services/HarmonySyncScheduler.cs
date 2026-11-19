@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using LcmCrdt;
+using LexCore.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
@@ -73,6 +74,16 @@ public class HarmonySyncScheduler(
             delay = Delay(state.ConsecutiveFailures);
         }
         _ = SyncAfterDelay(projectId, state, pending, delay);
+    }
+
+    /// <summary>
+    /// Waits out a running harmony sync of the project, then holds off further ones until the result is disposed.
+    /// </summary>
+    public async Task<IDisposable> PauseSyncs(Guid projectId, CancellationToken cancellationToken)
+    {
+        var state = State(projectId);
+        await state.SyncLock.WaitAsync(cancellationToken);
+        return Defer.Action(() => state.SyncLock.Release());
     }
 
     internal static TimeSpan Delay(int consecutiveFailures)

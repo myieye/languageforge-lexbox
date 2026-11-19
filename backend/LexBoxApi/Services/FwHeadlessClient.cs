@@ -130,6 +130,26 @@ public class FwHeadlessClient(HttpClient httpClient, ILogger<FwHeadlessClient> l
         }
     }
 
+    public async Task<CrdtRebuildReport> RebuildCrdt(Guid projectId, bool ignoreSyncError, bool discardUnsyncedCommits, bool allowDataDifference)
+    {
+        var response = await httpClient.PostAsync(
+            $"/api/merge/rebuild-crdt?projectId={projectId}&ignoreSyncError={ignoreSyncError}&discardUnsyncedCommits={discardUnsyncedCommits}&allowDataDifference={allowDataDifference}",
+            null);
+        return await ReadCrdtRebuildReport(response);
+    }
+
+    public async Task<CrdtRebuildReport> GetCrdtRebuild(Guid projectId)
+    {
+        return await ReadCrdtRebuildReport(await httpClient.GetAsync($"/api/merge/rebuild-crdt?projectId={projectId}"));
+    }
+
+    private static async Task<CrdtRebuildReport> ReadCrdtRebuildReport(HttpResponseMessage response)
+    {
+        if (!response.IsSuccessStatusCode) throw await FailedResponse(response);
+        return await response.Content.ReadFromJsonAsync<CrdtRebuildReport>()
+            ?? throw new FwHeadlessException(HttpStatusCode.BadGateway, "FwHeadless returned no rebuild report");
+    }
+
     public async Task BlockProject(Guid projectId, string? reason = null)
     {
         var url = $"/api/merge/block?projectId={projectId}";
