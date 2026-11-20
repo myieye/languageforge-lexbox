@@ -47,6 +47,9 @@ public static class MauiProgram
 
     public static MauiApp CreateMauiApp()
     {
+#if MACCATALYST
+        TmpProbe.StartIfRequested();
+#endif
         AppHolder holder = new AppHolder(null);
         var builder = MauiApp.CreateBuilder();
         // defaults < fw-lite-settings.json in the data dir < environment variables (e.g. FwLiteMaui__BaseDataDir)

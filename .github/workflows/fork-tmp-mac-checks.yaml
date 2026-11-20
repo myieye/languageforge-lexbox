@@ -1,0 +1,88 @@
+# TEMPORARY fork-only workflow, never merged: checks Mac FW Lite updates keep data, and probes login persistence.
+name: Fork tmp Mac checks
+on:
+  push:
+    branches: [claude/tmp-mac-checks]
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  VIEWER_BUILD_OUTPUT_DIR: backend/FwLite/FwLiteShared/wwwroot/viewer
+  MAUI_WORKLOAD_VERSION: 11.0.100.1
+jobs:
+  upgrade:
+    name: Update ${{ matrix.from }} -> latest, ${{ matrix.mode }}, ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-latest, macos-15-intel]
+        from: [v2026-09-28-553eb3f8, v2026-10-28-f3a35acc]
+        mode: [replace]
+        include:
+          - { runner: macos-latest, from: v2026-10-28-f3a35acc, mode: trash }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            .github/scripts
+            backend/FwLite/FwLiteProjectSync.Tests/sena-3-live.verified.sqlite
+          sparse-checkout-cone-mode: false
+      - name: Download release DMGs from sillsdev
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download ${{ matrix.from }} -R sillsdev/languageforge-lexbox -p FieldWorksLite.dmg -O old.dmg
+          gh release download v2026-11-13-9058284e -R sillsdev/languageforge-lexbox -p FieldWorksLite.dmg -O new.dmg
+          sw_vers; uname -m
+      - name: Update and check data
+        run: bash .github/scripts/tmp-mac-upgrade-test.sh old.dmg new.dmg backend/FwLite/FwLiteProjectSync.Tests/sena-3-live.verified.sqlite ${{ matrix.mode }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: upgrade-${{ matrix.runner }}-${{ matrix.from }}-${{ matrix.mode }}
+          path: ${{ runner.temp }}/upgrade
+
+  viewer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-frontend
+      - working-directory: frontend/viewer
+        run: pnpm run build
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: viewer-js
+          path: ${{ env.VIEWER_BUILD_OUTPUT_DIR }}
+
+  login-probe:
+    needs: viewer
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: viewer-js
+          path: ${{ env.VIEWER_BUILD_OUTPUT_DIR }}
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - run: sudo xcode-select -s /Applications/Xcode_27.2.app
+      - run: dotnet workload install maui-ios maui-maccatalyst --version ${{ env.MAUI_WORKLOAD_VERSION }}
+      # Ad-hoc signed with the release entitlements and hardened runtime, so the app is sandboxed like the DMG build.
+      - name: Build Mac Catalyst (ad-hoc signed, sandboxed)
+        working-directory: backend/FwLite/FwLiteMaui
+        run: |
+          dotnet build -f net11.0-maccatalyst -c Release -p:BuildAndroid=false -p:RuntimeIdentifier=maccatalyst-arm64 \
+            -p:EnableCodeSigning=true -p:CodesignKey=- -p:UseHardenedRuntime=true \
+            -p:CodesignEntitlements=Platforms/MacCatalyst/Entitlements.DeveloperId.plist
+      - name: Probe login storage
+        run: bash .github/scripts/tmp-mac-probe.sh "backend/FwLite/FwLiteMaui/bin/Release/net11.0-maccatalyst/maccatalyst-arm64/FieldWorks Lite.app"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: login-probe
+          path: ${{ runner.temp }}/probe
