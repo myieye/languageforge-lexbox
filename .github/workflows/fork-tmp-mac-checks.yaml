@@ -11,6 +11,7 @@ env:
   MAUI_WORKLOAD_VERSION: 11.0.100.1
 jobs:
   upgrade:
+    if: false # passed in round 1 (run 44730727526)
     name: Update ${{ matrix.from }} -> latest, ${{ matrix.mode }}, ${{ matrix.runner }}
     strategy:
       fail-fast: false

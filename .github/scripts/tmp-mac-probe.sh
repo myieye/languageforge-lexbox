@@ -15,6 +15,8 @@ for mode in write read; do
   kill $pid 2>/dev/null; for _ in $(seq 10); do kill -0 $pid 2>/dev/null || break; sleep 1; done; kill -9 $pid 2>/dev/null; wait $pid 2>/dev/null
   echo "== $mode run"; grep 'PROBE' "$OUT/$mode.stdout" || { echo "no probe output"; tail -50 "$OUT/$mode.stdout"; }
 done
-security find-generic-password -s fwlite_probe_service 2>&1 | head -20
 find "$HOME/Library/Containers/org.sil.FwLiteMaui" -name 'app.log' -not -path '*/tmp/*' -exec tail -30 {} \; 2>/dev/null
-grep -q 'PROBE: DONE' "$OUT/read.stdout"
+grep -q 'PROBE: DONE' "$OUT/read.stdout" || exit 1
+# pass only if the fresh process still sees the login written by the first one
+grep -q 'PROBE: IsSignedIn(lexbox.org)=True' "$OUT/read.stdout" || { echo "::error::login not kept across restart"; exit 1; }
+echo "Login kept across restart"

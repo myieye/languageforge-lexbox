@@ -1,7 +1,7 @@
 // TEMPORARY fork-CI probe, never merged.
 using System.Runtime.InteropServices;
-using System.Text;
-using Microsoft.Identity.Client.Extensions.Msal;
+using FwLiteShared.Auth;
+using Microsoft.Extensions.Options;
 
 namespace FwLiteMaui;
 
@@ -16,41 +16,42 @@ public static class TmpProbe
 
     static void Log(string msg) => Console.WriteLine("PROBE: " + msg);
 
-    static void Run(string mode)
+    static async Task Run(string mode)
     {
         try
         {
-            Log($"mode={mode} IsMacOS={OperatingSystem.IsMacOS()} IsMacCatalyst={OperatingSystem.IsMacCatalyst()} IsIOS={OperatingSystem.IsIOS()} RI.IsOSPlatform(OSX)={RuntimeInformation.IsOSPlatform(OSPlatform.OSX)} OSDescription={RuntimeInformation.OSDescription}");
-            Log($"AppDataDirectory={FileSystem.AppDataDirectory} HOME={Environment.GetEnvironmentVariable("HOME")} APP_SANDBOX_CONTAINER_ID={Environment.GetEnvironmentVariable("APP_SANDBOX_CONTAINER_ID")}");
-            foreach (var dp in new[] { false, true })
+            Log($"mode={mode} IsMacCatalyst={OperatingSystem.IsMacCatalyst()} RI.IsOSPlatform(OSX)={RuntimeInformation.IsOSPlatform(OSPlatform.OSX)} AppDataDirectory={FileSystem.AppDataDirectory}");
+            IServiceProvider? services = null;
+            for (var i = 0; i < 120 && services is null; i++)
             {
-                var store = new MacKeychainTokenCacheStore("fwlite_probe_service", "fwlite_probe_account_dp" + dp, dp);
-                var real = new MacKeychainTokenCacheStore(FwLiteShared.Auth.OAuthClient.KeyChainServiceName, FwLiteShared.Auth.OAuthClient.KeyChainAccountName, dp);
-                Try($"dp={dp} read-before", () => Describe(store.Read()));
-                Try($"dp={dp} real-item read", () => Describe(real.Read()));
-                if (mode == "write")
+                services = IPlatformApplication.Current?.Services;
+                if (services is null) await Task.Delay(500);
+            }
+            if (services is null) { Log("no services"); return; }
+            var authConfig = services.GetRequiredService<IOptions<AuthConfig>>().Value;
+            var store = authConfig.TokenCacheStore;
+            Log($"TokenCacheStore={store?.GetType().Name ?? "<none>"} CacheFileName={authConfig.CacheFileName} servers={string.Join(",", authConfig.LexboxServers.Select(s => s.Authority))}");
+            var factory = services.GetRequiredService<OAuthClientFactory>();
+            if (mode == "write")
+            {
+                if (store is null) { Log("no store, nothing to write"); }
+                else
                 {
-                    Try($"dp={dp} write", () => { store.Write(Encoding.UTF8.GetBytes("probe-value-1")); return "ok"; });
-                    Try($"dp={dp} overwrite", () => { store.Write(Encoding.UTF8.GetBytes("probe-value-2")); return "ok"; });
-                    Try($"dp={dp} read-after-write", () => Describe(store.Read()));
+                    var host = authConfig.LexboxServers[0].Authority.Host;
+                    store.Write(System.Text.Encoding.UTF8.GetBytes(FakeCache(host, authConfig.ClientId)));
+                    Log($"wrote fake login for {host}");
                 }
             }
-            Try("msal-helper default (keychain)", () =>
+            foreach (var server in authConfig.LexboxServers)
             {
-                var props = new StorageCreationPropertiesBuilder(Path.Combine(FileSystem.AppDataDirectory, "probe-msal.cache"), FileSystem.AppDataDirectory)
-                    .WithMacKeyChain("fwlite_probe_msal", "fwlite_probe_msal").Build();
-                var helper = MsalCacheHelper.CreateAsync(props).GetAwaiter().GetResult();
-                helper.VerifyPersistence();
-                return "VerifyPersistence ok";
-            });
-            Try("msal-helper unprotected file", () =>
-            {
-                var props = new StorageCreationPropertiesBuilder(Path.Combine(FileSystem.AppDataDirectory, "probe-msal-file.cache"), FileSystem.AppDataDirectory)
-                    .WithUnprotectedFile().Build();
-                var helper = MsalCacheHelper.CreateAsync(props).GetAwaiter().GetResult();
-                helper.VerifyPersistence();
-                return "VerifyPersistence ok";
-            });
+                var signedIn = await factory.GetClient(server).IsSignedIn();
+                Log($"IsSignedIn({server.Authority.Host})={signedIn}");
+            }
+            var file = authConfig.CacheFileName;
+            if (File.Exists(file))
+                Log($"cache file {file}: {new FileInfo(file).Length} bytes, mode {File.GetUnixFileMode(file)}");
+            else
+                Log($"cache file {file} does not exist");
         }
         catch (Exception e)
         {
@@ -59,11 +60,31 @@ public static class TmpProbe
         Log("DONE");
     }
 
-    static string Describe(byte[]? data) => data is null ? "<none>" : $"'{Encoding.UTF8.GetString(data)}' ({data.Length} bytes)";
-
-    static void Try(string name, Func<string> action)
-    {
-        try { Log($"{name}: {action()}"); }
-        catch (Exception e) { Log($"{name}: FAILED {e.GetType().Name}: {e.Message}"); }
-    }
+    // A minimal MSAL v3 cache holding one account and refresh token, the way MSAL saves a lexbox login.
+    static string FakeCache(string host, string clientId) => $$"""
+        {
+          "Account": {
+            "probe-uid.probe-utid-{{host}}-": {
+              "home_account_id": "probe-uid.probe-utid",
+              "environment": "{{host}}",
+              "realm": "",
+              "local_account_id": "probe-uid",
+              "username": "probe@example.test",
+              "authority_type": "MSSTS"
+            }
+          },
+          "RefreshToken": {
+            "probe-uid.probe-utid-{{host}}-refreshtoken-{{clientId}}--": {
+              "home_account_id": "probe-uid.probe-utid",
+              "environment": "{{host}}",
+              "client_id": "{{clientId}}",
+              "secret": "probe-not-a-real-token",
+              "credential_type": "RefreshToken"
+            }
+          },
+          "IdToken": {},
+          "AccessToken": {},
+          "AppMetadata": {}
+        }
+        """;
 }
