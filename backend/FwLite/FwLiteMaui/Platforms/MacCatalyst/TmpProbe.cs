@@ -47,6 +47,13 @@ public static class TmpProbe
                 var signedIn = await factory.GetClient(server).IsSignedIn();
                 Log($"IsSignedIn({server.Authority.Host})={signedIn}");
             }
+            if (mode == "logout")
+            {
+                // MSAL itself saves the cache here (AfterAccess with HasStateChanged), not the probe
+                var client = factory.GetClient(authConfig.LexboxServers[0]);
+                await client.Logout();
+                Log($"after logout IsSignedIn={await client.IsSignedIn()}");
+            }
             var file = authConfig.CacheFileName;
             if (File.Exists(file))
                 Log($"cache file {file}: {new FileInfo(file).Length} bytes, mode {File.GetUnixFileMode(file)}");
