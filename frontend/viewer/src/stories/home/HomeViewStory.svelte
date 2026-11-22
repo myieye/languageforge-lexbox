@@ -48,8 +48,8 @@
   const projectsService: ICombinedProjectsService = {
     supportsFwData: () => Promise.resolve(false),
     localProjects: () => Promise.resolve(localProjects),
-    remoteProjects: () => Promise.resolve(loggedIn ? [{server, projects: demoRemoteProjects, canDownloadByCode: false}] : []),
-    serverProjects: () => Promise.resolve(loggedIn ? {server, projects: demoRemoteProjects, canDownloadByCode: false} : undefined),
+    remoteProjects: () => Promise.resolve(loggedIn ? [{server, projects: demoRemoteProjects, canDownloadByCode: false, unreachable: false}] : []),
+    serverProjects: () => Promise.resolve(loggedIn ? {server, projects: demoRemoteProjects, canDownloadByCode: false, unreachable: false} : undefined),
     downloadProject: () => Promise.resolve(),
     downloadProjectByCode: () => Promise.resolve(DownloadProjectByCodeResult.Success),
     createProject: () => Promise.resolve(),

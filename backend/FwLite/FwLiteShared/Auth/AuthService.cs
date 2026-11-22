@@ -28,7 +28,9 @@ public class AuthService(
     {
         return await lexboxProjectService.Servers().ToAsyncEnumerable().Select(async (LexboxServer s, CancellationToken _) =>
         {
-            var currentName = await clientFactory.GetClient(s).GetCurrentName();
+            var client = clientFactory.GetClient(s);
+            // GetCurrentName is also null when a refresh failed only because we're offline
+            var currentName = await client.GetCurrentName() ?? await client.GetCachedAccountName();
             return new ServerStatus(s.DisplayName,
                 !string.IsNullOrEmpty(currentName),
                 currentName,

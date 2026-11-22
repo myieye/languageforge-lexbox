@@ -11,5 +11,6 @@ export interface IServerProjects
 	server: ILexboxServer;
 	projects: IProjectModel[];
 	canDownloadByCode: boolean;
+	unreachable: boolean;
 }
 /* eslint-enable */

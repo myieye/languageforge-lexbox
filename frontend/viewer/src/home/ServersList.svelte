@@ -1,6 +1,7 @@
 <script lang="ts">
   import type {ILexboxServer, IProjectModel, IServerProjects} from '$lib/dotnet-types';
   import {useAuthService, useProjectsService} from '$lib/services/service-provider';
+  import {SvelteSet} from 'svelte/reactivity';
   import Server from './Server.svelte';
 
   interface Props {
@@ -28,13 +29,16 @@
     }
   }
 
-  let loadingServerProjects: undefined | string = $state(undefined);
+  const loadingServerProjects = new SvelteSet<string>();
 
   async function refreshServerProjects(server: ILexboxServer, force: boolean = false) {
-    loadingServerProjects = server.id;
-    const projects = await projectsService.serverProjects(server.id, force);
-    if (projects) remoteProjects[server.id] = projects;
-    loadingServerProjects = undefined;
+    loadingServerProjects.add(server.id);
+    try {
+      const projects = await projectsService.serverProjects(server.id, force);
+      if (projects) remoteProjects[server.id] = projects;
+    } finally {
+      loadingServerProjects.delete(server.id);
+    }
   }
 
   fetchRemoteProjects().catch((error) => {
@@ -49,10 +53,18 @@
     await serversPromise;
   }
 
+  function retryUnreachableServers() {
+    for (const serverProjects of Object.values(remoteProjects)) {
+      if (serverProjects.unreachable) void refreshServerProjects(serverProjects.server);
+    }
+  }
+
 
   let serversPromise = $state(authService.servers());
 
 </script>
+
+<svelte:window ononline={retryUnreachableServers}/>
 
 {#await serversPromise}
   <Server status={undefined} projects={[]} localProjects={[]} loading={true}/>
@@ -64,8 +76,9 @@
     <Server {status}
             projects={serverProjects}
             {canDownloadByCode}
+            unreachable={remoteProjects[server.id]?.unreachable}
             {localProjects}
-            loading={loadingServerProjects === server.id || loadingRemoteProjects}
+            loading={loadingServerProjects.has(server.id) || loadingRemoteProjects}
             refreshProjects={() => refreshServerProjects(server, true)}
             refreshAll={() => refreshProjectsAndServers()}/>
   {/each}

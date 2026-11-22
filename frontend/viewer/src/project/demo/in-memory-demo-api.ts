@@ -187,7 +187,7 @@ export class InMemoryDemoApi implements IMiniLcmJsInvokable {
           displayName: '',
           id: serverId,
         }
-        return Promise.resolve({server, projects: [], canDownloadByCode: false});
+        return Promise.resolve({server, projects: [], canDownloadByCode: false, unreachable: false});
       },
       downloadProject: function (_project: IProjectModel): Promise<void> {
         return Promise.resolve();
