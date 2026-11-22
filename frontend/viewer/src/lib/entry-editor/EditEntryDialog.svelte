@@ -30,8 +30,11 @@
   $effect(() => {
     if (open) currentMode = mode;
   });
-  let entryResource = resource(() => entryId, async (entryId) => {
+  // The editor mutates the fetched entry, so refetch on every open or a dismissed edit would reappear.
+  // pre: loading must be set before the reopened dialog renders the previous (possibly edited) entry.
+  let entryResource = resource.pre([() => entryId, () => open], async ([entryId, open], _, {data}) => {
     if (!entryId) return undefined;
+    if (!open) return data;
     return await api.getEntry(entryId);
   });
   $effect(() => {
@@ -60,7 +63,7 @@
         {currentMode === 'view' ? $t`View ${entryLabel}` : $t`Update ${entryLabel}`}
       </Dialog.DialogTitle>
     </Dialog.DialogHeader>
-    {#if entryResource.loading}
+    {#if entryResource.loading && open}
       Loading...
     {:else if entry}
       <!--
