@@ -117,14 +117,18 @@ public static class EntryFakerHelper
             });
             if (isComponent)
             {
-                complexFormComponent.ComponentHeadword = createdEntry.Headword();
-                complexFormComponent.ComplexFormHeadword = entry.Headword();
+                complexFormComponent.ComponentHeadword = createdEntry.Headwords();
+                complexFormComponent.ComponentHomographNumber = createdEntry.HomographNumber;
+                complexFormComponent.ComplexFormHeadword = entry.Headwords();
+                complexFormComponent.ComplexFormHomographNumber = entry.HomographNumber;
                 complexFormComponent.Order = i++;
             }
             else
             {
-                complexFormComponent.ComplexFormHeadword = createdEntry.Headword();
-                complexFormComponent.ComponentHeadword = entry.Headword();
+                complexFormComponent.ComplexFormHeadword = createdEntry.Headwords();
+                complexFormComponent.ComplexFormHomographNumber = createdEntry.HomographNumber;
+                complexFormComponent.ComponentHeadword = entry.Headwords();
+                complexFormComponent.ComponentHomographNumber = entry.HomographNumber;
                 complexFormComponent.Order = 1;
             }
         }

@@ -87,13 +87,13 @@ public class QueryHelperTests: IAsyncLifetime
 
         var appleComponent = await Api.CreateComplexFormComponent(ComplexFormComponent.FromEntries(complexEntry, appleEntry));
         var appleComponentFromDb = await _fixture.DbContext.ComplexFormComponents.SingleAsyncLinqToDB(p => p.Id == appleComponent.Id);
-        appleComponentFromDb.ComponentHeadword.Should().Be("apple");
-        appleComponentFromDb.ComplexFormHeadword.Should().Be("apples");
+        appleComponentFromDb.ComponentHeadword["en"].Should().Be("apple");
+        appleComponentFromDb.ComplexFormHeadword["en"].Should().Be("apples");
 
         var pluralComponent = await Api.CreateComplexFormComponent(ComplexFormComponent.FromEntries(complexEntry, pluralEntry));
         var pluralComponentFromDb = await  _fixture.DbContext.ComplexFormComponents.SingleAsyncLinqToDB(p => p.Id == pluralComponent.Id);
-        pluralComponentFromDb.ComponentHeadword.Should().Be("-s");
-        pluralComponentFromDb.ComplexFormHeadword.Should().Be("apples");
+        pluralComponentFromDb.ComponentHeadword["en"].Should().Be("-s");
+        pluralComponentFromDb.ComplexFormHeadword["en"].Should().Be("apples");
 
         var apples = await _fixture.DbContext.Entries
             .LoadWith(e => e.ComplexForms)
@@ -104,7 +104,68 @@ public class QueryHelperTests: IAsyncLifetime
         apples.Components.Should().NotBeNull();
         apples.Components.Should().HaveCount(2);
 
-        apples.Components[0].ComponentHeadword.Should().Be("apple");
-        apples.Components[1].ComponentHeadword.Should().Be("-s");
+        apples.Components[0].ComponentHeadword["en"].Should().Be("apple");
+        apples.Components[1].ComponentHeadword["en"].Should().Be("-s");
+    }
+
+    [Fact]
+    public async Task QueryHeadwords_MatchesComputeHeadwords()
+    {
+        var entry = await Api.CreateEntry(new Entry()
+        {
+            LexemeForm = { { "en", " s " }, { "fr", "fr-lexeme" }, { "de", "de-lexeme" }, { "en-Zxxx-x-audio", "audio.wav" } },
+            CitationForm = { { "fr", "  " }, { "de", " de-citation " }, { "es", "es-citation" } },
+            MorphType = MorphTypeKind.Suffix,
+        });
+        var morphTypes = await _fixture.DbContext.MorphTypes.ToDictionaryAsyncLinqToDB(m => m.Kind);
+
+        var headwords = await _fixture.DbContext.Entries
+            .Where(e => e.Id == entry.Id)
+            .Select(e => e.QueryHeadwords())
+            .SingleAsyncLinqToDB();
+
+        headwords.Values.Should().BeEquivalentTo(EntryQueryHelpers.ComputeHeadwords(entry, morphTypes).Values);
+        headwords.Values.Should().BeEquivalentTo(new Dictionary<WritingSystemId, string>
+        {
+            ["en"] = "-s",
+            ["fr"] = "-fr-lexeme",
+            ["de"] = "de-citation",
+            ["es"] = "es-citation",
+        });
+    }
+
+    [Fact]
+    public async Task QueryHeadwords_IsEmptyWhenNoFormHasText()
+    {
+        var entry = await Api.CreateEntry(new Entry()
+        {
+            LexemeForm = { { "en", "   " }, { "en-Zxxx-x-audio", "audio.wav" } },
+            CitationForm = { { "fr", " " } },
+        });
+
+        var headwords = await _fixture.DbContext.Entries
+            .Where(e => e.Id == entry.Id)
+            .Select(e => e.QueryHeadwords())
+            .SingleAsyncLinqToDB();
+
+        headwords.Should().NotBeNull();
+        headwords.Values.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task QueryHeadwords_StemHasNoTokens()
+    {
+        var entry = await Api.CreateEntry(new Entry()
+        {
+            LexemeForm = { { "en", " apple " } },
+            MorphType = MorphTypeKind.Stem,
+        });
+
+        var headwords = await _fixture.DbContext.Entries
+            .Where(e => e.Id == entry.Id)
+            .Select(e => e.QueryHeadwords())
+            .SingleAsyncLinqToDB();
+
+        headwords.Values.Should().BeEquivalentTo(new Dictionary<WritingSystemId, string> { ["en"] = "apple" });
     }
 }

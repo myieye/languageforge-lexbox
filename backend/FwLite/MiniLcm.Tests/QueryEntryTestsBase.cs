@@ -138,10 +138,10 @@ public abstract class QueryEntryTestsBase : MiniLcmTestBase
         result.Should().NotBeNull();
         result.Components.Should().HaveCount(2);
 
-        result.Components[0].ComponentHeadword.Should().Be("Apple");
-        result.Components[0].ComplexFormHeadword.Should().Be("apples");
-        result.Components[1].ComponentHeadword.Should().Be("-s");
-        result.Components[1].ComplexFormHeadword.Should().Be("apples");
+        result.Components[0].ComponentHeadword["en"].Should().Be("Apple");
+        result.Components[0].ComplexFormHeadword["en"].Should().Be("apples");
+        result.Components[1].ComponentHeadword["en"].Should().Be("-s");
+        result.Components[1].ComplexFormHeadword["en"].Should().Be("apples");
     }
 
     [Fact]

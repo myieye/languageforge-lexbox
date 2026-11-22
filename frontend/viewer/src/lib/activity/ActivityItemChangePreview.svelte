@@ -1,10 +1,11 @@
 <script lang="ts">
   import * as Editor from '$lib/components/editor';
-  import {type IActivityChangeInfo, type IChangeContext, type IChangeEntity, type IComplexFormComponent, type IEntry, type IExampleSentence, type ISense} from '$lib/dotnet-types';
+  import {type IActivityChangeInfo, type IChangeContext, type IChangeEntity, type IComplexFormComponent, type IEntry, type IExampleSentence, type IMultiString, type ISense} from '$lib/dotnet-types';
   import {T, t} from 'svelte-i18n-lingui';
   import {formatJsonForUi} from './utils';
   import {useViewService} from '$lib/views/view-service.svelte';
   import Headwords from '$lib/components/dictionary/Headwords.svelte';
+  import HomographNumber from '$lib/components/dictionary/HomographNumber.svelte';
   import DiffEntryPrimitive from '$lib/entry-editor/diff-view/DiffEntryPrimitive.svelte';
   import DiffSensePrimitive from '$lib/entry-editor/diff-view/DiffSensePrimitive.svelte';
   import DiffExamplePrimitive from '$lib/entry-editor/diff-view/DiffExamplePrimitive.svelte';
@@ -126,13 +127,18 @@
   {#if kind === 'sense' && info?.sense?.number}{info.sense.number}&nbsp;{/if}<DiffAnchor {...anchor} />
 {/snippet}
 
-{#snippet linkEnd(entry: IEntry | undefined, snapshotHeadword: string | undefined)}
+{#snippet linkEnd(entry: IEntry | undefined, snapshotHeadwords: IMultiString | undefined, snapshotHomographNumber: number | undefined)}
   {@const liveEntry = live(entry)}
+  <!-- A deleted entry's last state beats the link's copy, which dates from when the link was made -->
+  {@const entryHeadword = entry && writingSystemService.viewBestHeadword(entry, viewService.currentView)}
+  {@const deletedHeadword =
+    entryHeadword || (snapshotHeadwords && writingSystemService.viewBestHeadwordOf(snapshotHeadwords, viewService.currentView))}
+  {@const deletedHomographNumber = entryHeadword && entry ? entry.homographNumber : (snapshotHomographNumber ?? 0)}
   <span class="text-lg font-semibold text-foreground">
     {#if liveEntry}
       <Headwords class="font-semibold" entry={liveEntry} placeholder={$t`Untitled`} />
     {:else}
-      <span class="text-muted-foreground">{snapshotHeadword || $t`Untitled`} <span class="text-base font-normal">{$t`(deleted)`}</span></span>
+      <span class="text-muted-foreground">{#if deletedHeadword}{deletedHeadword}<HomographNumber homographNumber={deletedHomographNumber} />{:else}{$t`Untitled`}{/if} <span class="text-base font-normal">{$t`(deleted)`}</span></span>
     {/if}
   </span>
 {/snippet}
@@ -147,8 +153,8 @@
   <!-- Muted connector between equal-weight headwords: neither end of the link outranks the other -->
   <span class="wrap-break-word text-base font-normal text-muted-foreground">
     <T msg="# part of #" cmt="A link between two dictionary entries: first # is the component (a word plus maybe its sense), second # is the complex form it belongs to">
-      {@render linkEnd(component, cfc?.componentHeadword)}{#if componentSense}{@render senseSuffix(componentSense)}{/if}
-      {#snippet second()}{@render linkEnd(complexForm, cfc?.complexFormHeadword)}{/snippet}
+      {@render linkEnd(component, cfc?.componentHeadword, cfc?.componentHomographNumber)}{#if componentSense}{@render senseSuffix(componentSense)}{/if}
+      {#snippet second()}{@render linkEnd(complexForm, cfc?.complexFormHeadword, cfc?.complexFormHomographNumber)}{/snippet}
     </T>
   </span>
 {/snippet}

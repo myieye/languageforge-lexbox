@@ -151,6 +151,29 @@ public partial class MigrationTests : IAsyncLifetime
             .UseFileName($"VerifyRegeneratedSnapshotsAfterMigrationFromScriptedDb.{regressionVersion}");
     }
 
+    [Fact]
+    public async Task LegacyComplexFormComponentHeadwords_ReadThroughEfAfterMigration()
+    {
+        await _helper.InitializeAsync(RegressionTestHelper.RegressionVersion.v2);
+        // The v2 script stores this link's headwords as plain text ('Orange'/'de'). Its old model version makes
+        // open regenerate the snapshots, which rewrites the row, so the migration SQL itself is pinned in HeadwordMigrationSqlTests.
+        var legacyId = Guid.Parse("a4a74738-3914-43ca-8c25-bee34eb517b7");
+        await using (var dbContext = await _helper.Services.GetRequiredService<IDbContextFactory<LcmCrdtDbContext>>().CreateDbContextAsync())
+        {
+            var stored = await dbContext.ComplexFormComponents.SingleAsync(c => c.Id == legacyId);
+            stored.ComplexFormHeadword.Values.Values.Should().Contain("Orange");
+            stored.ComponentHeadword.Values.Values.Should().Contain("de");
+        }
+
+        var api = _helper.Services.GetRequiredService<IMiniLcmApi>();
+        var complexForm = await api.GetEntry(Guid.Parse("75050583-70d7-4605-a6e6-872b8f36c482"));
+        var link = complexForm!.Components.Should().ContainSingle(c => c.Id == legacyId).Subject;
+        // FindComplexFormComponent reads the stored columns through EF
+        await api.DeleteComplexFormComponent(link);
+
+        (await api.GetEntry(complexForm.Id))!.Components.Should().NotContain(c => c.Id == legacyId);
+    }
+
     private static async Task<ProjectSnapshot> TakeProjectSnapshot(IMiniLcmReadApi api)
     {
         return new ProjectSnapshot(

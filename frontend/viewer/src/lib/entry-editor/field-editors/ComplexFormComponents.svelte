@@ -31,10 +31,12 @@
     const component: IComplexFormComponent = {
       id: randomId(),
       complexFormEntryId: entry.id,
-      complexFormHeadword: writingSystemService.firstHeadword(entry),
+      complexFormHeadword: writingSystemService.headwords(entry),
+      complexFormHomographNumber: entry.homographNumber,
       componentEntryId: selection.entry.id,
       componentSenseId: selection.sense?.id,
-      componentHeadword: writingSystemService.firstHeadword(selection.entry),
+      componentHeadword: writingSystemService.headwords(selection.entry),
+      componentHomographNumber: selection.entry.homographNumber,
     };
     value = [...value, component];
     onchange?.(value);
@@ -53,7 +55,7 @@
   }
 </script>
 
-<EntryOrSenseItemList bind:items={value} {readonly} orderable {onchange} getEntryId={(e) => e.componentEntryId} getHeadword={(e) => e.componentHeadword}>
+<EntryOrSenseItemList bind:items={value} {readonly} orderable {onchange} getEntryId={(e) => e.componentEntryId} getHeadword={(c) => writingSystemService.viewBestHeadwordOfWithHomograph(c.componentHeadword, c.componentHomographNumber, viewService.currentView)}>
   {#snippet actions()}
     <EntryOrSensePicker title={$t`Add component`} pick={(e) => addComponent(e)}
       {disableEntry} {disableSense}>

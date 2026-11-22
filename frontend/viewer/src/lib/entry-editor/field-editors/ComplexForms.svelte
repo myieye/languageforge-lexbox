@@ -32,9 +32,11 @@
     const complexForm: IComplexFormComponent = {
       id: randomId(),
       complexFormEntryId: selection.entry.id,
-      complexFormHeadword: writingSystemService.firstHeadword(selection.entry),
+      complexFormHeadword: writingSystemService.headwords(selection.entry),
+      complexFormHomographNumber: selection.entry.homographNumber,
       componentEntryId: entry.id,
-      componentHeadword: writingSystemService.firstHeadword(entry),
+      componentHeadword: writingSystemService.headwords(entry),
+      componentHomographNumber: entry.homographNumber,
     };
     value = [...value, complexForm];
     onchange?.(value);
@@ -43,8 +45,9 @@
   function complexFormLabel(cf: IComplexFormComponent): string | undefined {
     const found = senseInEntry(entry, cf.componentSenseId);
     const sense = typeof found === 'object' ? senseLabel(writingSystemService, viewService.currentView, found) : undefined;
+    const headword = writingSystemService.viewBestHeadwordOfWithHomograph(cf.complexFormHeadword, cf.complexFormHomographNumber, viewService.currentView);
     // Without a headword, leave the list its own placeholder rather than show only the sense
-    return sense && cf.complexFormHeadword ? `${cf.complexFormHeadword} (${sense})` : cf.complexFormHeadword;
+    return sense && headword ? `${headword} (${sense})` : headword;
   }
 
   function disableEntry(e: IEntry): false | { reason: string } {

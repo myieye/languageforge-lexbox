@@ -87,9 +87,15 @@
     Properties: 
       Id (_id, Guid) Required PK AfterSave:Throw ValueGenerated.OnAdd
       ComplexFormEntryId (Guid) Required FK Index
-      ComplexFormHeadword (string)
+      ComplexFormHeadword (MultiString)
+        Annotations: 
+          Relational:ColumnType: TEXT
+      ComplexFormHomographNumber (int) Required
       ComponentEntryId (Guid) Required FK Index
-      ComponentHeadword (string)
+      ComponentHeadword (MultiString)
+        Annotations: 
+          Relational:ColumnType: TEXT
+      ComponentHomographNumber (int) Required
       ComponentSenseId (Guid?) FK Index
         Annotations: 
           Relational:ColumnName: ComponentSenseId

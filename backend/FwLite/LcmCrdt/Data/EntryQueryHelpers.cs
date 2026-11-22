@@ -119,38 +119,35 @@ public static class EntryQueryHelpers
     /// <summary>
     /// Computes headwords for all writing systems present in CitationForm or LexemeForm,
     /// applying morph tokens when CitationForm is absent.
-    /// Used for in-memory population of Entry.Headword after loading from DB.
     /// </summary>
     public static MultiString ComputeHeadwords(Entry entry,
         IReadOnlyDictionary<MorphTypeKind, MorphType> morphTypeLookup)
     {
-        var result = new MultiString();
         morphTypeLookup.TryGetValue(entry.MorphType, out var morphData);
-
-        // Iterate all WS keys that have data, not just "current" vernacular WSs,
-        // so we don't lose headwords for non-current or future writing systems.
-        var wsIds = entry.CitationForm.Values.Keys
-            .Union(entry.LexemeForm.Values.Keys)
-            .Where(ws => !ws.IsAudio);
-
-        foreach (var wsId in wsIds)
-        {
-            var citation = entry.CitationForm[wsId]?.Trim();
-            if (!string.IsNullOrEmpty(citation))
-            {
-                result[wsId] = citation;
-                continue;
-            }
-
-            var lexeme = entry.LexemeForm[wsId]?.Trim();
-            if (!string.IsNullOrEmpty(lexeme))
-            {
-                var leading = morphData?.Prefix ?? "";
-                var trailing = morphData?.Postfix ?? "";
-                result[wsId] = (leading + lexeme + trailing).Trim();
-            }
-        }
-
-        return result;
+        return entry.Headwords(morphData);
     }
+
+    /// <summary>
+    /// SQL version of <see cref="ComputeHeadwords"/>, returning the headwords as a MultiString JSON object.
+    /// </summary>
+    [ExpressionMethod(nameof(QueryHeadwordsExpression))]
+    public static MultiString QueryHeadwords(this Entry e) => throw new NotSupportedException();
+
+    private static Expression<Func<Entry, MultiString>> QueryHeadwordsExpression() =>
+        e => HeadwordsJson(e.LexemeForm, e.CitationForm, e.QueryMorphType()!.Prefix, e.QueryMorphType()!.Postfix);
+
+    // json_group_object over no rows (e.g. a missing entry) gives '{}', so this never returns NULL.
+    [Sql.Expression("""
+                    (select json_group_object(hw.ws, hw.headword) from (
+                        select ws.key as ws,
+                            coalesce(
+                                nullif(trim({1} ->> ws.key), ''),
+                                trim(coalesce({2}, '') || nullif(trim({0} ->> ws.key), '') || coalesce({3}, ''))
+                            ) as headword
+                        from (select key from json_each({0}) union select key from json_each({1})) ws
+                        where not (ws.key like '%-zxxx-%' and (ws.key like '%-audio' or ws.key like '%-audio-%'))
+                    ) hw where hw.headword is not null and hw.headword <> '')
+                    """, ServerSideOnly = true)]
+    private static MultiString HeadwordsJson(MultiString lexemeForm, MultiString citationForm, string? prefix, string? postfix) =>
+        throw new NotSupportedException();
 }

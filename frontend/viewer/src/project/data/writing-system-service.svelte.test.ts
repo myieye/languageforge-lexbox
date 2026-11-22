@@ -186,6 +186,38 @@ describe('headwords', () => {
       expect(service.viewBestHeadwordIn(entryWith({}), viewWith())).toBeUndefined();
     });
   });
+
+  describe('viewBestHeadwordOf (viewBestHeadword for headwords stored on a complex form link)', () => {
+    it("prefers the view's vernaculars, like the entry headwords around it", () => {
+      expect(service.viewBestHeadwordOf({seh: 'casa', ny: 'nyumba'}, viewWith({vernacular: ['ny']}))).toBe('nyumba');
+    });
+
+    it('falls back to the other vernaculars in project order', () => {
+      expect(service.viewBestHeadwordOf({en: 'house', seh: 'casa'}, viewWith({vernacular: ['ny']}))).toBe('casa');
+    });
+
+    it('falls back to a value under any key, such as legacy data keyed default', () => {
+      expect(service.viewBestHeadwordOf({default: 'casa'}, viewWith({vernacular: ['ny']}))).toBe('casa');
+    });
+
+    it('is empty when there is no value anywhere', () => {
+      expect(service.viewBestHeadwordOf({}, viewWith())).toBe('');
+    });
+
+    it('appends the homograph number as a subscript for display', () => {
+      expect(service.viewBestHeadwordOfWithHomograph({seh: 'casa'}, 2, viewWith())).toBe('casa₂');
+      expect(service.viewBestHeadwordOfWithHomograph({}, 2, viewWith())).toBe('');
+      expect(service.viewBestHeadwordOfWithHomograph({seh: 'casa'}, 0, viewWith())).toBe('casa');
+    });
+  });
+
+  describe('headwords (every text vernacular, for a new complex form link)', () => {
+    it('includes each vernacular with a form and skips the rest', () => {
+      const entry = entryWith({lexemeForm: {seh: 'casa', 'seh-audio': 'casa.wav'}, citationForm: {ny: 'nyumba'}});
+
+      expect(service.headwords(entry)).toEqual({seh: 'casa', ny: 'nyumba'});
+    });
+  });
 });
 
 describe('viewFirstDefOrGlossVal', () => {

@@ -761,9 +761,11 @@ public class FwDataMiniLcmApi(
         return new ComplexFormComponent
         {
             ComponentEntryId = component.Guid,
-            ComponentHeadword = component.LexEntryHeadwordOrUnknown(),
+            ComponentHeadword = LinkHeadwords(component),
+            ComponentHomographNumber = component.HomographNumber,
             ComplexFormEntryId = complexEntry.Guid,
-            ComplexFormHeadword = complexEntry.LexEntryHeadwordOrUnknown(),
+            ComplexFormHeadword = LinkHeadwords(complexEntry),
+            ComplexFormHomographNumber = complexEntry.HomographNumber,
             Order = Order(component, complexEntry)
         };
     }
@@ -774,11 +776,36 @@ public class FwDataMiniLcmApi(
         {
             ComponentEntryId = componentSense.Entry.Guid,
             ComponentSenseId = componentSense.Guid,
-            ComponentHeadword = componentSense.Entry.LexEntryHeadwordOrUnknown(),
+            ComponentHeadword = LinkHeadwords(componentSense.Entry),
+            ComponentHomographNumber = componentSense.Entry.HomographNumber,
             ComplexFormEntryId = complexEntry.Guid,
-            ComplexFormHeadword = complexEntry.LexEntryHeadwordOrUnknown(),
+            ComplexFormHeadword = LinkHeadwords(complexEntry),
+            ComplexFormHomographNumber = complexEntry.HomographNumber,
             Order = Order(componentSense, complexEntry)
         };
+    }
+
+    private MultiString LinkHeadwords(ILexEntry entry)
+    {
+        var headwords = new MultiString();
+        foreach (var ws in WsHandles(entry.CitationForm).Union(WsHandles(entry.LexemeFormOA?.Form)))
+        {
+            var wsId = GetWritingSystemId(ws);
+            if (wsId.IsAudio) continue;
+            var headword = entry.LexEntryHeadword(ws);
+            if (!string.IsNullOrEmpty(headword)) headwords[wsId] = headword;
+        }
+        return headwords;
+    }
+
+    private static IEnumerable<int> WsHandles(ITsMultiString? multiString)
+    {
+        if (multiString is null) yield break;
+        for (var i = 0; i < multiString.StringCount; i++)
+        {
+            multiString.GetStringFromIndex(i, out var ws);
+            yield return ws;
+        }
     }
 
     private static int Order(ICmObject component, ILexEntry complexEntry)

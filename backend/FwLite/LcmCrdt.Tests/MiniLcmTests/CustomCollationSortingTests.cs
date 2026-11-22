@@ -41,6 +41,6 @@ public class CustomCollationSortingTests : CustomCollationSortingTestsBase
 
         var entry = await Api.GetEntry(component.Id);
 
-        entry!.ComplexForms.Select(c => c.ComplexFormHeadword).Should().Equal("zebra", "apple");
+        entry!.ComplexForms.Select(c => c.ComplexFormHeadword["de"]).Should().Equal("zebra", "apple");
     }
 }

@@ -6,6 +6,72 @@ namespace MiniLcm.Tests;
 
 public class SerializationTests(ITestOutputHelper output)
 {
+    private const string ComponentJson = """
+        "ComplexFormEntryId":"82cf7254-3a4f-497a-9e15-7d93fc830356","ComponentEntryId":"e5dbeb7f-4df4-4fc7-82c2-a1e14f49365a"
+        """;
+
+    [Fact]
+    public void ComplexFormComponent_LegacyStringHeadwordsReadAsDefaultWritingSystem()
+    {
+        var component = JsonSerializer.Deserialize<ComplexFormComponent>(
+            $$"""{{{ComponentJson}},"ComplexFormHeadword":"Pineapple","ComponentHeadword":"Pine apple"}""");
+
+        component.Should().NotBeNull();
+        component.ComplexFormHeadword.Values.Should().BeEquivalentTo(new Dictionary<WritingSystemId, string> { [WritingSystemId.Default] = "Pineapple" });
+        component.ComponentHeadword.Values.Should().BeEquivalentTo(new Dictionary<WritingSystemId, string> { [WritingSystemId.Default] = "Pine apple" });
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"\"")]
+    [InlineData("\"(Unknown)\"")]
+    [InlineData("{}")]
+    public void ComplexFormComponent_EmptyLegacyHeadwordsReadAsEmpty(string headwordJson)
+    {
+        var component = JsonSerializer.Deserialize<ComplexFormComponent>(
+            $$"""{{{ComponentJson}},"ComplexFormHeadword":{{headwordJson}},"ComponentHeadword":{{headwordJson}}}""");
+
+        component.Should().NotBeNull();
+        component.ComplexFormHeadword.Values.Should().BeEmpty();
+        component.ComponentHeadword.Values.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ComplexFormComponent_NullHeadwordWritesEmptyObject()
+    {
+        var component = new ComplexFormComponent
+        {
+            Id = Guid.NewGuid(),
+            ComplexFormEntryId = Guid.NewGuid(),
+            ComponentEntryId = Guid.NewGuid(),
+            ComplexFormHeadword = null!,
+        };
+
+        JsonSerializer.Serialize(component).Should().Contain("\"ComplexFormHeadword\":{}");
+    }
+
+    [Fact]
+    public void ComplexFormComponent_MultiStringHeadwordsRoundTrip()
+    {
+        var component = new ComplexFormComponent
+        {
+            Id = Guid.NewGuid(),
+            ComplexFormEntryId = Guid.NewGuid(),
+            ComplexFormHeadword = { { "en", "bank" }, { "fr", "banque" } },
+            ComplexFormHomographNumber = 2,
+            ComponentEntryId = Guid.NewGuid(),
+            ComponentHeadword = { { "en", "-s" } },
+        };
+
+        var json = JsonSerializer.Serialize(component);
+        json.Should().Contain("""
+            "ComplexFormHeadword":{"en":"bank","fr":"banque"}
+            """);
+        var roundTripped = JsonSerializer.Deserialize<ComplexFormComponent>(json);
+
+        roundTripped.Should().BeEquivalentTo(component);
+    }
+
     [Fact]
     public void CanSerializeEntry()
     {

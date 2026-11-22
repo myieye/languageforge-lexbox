@@ -10,6 +10,8 @@ public class ComplexFormComponentTests : ComplexFormComponentTestsBase
         return _fixture.Api;
     }
 
+    protected override int ExpectedHomographNumberAfterHomographDeleted => 1;
+
     public override async Task DisposeAsync()
     {
         await base.DisposeAsync();

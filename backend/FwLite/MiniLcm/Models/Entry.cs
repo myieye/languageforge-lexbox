@@ -44,6 +44,36 @@ public record Entry : IObjectWithId<Entry>
         return string.IsNullOrEmpty(word) ? UnknownHeadword : word;
     }
 
+    /// <summary>
+    /// The headword in every non-audio writing system that has one: the citation form, else the lexeme form with the morph type's tokens.
+    /// Covers every writing system with data, not just current ones, so headwords survive writing system list changes.
+    /// </summary>
+    public MultiString Headwords(MorphType? morphType = null)
+    {
+        var result = new MultiString();
+        var wsIds = CitationForm.Values.Keys
+            .Union(LexemeForm.Values.Keys)
+            .Where(ws => !ws.IsAudio);
+
+        foreach (var wsId in wsIds)
+        {
+            var citation = CitationForm[wsId]?.Trim();
+            if (!string.IsNullOrEmpty(citation))
+            {
+                result[wsId] = citation;
+                continue;
+            }
+
+            var lexeme = LexemeForm[wsId]?.Trim();
+            if (!string.IsNullOrEmpty(lexeme))
+            {
+                result[wsId] = ((morphType?.Prefix ?? "") + lexeme + (morphType?.Postfix ?? "")).Trim();
+            }
+        }
+
+        return result;
+    }
+
     public Entry Copy()
     {
         return new Entry

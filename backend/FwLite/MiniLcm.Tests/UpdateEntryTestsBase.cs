@@ -289,16 +289,16 @@ public abstract class UpdateEntryTestsBase : MiniLcmTestBase
         {
             Id = componentHeadwordsToIds[@char],
             ComplexFormEntryId = entryId,
-            ComplexFormHeadword = "complex-form",
-            ComponentHeadword = @char,
+            ComplexFormHeadword = { { "en", "complex-form" } },
+            ComponentHeadword = { { "en", @char } },
             ComponentEntryId = componentHeadwordsToEntryIds[@char],
         }).ToList();
         var afterComponents = after.Split(',').Select(@char => new ComplexFormComponent()
         {
             Id = componentHeadwordsToIds[@char],
             ComplexFormEntryId = entryId,
-            ComplexFormHeadword = "complex-form",
-            ComponentHeadword = @char,
+            ComplexFormHeadword = { { "en", "complex-form" } },
+            ComponentHeadword = { { "en", @char } },
             ComponentEntryId = componentHeadwordsToEntryIds[@char],
         }).ToList();
 

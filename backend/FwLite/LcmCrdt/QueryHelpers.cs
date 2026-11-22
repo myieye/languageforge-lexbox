@@ -44,13 +44,21 @@ public static class QueryHelpers
         });
     }
 
-    public static IComparer<ComplexFormComponent> AsComplexFormComparer(this IComparer<string> headwordComparer)
+    public static IComparer<ComplexFormComponent> AsComplexFormComparer(this IComparer<string> headwordComparer, WritingSystemId? ws)
     {
         return Comparer<ComplexFormComponent>.Create((a, b) =>
         {
-            var result = headwordComparer.Compare(a.ComplexFormHeadword, b.ComplexFormHeadword);
+            var result = headwordComparer.Compare(SortHeadword(a.ComplexFormHeadword, ws), SortHeadword(b.ComplexFormHeadword, ws));
+            if (result != 0) return result;
+            result = a.ComplexFormHomographNumber.CompareTo(b.ComplexFormHomographNumber);
             if (result != 0) return result;
             return a.ComplexFormEntryId.CompareTo(b.ComplexFormEntryId);
         });
+    }
+
+    private static string SortHeadword(MultiString headword, WritingSystemId? ws)
+    {
+        if (ws is { } wsId && headword.Values.TryGetValue(wsId, out var value) && !string.IsNullOrEmpty(value)) return value;
+        return headword.FirstValueByCode() ?? "";
     }
 }

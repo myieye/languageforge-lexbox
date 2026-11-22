@@ -52,8 +52,8 @@ public class MiniLcmRepository(
     // Complex forms sort with the same collation as the entry list
     private IComparer<ComplexFormComponent> ComplexFormComparer(WritingSystem? writingSystem) =>
         writingSystem is null
-            ? cultureProvider.GetCompareInfo(null).GetStringComparer(CompareOptions.IgnoreCase).AsComplexFormComparer()
-            : collatorProvider.GetCollator(writingSystem).AsComplexFormComparer();
+            ? cultureProvider.GetCompareInfo(null).GetStringComparer(CompareOptions.IgnoreCase).AsComplexFormComparer(null)
+            : collatorProvider.GetCollator(writingSystem).AsComplexFormComparer(writingSystem.WsId);
 
     private async ValueTask EnsureConnectionOpen()
     {
@@ -124,6 +124,18 @@ public class MiniLcmRepository(
     public async Task<ComplexFormComponent?> FindComplexFormComponent(ComplexFormComponent complexFormComponent)
     {
         return await AsyncExtensions.SingleOrDefaultAsync(ComplexFormComponents,
+            c =>
+            c.ComplexFormEntryId == complexFormComponent.ComplexFormEntryId
+            && c.ComponentEntryId == complexFormComponent.ComponentEntryId
+            && c.ComponentSenseId == complexFormComponent.ComponentSenseId);
+    }
+
+    /// <summary>
+    /// Like <see cref="FindComplexFormComponent(ComplexFormComponent)"/>, but through linq2db, so headwords and homograph numbers are computed from the linked entries.
+    /// </summary>
+    public async Task<ComplexFormComponent?> GetComplexFormComponent(ComplexFormComponent complexFormComponent)
+    {
+        return await AsyncExtensions.SingleOrDefaultAsync(ComplexFormComponents.ToLinqToDB(),
             c =>
             c.ComplexFormEntryId == complexFormComponent.ComplexFormEntryId
             && c.ComponentEntryId == complexFormComponent.ComponentEntryId

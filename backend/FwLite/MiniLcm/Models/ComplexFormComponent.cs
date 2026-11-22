@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using MiniLcm.Attributes;
 
@@ -16,9 +17,11 @@ public record ComplexFormComponent : IObjectWithId<ComplexFormComponent>, IOrder
         {
             Id = Guid.NewGuid(),
             ComplexFormEntryId = complexFormEntry.Id,
-            ComplexFormHeadword = complexFormEntry.Headword(),
+            ComplexFormHeadword = complexFormEntry.Headwords(),
+            ComplexFormHomographNumber = complexFormEntry.HomographNumber,
             ComponentEntryId = componentEntry.Id,
-            ComponentHeadword = componentEntry.Headword(),
+            ComponentHeadword = componentEntry.Headwords(),
+            ComponentHomographNumber = componentEntry.HomographNumber,
             ComponentSenseId = componentSenseId,
         };
     }
@@ -46,10 +49,15 @@ public record ComplexFormComponent : IObjectWithId<ComplexFormComponent>, IOrder
     public double Order { get; set; }
     public DateTimeOffset? DeletedAt { get; set; }
     public virtual required Guid ComplexFormEntryId { get; set; }
-    public string? ComplexFormHeadword { get; set; }
+    // Headwords and homograph numbers are display-only copies of the linked entries, recomputed on every read and ignored by sync.
+    [JsonConverter(typeof(LegacyHeadwordConverter))]
+    public MultiString ComplexFormHeadword { get; set; } = new();
+    public int ComplexFormHomographNumber { get; set; }
     public virtual required Guid ComponentEntryId { get; set; }
     public virtual Guid? ComponentSenseId { get; set; } = null;
-    public string? ComponentHeadword { get; set; }
+    [JsonConverter(typeof(LegacyHeadwordConverter))]
+    public MultiString ComponentHeadword { get; set; } = new();
+    public int ComponentHomographNumber { get; set; }
 
 
     public Guid[] GetReferences()
@@ -76,9 +84,11 @@ public record ComplexFormComponent : IObjectWithId<ComplexFormComponent>, IOrder
             Id = _id,
             Order = Order,
             ComplexFormEntryId = ComplexFormEntryId,
-            ComplexFormHeadword = ComplexFormHeadword,
+            ComplexFormHeadword = ComplexFormHeadword.Copy(),
+            ComplexFormHomographNumber = ComplexFormHomographNumber,
             ComponentEntryId = ComponentEntryId,
-            ComponentHeadword = ComponentHeadword,
+            ComponentHeadword = ComponentHeadword.Copy(),
+            ComponentHomographNumber = ComponentHomographNumber,
             ComponentSenseId = ComponentSenseId,
             DeletedAt = DeletedAt,
         };
@@ -87,6 +97,36 @@ public record ComplexFormComponent : IObjectWithId<ComplexFormComponent>, IOrder
     public override string ToString()
     {
         return
-            $"{nameof(Order)}: {Order}, {nameof(DeletedAt)}: {DeletedAt}, {nameof(ComplexFormEntryId)}: {ComplexFormEntryId}, {nameof(ComplexFormHeadword)}: {ComplexFormHeadword}, {nameof(ComponentEntryId)}: {ComponentEntryId}, {nameof(ComponentSenseId)}: {ComponentSenseId}, {nameof(ComponentHeadword)}: {ComponentHeadword}";
+            $"{nameof(Order)}: {Order}, {nameof(DeletedAt)}: {DeletedAt}, {nameof(ComplexFormEntryId)}: {ComplexFormEntryId}, {nameof(ComplexFormHeadword)}: {ComplexFormHeadword}, {nameof(ComplexFormHomographNumber)}: {ComplexFormHomographNumber}, {nameof(ComponentEntryId)}: {ComponentEntryId}, {nameof(ComponentSenseId)}: {ComponentSenseId}, {nameof(ComponentHeadword)}: {ComponentHeadword}, {nameof(ComponentHomographNumber)}: {ComponentHomographNumber}";
+    }
+}
+
+/// <summary>
+/// Snapshots written before link headwords were multi-WS hold a single string with no WS label; it goes under "default".
+/// </summary>
+public class LegacyHeadwordConverter : JsonConverter<MultiString>
+{
+    private static readonly MultiStringConverter MultiStringConverter = new();
+
+    public override bool HandleNull => true;
+
+    public override MultiString Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        switch (reader.TokenType)
+        {
+            case JsonTokenType.Null:
+                return new();
+            case JsonTokenType.String:
+                var value = reader.GetString();
+                if (string.IsNullOrEmpty(value) || value == Entry.UnknownHeadword) return new();
+                return new() { { WritingSystemId.Default.Code, value } };
+            default:
+                return MultiStringConverter.Read(ref reader, typeToConvert, options) ?? new();
+        }
+    }
+
+    public override void Write(Utf8JsonWriter writer, MultiString? value, JsonSerializerOptions options)
+    {
+        MultiStringConverter.Write(writer, value ?? new MultiString(), options);
     }
 }

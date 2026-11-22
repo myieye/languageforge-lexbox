@@ -511,13 +511,19 @@ public partial class RecordingMiniLcmApi(IMiniLcmApi api) : IMiniLcmApi
     private static string ComplexFormComponentName(ComplexFormComponent? component)
     {
         if (component == null) return "null";
-        return $"{component.ComponentHeadword} (entry {component.ComponentEntryId}, sense {OrNull(component.ComponentSenseId)})";
+        return $"{LinkHeadword(component.ComponentHeadword, component.ComponentHomographNumber)} (entry {component.ComponentEntryId}, sense {OrNull(component.ComponentSenseId)})";
     }
 
     private static string ComplexFormName(ComplexFormComponent? component)
     {
         if (component == null) return "null";
-        return $"{component.ComplexFormHeadword} ({component.ComplexFormEntryId})";
+        return $"{LinkHeadword(component.ComplexFormHeadword, component.ComplexFormHomographNumber)} ({component.ComplexFormEntryId})";
+    }
+
+    private static string LinkHeadword(MultiString headword, int homographNumber)
+    {
+        var text = headword.FirstValueByCode() ?? "";
+        return homographNumber > 0 ? $"{text} {homographNumber}" : text;
     }
 
     // No position and neighbourless are the same append to OrderPicker, so they read the same here.
