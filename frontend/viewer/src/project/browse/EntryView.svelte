@@ -31,6 +31,7 @@
   import type {IUserComment} from '$lib/dotnet-types/generated-types/MiniLcm/Models/IUserComment';
   import {ResizableHandle, ResizablePane, ResizablePaneGroup} from '$lib/components/ui/resizable';
   import {IsExtraLarge} from '$lib/hooks/is-extra-large.svelte';
+  import {IsMobile} from '$lib/hooks/is-mobile.svelte';
 
   type DictionaryPreviewMode = 'show' | 'hide' | 'sticky';
 
@@ -159,8 +160,14 @@
   let editorRef: HTMLElement | null = $state(null);
   watch([() => [loadedEntryId, entryScrollViewportRef, editorRef, platform.features.hasHardwareKeyboard]], () => {
     entryScrollViewportRef?.scrollTo({ top: 0, left: 0 });
-    if (platform.features.hasHardwareKeyboard) findFirstTabbable(editorRef)?.focus();
+    // Don't pull focus out of the entries list while the user is arrowing through it
+    const navigatingList = !IsMobile.value && document.activeElement?.matches('[data-entry-index]:focus-visible');
+    if (platform.features.hasHardwareKeyboard && !navigatingList) focusEditor();
   });
+
+  export function focusEditor() {
+    findFirstTabbable(editorRef)?.focus();
+  }
 </script>
 
 {#snippet preview(entry: IEntry)}
