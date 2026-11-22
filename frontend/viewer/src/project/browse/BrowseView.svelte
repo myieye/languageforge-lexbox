@@ -41,6 +41,8 @@
   let semanticDomain = $state<ISemanticDomain>();
   let partOfSpeech = $state<IPartOfSpeech>();
   let unreadComments = $state(false);
+  let userFilterActive = $state(false);
+  let searchFilter: SearchFilter | undefined = $state();
   // Same history strategy as the master-detail open state: on mobile the comments take
   // half the screen, so back should close them rather than leave the view. Nothing else
   // pushes for them now that the panel is a pane rather than a drawer.
@@ -101,7 +103,7 @@
     {#snippet master({selectedId: masterSelectedId, select})}
       <div class="flex flex-col h-full p-2 md:p-4 md:pr-0">
         <div class="md:mr-3">
-          <SearchFilter bind:search bind:gridifyFilter bind:publication bind:semanticDomain bind:partOfSpeech bind:unreadComments />
+          <SearchFilter bind:this={searchFilter} bind:search bind:gridifyFilter bind:publication bind:semanticDomain bind:partOfSpeech bind:unreadComments bind:userFilterActive />
           <div class="my-2 flex items-center gap-2">
             <SortMenu bind:value={sort}
               autoSelector={() => search ? SortField.SearchRelevance : SortField.Headword} />
@@ -122,6 +124,8 @@
                      {publication}
                      {partOfSpeech}
                      {semanticDomain}
+                     {userFilterActive}
+                     onClearFilters={() => searchFilter?.clearFilters()}
                      onSelectEntry={(e) => select(e?.id ?? '')}
                      previewDictionary={entryMode === 'preview'}/>
       </div>
