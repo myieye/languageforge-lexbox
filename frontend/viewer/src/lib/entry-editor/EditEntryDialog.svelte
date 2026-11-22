@@ -10,6 +10,7 @@
   import {pt} from '$lib/views/view-text';
   import {t} from 'svelte-i18n-lingui';
   import {AppNotification} from '$lib/notifications/notifications';
+  import {useBackHandler} from '$lib/utils/back-handler.svelte';
 
   const api = useMiniLcmApi();
   const viewService = useViewService();
@@ -24,6 +25,7 @@
     /** 'view' opens read-only with an Edit button; 'edit' opens editable (default). */
     mode?: 'view' | 'edit',
   } = $props();
+  useBackHandler({addToStack: () => open, onBack: () => open = false, key: 'edit-entry-dialog'});
   // Own the mode internally so the in-dialog Edit button can flip it; reset to the requested mode
   // whenever the dialog (re)opens.
   let currentMode = $state<'view' | 'edit'>('edit');

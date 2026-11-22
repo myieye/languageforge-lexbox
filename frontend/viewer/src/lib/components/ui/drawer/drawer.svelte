@@ -10,16 +10,19 @@
     open = $bindable(false),
     activeSnapPoint = $bindable(null),
     disableBackHandler = false,
+    onBack = () => (open = false),
     ...restProps
   }: DrawerPrimitive.RootProps & {
     disableBackHandler?: boolean;
+    /** Must close the drawer. */
+    onBack?: () => void;
   } = $props();
 
   const snapPoints = $derived(restProps.snapPoints);
 
   useBackHandler({
     addToStack: () => open && IsMobile.value && !disableBackHandler,
-    onBack: () => (open = false),
+    onBack: () => onBack(),
     key: 'drawer',
   });
 
