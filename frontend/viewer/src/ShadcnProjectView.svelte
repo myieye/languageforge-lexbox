@@ -13,7 +13,7 @@
   import PluginStudioView from '$lib/plugins/studio/PluginStudioView.svelte';
   import {AppNotification} from '$lib/notifications/notifications';
   import type {HTMLAttributes} from 'svelte/elements';
-  import {useIdleService} from '$lib/services/idle-service';
+  import {useIdleService} from '$lib/services/idle-service.svelte';
   import {useFeatures} from '$lib/services/feature-service';
   import MediaManagerView from '$lib/media-manager/MediaManagerView.svelte';
   import {onMount} from 'svelte';
