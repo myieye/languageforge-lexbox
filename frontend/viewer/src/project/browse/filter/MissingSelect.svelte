@@ -1,7 +1,8 @@
 <script lang="ts" module>
   import {gt} from 'svelte-i18n-lingui';
+  import type {MissingOption} from './filter-types';
 
-  const missingOptions = [
+  const missingOptions: MissingOption[] = [
     { id: 'semanticDomains', label: gt`Semantic domain` },
     { id: 'partOfSpeech', label: gt`Part of speech` },
     { id: 'publication', label: gt`Publication` },
@@ -9,8 +10,6 @@
     { id: 'examples', label: gt`Example sentences` },
     { id: 'translations', label: gt`Example translations` },
   ]
-
-  export type MissingOption = typeof missingOptions[number];
 </script>
 
 <script lang="ts">

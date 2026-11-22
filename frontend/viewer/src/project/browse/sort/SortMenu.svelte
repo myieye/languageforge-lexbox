@@ -24,23 +24,25 @@
   import {cn} from '$lib/utils';
   import {watch, type Getter} from 'runed';
   import {Icon} from '$lib/components/ui/icon';
-  import {sortOptions, type SortConfig} from './options';
+  import {sortOptions, type SortChoice, type SortConfig} from './options';
   import {Button, buttonVariants} from '$lib/components/ui/button';
 
   type Props = {
     value?: SortConfig;
+    /** Undefined = auto */
+    choice?: SortChoice;
     autoSelector: Getter<SortField>;
   };
 
   let {
     value = $bindable(),
+    choice = $bindable(),
     autoSelector,
   }: Props = $props();
 
-  let selectedSortField = $state<SortField>();
-  let direction = $state<SortDirection>('asc');
   const autoSort = $derived(autoSelector());
-  const sortField = $derived(selectedSortField ?? autoSort);
+  const sortField = $derived(choice?.field ?? autoSort);
+  const direction = $derived<SortDirection>(choice?.dir ?? 'asc');
   watch(() => ({ sortField, direction }), ({ sortField, direction }) => {
     value = { field: sortField, dir: direction };
   });
@@ -59,11 +61,8 @@
   </ResponsiveMenu.Trigger>
   <ResponsiveMenu.Content align="start">
     <ResponsiveMenu.Item
-        onSelect={() => {
-          selectedSortField = undefined;
-          direction = 'asc';
-        }}
-        class={cn(!selectedSortField && 'bg-muted')}
+        onSelect={() => choice = undefined}
+        class={cn(!choice && 'bg-muted')}
         >
         {$t`Auto`}
         <span class="text-muted-foreground ml-auto">
@@ -73,11 +72,8 @@
     {#each sortOptions as option (option)}
       {@const icon = sortIcons[option.field]?.[option.dir]}
       <ResponsiveMenu.Item
-        onSelect={() => {
-          selectedSortField = option.field;
-          direction = option.dir;
-        }}
-        class={cn(selectedSortField === option.field && direction === option.dir && 'bg-muted')}
+        onSelect={() => choice = option}
+        class={cn(choice?.field === option.field && choice.dir === option.dir && 'bg-muted')}
         >
         {#if icon}
           <Icon {icon} />

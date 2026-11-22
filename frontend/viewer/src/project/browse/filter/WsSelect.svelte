@@ -8,9 +8,10 @@
 
   let {value = $bindable(), wsType}: { value: string[], wsType: WritingSystemSelection | undefined } = $props();
   let writingSystems = $derived(wsType ? wsService.pickWritingSystems(wsType) : []);
+  // Lazy, so a selection restored on mount survives
   watch(() => writingSystems, () => {
     value = writingSystems.map(ws => ws.wsId);
-  });
+  }, {lazy: true});
 </script>
 <Select.Root disabled={!wsType} type="multiple" bind:value>
   <Select.Trigger class="flex-1">

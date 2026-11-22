@@ -1,7 +1,7 @@
 import type {IPartOfSpeech} from '$lib/dotnet-types';
 import {useWritingSystemService, type WritingSystemService} from './writing-system-service.svelte';
 import {type ProjectContext, useProjectContext} from '$project/project-context.svelte';
-import {type ResourceReturn} from 'runed';
+import {type DetachedResourceReturn} from '$project/detached-resource';
 
 type LabeledPartOfSpeech = IPartOfSpeech & { label: string };
 
@@ -19,7 +19,11 @@ export class PartOfSpeechService {
     this.#posResource = projectContext.apiResource([], api => api.getPartsOfSpeech());
   }
 
-  #posResource: ResourceReturn<IPartOfSpeech[], unknown, true>;
+  #posResource: DetachedResourceReturn<IPartOfSpeech[]>;
+
+  get loaded(): boolean {
+    return this.#posResource.loaded;
+  }
 
   current: LabeledPartOfSpeech[] = $derived.by(() => {
     return this.#posResource.current.map(pos => ({

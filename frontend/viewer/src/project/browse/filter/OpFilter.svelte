@@ -1,8 +1,5 @@
-<script lang="ts" module>
-  export type Op = 'starts-with' | 'contains' | 'ends-with' | 'equals' | 'not-equals';
-</script>
-
 <script lang="ts">
+  import type {Op} from './filter-types';
   import * as Select from '$lib/components/ui/select';
   import {Icon} from '$lib/components/ui/icon';
   import {t} from 'svelte-i18n-lingui';
