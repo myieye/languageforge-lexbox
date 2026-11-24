@@ -89,6 +89,7 @@ public static class ReinforcedFwLiteTypingConfig
                 ..config.ObjectTypes,
                 typeof(WritingSystems),
                 typeof(MiniLcmJsInvokable.MiniLcmFeatures),
+                typeof(MiniLcmJsInvokable.CommentAuthor),
                 typeof(IObjectWithId),
                 typeof(RichString),
                 typeof(RichTextObjectData),

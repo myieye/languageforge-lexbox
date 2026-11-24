@@ -211,7 +211,7 @@ public partial class CrdtProjectsService(
     {
         // Code must satisfy the lowercase-only ProjectCode rule; the display name keeps its casing.
         return await CreateProjectFromTemplate(
-            new(name, name.ToLowerInvariant(), AfterCreate: ExampleProjectData.Seed, Role: UserProjectRole.Manager, AuthenticatedUser: "Example User", AuthenticatedUserId: "example-user"),
+            new(name, name.ToLowerInvariant(), AfterCreate: ExampleProjectData.Seed, Role: UserProjectRole.Manager),
             vernacularWs: "de",
             configureVernacular: ws => ws with { IcuCollationRules = ExampleProjectData.DemoIcuCollationRules });
     }

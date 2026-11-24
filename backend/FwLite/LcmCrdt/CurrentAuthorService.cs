@@ -48,7 +48,12 @@ public class CurrentAuthorService(CurrentProjectService currentProjectService, I
     /// </summary>
     public bool IsCurrentAuthor(string? authorId)
     {
-        if (string.IsNullOrEmpty(authorId)) return false;
-        return authorId == GetCurrentAuthor().Id || authorId == localAuthorProvider.GetLocalAuthor()?.Id;
+        return !string.IsNullOrEmpty(authorId) && CurrentAuthorIds().Contains(authorId);
+    }
+
+    public string[] CurrentAuthorIds()
+    {
+        string?[] ids = [GetCurrentAuthor().Id, localAuthorProvider.GetLocalAuthor()?.Id];
+        return ids.OfType<string>().Where(id => id.Length > 0).Distinct().ToArray();
     }
 }

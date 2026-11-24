@@ -7,7 +7,7 @@
   import {ThreadStatus} from '$lib/dotnet-types/generated-types/MiniLcm/Models/ThreadStatus';
   import {IsExtraLarge} from '$lib/hooks/is-extra-large.svelte';
   import {cn} from '$lib/utils';
-  import {useProjectContext} from '$project/project-context.svelte';
+  import {isOwnComment, useCommentAuthor} from '$project/data';
   import {t} from 'svelte-i18n-lingui';
   import CommentAuthorAvatar from './CommentAuthorAvatar.svelte';
   import CommentItem from './CommentItem.svelte';
@@ -25,7 +25,6 @@
     threadViews,
     newThreadText = $bindable(''),
     editingCommentId,
-    currentUserId,
     addingComment = $bindable(false),
     expandedThreadIds = new SvelteSet<string>(),
     mobileThreadId = $bindable<string | null>(null),
@@ -48,7 +47,6 @@
     threadViews: ThreadView[];
     newThreadText?: string;
     editingCommentId?: string;
-    currentUserId?: string;
     addingComment?: boolean;
     expandedThreadIds?: SvelteSet<string>;
     mobileThreadId?: string | null;
@@ -66,8 +64,7 @@
     onMarkUnread?: (threadId: string) => void | Promise<void>;
   } = $props();
 
-  const projectContext = useProjectContext();
-  const authorName = $derived(projectContext.projectData?.lastUserName);
+  const commentAuthor = useCommentAuthor();
 
   const openThreads = $derived(threadViews.filter((tv) => tv.thread.status === ThreadStatus.Open));
   const resolvedThreads = $derived(threadViews.filter((tv) => tv.thread.status === ThreadStatus.Closed));
@@ -134,7 +131,7 @@
       <div class="flex shrink-0 flex-col gap-2 border-b border-border px-3.5 py-3" transition:slide>
         {#if canComment}
           <div class="flex items-start gap-2">
-            <CommentAuthorAvatar {authorName} authorId={currentUserId} size="md" class="mt-1 shrink-0" />
+            <CommentAuthorAvatar authorName={commentAuthor.current?.name} authorId={commentAuthor.current?.id} size="md" class="mt-1 shrink-0" />
             <div class="flex flex-1 flex-col gap-1.5">
               <Textarea
                 autofocus
@@ -205,7 +202,7 @@
               {comment}
               compact={index > 0}
               arrived={arrivals.has(comment.id)}
-              canEdit={Boolean(currentUserId && comment.authorId === currentUserId)}
+              canEdit={isOwnComment(commentAuthor.current, comment.authorId)}
               {saving}
               editing={editingCommentId === comment.id}
               onStartEdit={() => onStartEdit(comment)}
@@ -252,7 +249,6 @@
                 {canComment}
                 {canResolve}
                 {saving}
-                {currentUserId}
                 {editingCommentId}
                 {arrivals}
                 hasUnread={unreadThreadIds.has(threadView.thread.id)}
@@ -286,7 +282,6 @@
                       {canComment}
                       {canResolve}
                       {saving}
-                      {currentUserId}
                       {editingCommentId}
                       {arrivals}
                       hasUnread={unreadThreadIds.has(threadView.thread.id)}

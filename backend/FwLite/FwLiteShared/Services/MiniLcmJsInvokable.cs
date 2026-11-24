@@ -16,7 +16,8 @@ public class MiniLcmJsInvokable(
     IProjectIdentifier project,
     ILogger<MiniLcmJsInvokable> logger,
     MiniLcmApiNotifyWrapperFactory notificationWrapperFactory,
-    MiniLcmApiUserFacingWrappers userFacingWrappers
+    MiniLcmApiUserFacingWrappers userFacingWrappers,
+    CurrentAuthorService currentAuthorService
     ) : IDisposable
 {
     private readonly IMiniLcmApi _wrappedApi = userFacingWrappers.Apply(api, project, notificationWrapperFactory);
@@ -35,6 +36,17 @@ public class MiniLcmJsInvokable(
     private bool CanWrite => api is not CrdtMiniLcmApi crdtApi || !crdtApi.ProjectData.IsReadonly;
     private bool CanComment => api is CrdtMiniLcmApi crdtApi && crdtApi.ProjectData.CanComment;
     private bool CanSyncFieldWorks => api is CrdtMiniLcmApi crdtApi && crdtApi.ProjectData.CanSyncFieldWorks;
+
+    /// <param name="OwnIds">Every author id whose comments the current user may edit, see <see cref="CurrentAuthorService.IsCurrentAuthor"/>.</param>
+    public record CommentAuthor(string? Id, string? Name, string[] OwnIds);
+
+    [JSInvokable]
+    public CommentAuthor? GetCommentAuthor()
+    {
+        if (api is not CrdtMiniLcmApi) return null;
+        var author = currentAuthorService.GetCurrentAuthor();
+        return new(author.Id, author.Name, currentAuthorService.CurrentAuthorIds());
+    }
 
     //todo move info notify wrapper factory
     private void OnDataChanged()
