@@ -6,8 +6,22 @@ namespace LcmCrdt;
 public class LcmCrdtConfig
 {
     public string ProjectPath { get; set; } = Path.GetFullPath(".");
-    public string ProjectCacheFileName { get; set; } = "project-cache.json";
+    public const string DefaultProjectCacheFileName = "project-cache.json";
+    public string ProjectCacheFileName { get; set; } = DefaultProjectCacheFileName;
     public bool EnableProjectDataFileCache { get; set; } = true;
+
+    /// <summary>
+    /// When true, new projects are created at <c>{ProjectPath}/projects/{code}/{code}.sqlite</c> instead of
+    /// <c>{ProjectPath}/{code}.sqlite</c>. Projects in either layout are always found.
+    /// </summary>
+    public bool UseProjectFolders { get; set; }
+
+    public const string ProjectFoldersDirName = "projects";
+
+    public static string ProjectFolderDbPath(string projectPath, string code)
+    {
+        return Path.Combine(projectPath, ProjectFoldersDirName, code, $"{code}.sqlite");
+    }
 
     public string ProjectCachePath()
     {
