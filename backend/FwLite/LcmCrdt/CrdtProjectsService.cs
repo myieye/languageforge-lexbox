@@ -92,8 +92,11 @@ public partial class CrdtProjectsService(
         UserProjectRole role)
     {
         if (project.Data?.LastUserName == userName && project.Data?.LastUserId == userId && project.Data?.Role == role) return false;
+        await using var scope = provider.CreateAsyncScope();
+        var currentProjectService = scope.ServiceProvider.GetRequiredService<CurrentProjectService>();
         var roleChanged = false;
-        await ExecInProject(project, async (scopedServices, currentProjectService) =>
+        //skipped while the project is being opened, and the sync after opening refreshes the user and role anyway
+        await currentProjectService.TryExecOnProjectData(project, async () =>
         {
             await currentProjectService.UpdateLastUser(userName, userId);
             roleChanged = await currentProjectService.UpdateUserRole(role);
