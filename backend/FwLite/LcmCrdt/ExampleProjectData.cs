@@ -1,3 +1,4 @@
+using LcmCrdt.Utils;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LcmCrdt;
@@ -13,6 +14,8 @@ internal static class ExampleProjectData
 
     public static async Task Seed(IServiceProvider provider, CrdtProject _)
     {
+        // the demo data ships with the project, so it isn't the user's work
+        using var asTemplate = provider.GetRequiredService<CommitMetadataInterceptor>().Intercept(CommitHelpers.StampAsTemplate);
         var api = provider.GetRequiredService<IMiniLcmApi>();
         await CreateWritingSystems(api);
         var nounPosId = (await api.GetPartsOfSpeech().FirstOrDefaultAsync(pos => pos.Name["en"] == "Noun")

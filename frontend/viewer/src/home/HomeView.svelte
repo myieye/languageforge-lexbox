@@ -46,6 +46,7 @@
   let createDemoProjectLoading = $state(false);
 
   async function createDemoProject() {
+    if (!authorName.current && !await nameDialog!.ask()) return;
     try {
       createDemoProjectLoading = true;
       await projectsService.createDemoProject(exampleProjectName);

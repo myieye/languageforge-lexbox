@@ -3,6 +3,7 @@
   import {useMiniLcmApi} from '$lib/services/service-provider';
   import {useProjectEventBus} from '$lib/services/event-bus';
   import {useProjectContext} from '$project/project-context.svelte';
+  import {useCommentAuthor} from '$project/data';
   import {cn, randomId} from '$lib/utils';
   import type {IUserComment} from '$lib/dotnet-types/generated-types/MiniLcm/Models/IUserComment';
   import type {SubjectType} from '$lib/dotnet-types/generated-types/MiniLcm/Models/SubjectType';
@@ -33,9 +34,12 @@
   const api = useMiniLcmApi();
   const projectEventBus = useProjectEventBus();
   const projectContext = useProjectContext();
-  const currentUserId = $derived(projectContext.projectData?.lastUserId);
+  const commentAuthor = useCommentAuthor();
+  // a sync can switch the author to the Lexbox user, and the user can rename their local author
+  watch(() => open, isOpen => { if (isOpen) void commentAuthor.refetch(); });
+  projectEventBus.onSync(() => { if (open) void commentAuthor.refetch(); });
   // Commenters can comment but not edit the project, so resolving/reopening threads needs write access
-  const canComment = $derived(Boolean(currentUserId) && !!projectContext.features.commentWrite);
+  const canComment = $derived(!!projectContext.features.commentWrite);
   const canResolve = $derived(canComment && !!projectContext.features.write);
 
   let saving = $state(false);
@@ -270,7 +274,6 @@
     {saving}
     {threadViews}
     {editingCommentId}
-    {currentUserId}
     {unreadThreadIds}
     {arrivals}
     onClose={() => onOpenChange(false)}

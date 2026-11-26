@@ -1,7 +1,7 @@
 <script lang="ts">
   import {Button} from '$lib/components/ui/button';
   import {Textarea} from '$lib/components/ui/textarea';
-  import {useProjectContext} from '$project/project-context.svelte';
+  import {useCommentAuthor} from '$project/data';
   import {t} from 'svelte-i18n-lingui';
   import CommentAuthorAvatar from './CommentAuthorAvatar.svelte';
 
@@ -21,9 +21,9 @@
     onSubmit: (text: string) => void | Promise<void>;
   } = $props();
 
-  const projectContext = useProjectContext();
-  const authorId = $derived(projectContext.projectData?.lastUserId);
-  const authorName = $derived(projectContext.projectData?.lastUserName);
+  const commentAuthor = useCommentAuthor();
+  const authorId = $derived(commentAuthor.current?.id);
+  const authorName = $derived(commentAuthor.current?.name);
 
   let focused = $state(false);
   let textareaEl = $state<HTMLTextAreaElement | null>(null);

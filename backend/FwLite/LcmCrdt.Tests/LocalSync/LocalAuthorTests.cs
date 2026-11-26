@@ -87,6 +87,25 @@ public class LocalAuthorTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AfterSigningIntoLexbox_TheCurrentAuthorIdsAreTheLexboxUserAndThisDevice()
+    {
+        var thread = await CreateThread();
+        await _fixture.GetService<CurrentProjectService>().UpdateLastUser("Real Person", "lexbox-user-1");
+
+        _fixture.GetService<CurrentAuthorService>().CurrentAuthorIds()
+            .Should().BeEquivalentTo(["lexbox-user-1", thread.AuthorId]);
+    }
+
+    [Fact]
+    public async Task WithoutALexboxUser_TheCurrentAuthorIdIsJustThisDevice()
+    {
+        var thread = await CreateThread();
+
+        _fixture.GetService<CurrentAuthorService>().CurrentAuthorIds()
+            .Should().BeEquivalentTo([thread.AuthorId]);
+    }
+
+    [Fact]
     public async Task WithoutALexboxUser_CommitsAreAttributedToTheLocalAuthor()
     {
         var thread = await CreateThread();

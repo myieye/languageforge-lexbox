@@ -4,6 +4,7 @@
 //     the code is regenerated.
 
 import type {IMiniLcmFeatures} from './IMiniLcmFeatures';
+import type {ICommentAuthor} from './ICommentAuthor';
 import type {IWritingSystems} from '../../MiniLcm/Models/IWritingSystems';
 import type {IPartOfSpeech} from '../../MiniLcm/Models/IPartOfSpeech';
 import type {IPublication} from '../../MiniLcm/Models/IPublication';
@@ -34,6 +35,7 @@ import type {ILcmFileMetadata} from '../../MiniLcm/Media/ILcmFileMetadata';
 export interface IMiniLcmJsInvokable
 {
 	supportedFeatures() : Promise<IMiniLcmFeatures>;
+	getCommentAuthor() : Promise<ICommentAuthor | undefined>;
 	getWritingSystems() : Promise<IWritingSystems>;
 	getPartsOfSpeech() : Promise<IPartOfSpeech[]>;
 	getPublications() : Promise<IPublication[]>;

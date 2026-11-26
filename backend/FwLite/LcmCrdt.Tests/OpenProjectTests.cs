@@ -52,6 +52,9 @@ public class OpenProjectTests
         headwords.Should().Equal(
             "Banane", "Beere", "Apfel", "Erdbeere", "Heidelbeere", "Orange", "Traube");
 
+        var activity = await asyncScope.ServiceProvider.GetRequiredService<HistoryService>().ProjectActivity(0, 1000, new ActivityQuery());
+        activity.Should().AllSatisfy(a => a.Metadata.AuthorId.Should().Be(CommitHelpers.SystemAuthorId));
+
         await using var dbContext = await asyncScope.ServiceProvider.GetRequiredService<IDbContextFactory<LcmCrdtDbContext>>().CreateDbContextAsync();
         await dbContext.Database.EnsureDeletedAsync();
     }

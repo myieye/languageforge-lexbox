@@ -10,6 +10,7 @@ import {
   type IFilterQueryOptions,
   type IIndexQueryOptions,
   type IMiniLcmFeatures,
+  type ICommentAuthor,
   type IMiniLcmJsInvokable,
   type IMorphType,
   type IPartOfSpeech,
@@ -288,6 +289,10 @@ export class InMemoryDemoApi implements IMiniLcmJsInvokable {
       customViews: true,
       plugins: true,
     } satisfies IMiniLcmFeatures);
+  }
+
+  getCommentAuthor(): Promise<ICommentAuthor | undefined> {
+    return Promise.resolve(undefined);
   }
 
   readonly projectName = projectName;

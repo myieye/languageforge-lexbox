@@ -11,6 +11,7 @@
   import CommentItem from './CommentItem.svelte';
   import CommentReplyInput from './CommentReplyInput.svelte';
   import DevContent from '$lib/layout/DevContent.svelte';
+  import {isOwnComment, useCommentAuthor} from '$project/data';
   import type {ThreadView} from './types';
   import {slide} from 'svelte/transition';
   import {prefersReducedMotion} from 'svelte/motion';
@@ -20,7 +21,6 @@
     canComment,
     canResolve,
     saving,
-    currentUserId,
     editingCommentId,
     expanded = false,
     hasUnread = false,
@@ -37,7 +37,6 @@
     canComment: boolean;
     canResolve: boolean;
     saving: boolean;
-    currentUserId?: string;
     editingCommentId?: string;
     expanded?: boolean;
     hasUnread?: boolean;
@@ -51,6 +50,8 @@
     /** Debug only: puts the thread back in the unread state. */
     onMarkUnread?: () => void;
   } = $props();
+
+  const commentAuthor = useCommentAuthor();
 
   // A new thread animates as one block; a comment animates itself, or the collapsed thread hiding it.
   const threadArrived = $derived(arrivals.has(`${threadView.thread.id}:${threadView.thread.status}`));
@@ -165,7 +166,7 @@
               {comment}
               compact={index > 0}
               arrived={!threadArrived && arrivals.has(comment.id)}
-              canEdit={Boolean(currentUserId && comment.authorId === currentUserId)}
+              canEdit={isOwnComment(commentAuthor.current, comment.authorId)}
               {saving}
               editing={editingCommentId === comment.id}
               onStartEdit={() => onStartEdit(comment)}

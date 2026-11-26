@@ -3,6 +3,7 @@ export * from './IAppLauncher';
 export * from './IHistoryServiceJsInvokable';
 export * from './IJsInvokableLogger';
 export * from './IMiniLcmFeatures';
+export * from './ICommentAuthor';
 export * from './IMiniLcmJsInvokable';
 export * from './IMultiWindowService';
 export * from './IPreferencesService';
